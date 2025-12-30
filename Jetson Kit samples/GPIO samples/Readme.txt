@@ -3,6 +3,9 @@ Samples:
 GPIO:
 Blinky
 Simple input
+Polling button
+
+https://libgpiod.readthedocs.io/en/latest/python_api.html
 
 I2C: 
 BMP280 communication
@@ -12,5 +15,7 @@ BMP280 communication
 
 UART:
 Simple loopback
-P2P communication
+P2P communication (TBD)
+
+
 

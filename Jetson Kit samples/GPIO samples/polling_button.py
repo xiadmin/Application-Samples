@@ -2,6 +2,11 @@
 TODO: Lorem ipsum
 
 This would need interrupts. They need to be configured in the Tegra image.
+based on 
+https://docs.arduino.cc/built-in-examples/digital/Debounce/
+
+Reference:
+https://libgpiod.readthedocs.io/en/latest/python_api.html
 """
 
 import time
@@ -21,9 +26,7 @@ DEBOUNCE_MS = 50
 
 button_settings = gpiod.LineSettings(
         direction=Direction.INPUT,
-        edge_detection=Edge.BOTH,
-        debounce_period=timedelta(milliseconds=DEBOUNCE_MS),
-        bias=Bias.PULL_DOWN
+        active_low=True # inverse logic for buttons
     )
 
 led_settings = gpiod.LineSettings(
@@ -36,9 +39,7 @@ led_settings = gpiod.LineSettings(
 button_request = gpiod.request_lines(
         BUTTON_DEVICE,
         consumer="button-input",
-        config={
-            BUTTON_OFFSET: button_settings
-        }
+        config={BUTTON_OFFSET: button_settings}
     )
 
 led_request = gpiod.request_lines(
@@ -50,22 +51,34 @@ led_request = gpiod.request_lines(
 try:
     print("Press the button to activate EDGE LED")
 
+    last_button_value = Value.INACTIVE
+    led_state = False
+    button_state = Value.INACTIVE
+    last_debounce_time = time.monotonic_ns() // 1_000_000 
+
     while True:
     	# Replace this to polling
-        ret_value = button_request.wait_edge_events(3.0)
-
-        if ret_value:
-            print("Event ready")
-        else:
-            print("no events")
-            continue 
+        button_value = button_request.get_value(BUTTON_OFFSET)
         
-        event = button_request.read_edge_events()
+        if button_value is not last_button_value:
+            last_debounce_time = time.monotonic_ns() // 1_000_000  # Convert to milliseconds
+        
+        current_time = time.monotonic_ns() // 1_000_000  # Convert to milliseconds
+        
+        if (current_time - last_debounce_time) > DEBOUNCE_MS:
+            if button_value != button_state:
+                button_state = button_value
+                if button_state is Value.ACTIVE:
+                    # Button pressed, toggle LED state
+                    print("Button pressed, toggling LED")
+                    led_state = not led_state
 
-        if event.event_type is gpiod.EdgeEvent.Type.RISING_EDGE:
-            led_request.set_value(LED_OFFSET, Value.INACTIVE) 
-        elif event.event_type is gpiod.EdgeEvent.Type.FALLING_EDGE:
-            led_request.set_value(LED_OFFSET, Value.ACTIVE)         
+        if led_state==True:
+            led_request.set_value(LED_OFFSET, Value.ACTIVE)
+        else:
+            led_request.set_value(LED_OFFSET, Value.INACTIVE)
+
+        last_button_value = button_value           
 
 except KeyboardInterrupt:
     print("Aborted.")

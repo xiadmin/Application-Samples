@@ -9,6 +9,8 @@ Line:   offset
 
 TODO: Lorem ipsum
 
+Buttons and LeDs have inverted logic
+
 https://libgpiod.readthedocs.io/en/latest/python_api.html
 """
 import time
@@ -21,7 +23,7 @@ OFFSET = 25
 request = gpiod.request_lines(
     DEVICE,
     consumer="simple-input",
-    config={OFFSET: gpiod.LineSettings(direction=Direction.INPUT,drive=Drive.PUSH_PULL)},
+    config={OFFSET: gpiod.LineSettings(direction=Direction.INPUT, active_low=True)},
 )
 
 try:
