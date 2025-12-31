@@ -9,8 +9,7 @@ Line:   offset
 
 TODO: Lorem ipsum
 
-Buttons and LeDs have inverted logic
-
+Libgpiod documentation:
 https://libgpiod.readthedocs.io/en/latest/python_api.html
 """
 import time
@@ -23,16 +22,21 @@ OFFSET = 25
 request = gpiod.request_lines(
     DEVICE,
     consumer="simple-input",
-    config={OFFSET: gpiod.LineSettings(direction=Direction.INPUT, active_low=True)},
-)
+    config={OFFSET: gpiod.LineSettings(direction=Direction.INPUT, 
+                                       active_low=True # Buttons use inverse logic
+                                       )},
+    )
 
 try:
     for i in range(100):
+        # Reading value
         value = request.get_value(OFFSET)
         print(f"Edge button value: {value.value}")
         time.sleep(0.5)
+
 except KeyboardInterrupt:
-    print("Aborted.")
+    print("Aborting!")
+
 finally:
     request.release()
 

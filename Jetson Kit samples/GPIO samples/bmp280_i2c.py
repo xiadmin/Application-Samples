@@ -2,7 +2,16 @@
 Docstring for Jetson Kit samples.GPIO samples.bmp280_i2c
 
 
-Datasheet:
+Connect:
+Vin to gpio header pin 5 (3V3)
+GND to gpio header pin 6 (GND)
+SCK to gpio header pin 27 (I2C1 SCL)
+SDI to gpio header pin 28 (I2C1 SDA)
+
+Adafruit board:
+https://learn.adafruit.com/adafruit-bmp280-barometric-pressure-plus-temperature-sensor-breakout
+
+BMP280 Datasheet:
 https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp280-ds001.pdf
 
 Pylibi2c documentation: 
@@ -14,7 +23,7 @@ import sys
 import pylibi2c
 from numpy import double
 
-#Using device i2c-7, which is mapped to I2C1 on Orin NX, GPIO pins 27 (SCL) and 28 (SDA)
+#Using device i2c-7, which is mapped to I2C1 on Orin NX, GPIO header pins 27 (SCL) and 28 (SDA)
 I2C_BUS = "/dev/i2c-7"   
 BMP280_ADDR = 0x77  # 0x76 if SDO=GND, 0x77 if SDO=VDDIO (datasheet chapter 5.2)
 
@@ -35,6 +44,8 @@ def compensate_temperature(adc_T,dig_T1,dig_T2,dig_T3):
     t_fine = var1 + var2
     temp = (t_fine * 5 + 128) >> 8
     return (double (temp) / 100.0)
+
+print("BMP280 I2C sample")
 
 # Initialize I2C device
 i2c = pylibi2c.I2CDevice(I2C_BUS, BMP280_ADDR, iaddr_bytes=1)

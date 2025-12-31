@@ -1,19 +1,20 @@
 """
 TODO: Lorem ipsum
 
-This would need interrupts. They need to be configured in the Tegra image.
-based on 
+
+This sample is based on polling method with debounce logic. Should an interrupt be needed, 
+a reconfiguration of the Tegra image is required. Please contact XIMEA support for more details.
+
+Sample is based on: 
 https://docs.arduino.cc/built-in-examples/digital/Debounce/
 
-Reference:
+Libgpiod documentation:
 https://libgpiod.readthedocs.io/en/latest/python_api.html
 """
 
 import time
-from datetime import timedelta
 import gpiod
-from gpiod.line import Direction, Drive, Edge, Value, Bias
-
+from gpiod.line import Direction, Drive, Value
 
 BUTTON_DEVICE = "/dev/gpiochip1"
 BUTTON_OFFSET = 25
@@ -23,16 +24,15 @@ LED_OFFSET = 106
 
 DEBOUNCE_MS = 50
 
-
 button_settings = gpiod.LineSettings(
         direction=Direction.INPUT,
-        active_low=True # inverse logic for buttons
+        active_low=True # Buttons use inverse logic
     )
 
 led_settings = gpiod.LineSettings(
         direction=Direction.OUTPUT,
         drive=Drive.PUSH_PULL,
-        active_low=True,
+        active_low=True, # LEDs use inverse logic
         output_value=Value.INACTIVE
     )
 
@@ -49,7 +49,7 @@ led_request = gpiod.request_lines(
 )
 
 try:
-    print("Press the button to activate EDGE LED")
+    print("Press the button to activate Edge green LED")
 
     last_button_value = Value.INACTIVE
     led_state = False
@@ -57,7 +57,7 @@ try:
     last_debounce_time = time.monotonic_ns() // 1_000_000 
 
     while True:
-    	# Replace this to polling
+    	# Reading button value
         button_value = button_request.get_value(BUTTON_OFFSET)
         
         if button_value is not last_button_value:
@@ -73,6 +73,7 @@ try:
                     print("Button pressed, toggling LED")
                     led_state = not led_state
 
+        # Setting LED state
         if led_state==True:
             led_request.set_value(LED_OFFSET, Value.ACTIVE)
         else:
@@ -81,7 +82,8 @@ try:
         last_button_value = button_value           
 
 except KeyboardInterrupt:
-    print("Aborted.")
+    print("Aborting!")
+
 finally:
     button_request.release()
     led_request.release()
