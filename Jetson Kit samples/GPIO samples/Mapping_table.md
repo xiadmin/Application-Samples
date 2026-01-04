@@ -24,7 +24,7 @@ Note that the GPIO pins use 1V8 logic.
 
 | *GPIO header pin number* |  *GPIO name* | *SOC Pin number* |  *GPIO label* | *GPIO chip/device name* | *GPIO offset* |
 | --- | --- | --- | --- | --- |  --- |  
-| 13    | GPIO3 | 228 | PH.00  | gpiochip0 | 43 |
+| 12    | GPIO13 | 228 | PH.00  | gpiochip0 | 43 |
 
 ### Buttons:
 
