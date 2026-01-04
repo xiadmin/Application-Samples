@@ -1,9 +1,19 @@
 """
-TODO: Lorem ipsum
+This is a sample code demonstrating the use of a button on the Jetson Kit. 
+The button press detection is based on polling with debouncing.
+Should an interrupt be needed, a reconfiguration of the Tegra image is required. 
+Please contact XIMEA support for more details.
 
+Outer button (GPIO10) and Outer green LED (GPIO11) are used in the sample.
+Libgpiod is used for GPIO control.
 
-This sample is based on polling method with debounce logic. Should an interrupt be needed, 
-a reconfiguration of the Tegra image is required. Please contact XIMEA support for more details.
+Workflow:
+- Initialize GPIO10 for input, inverse logic
+- Initialize GPIO11 for output, inverse logic
+- In a loop:
+-- On a proper button press (with debouncing), toggle the LED state
+
+Abort the program with Ctrl+C.
 
 Sample is based on: 
 https://docs.arduino.cc/built-in-examples/digital/Debounce/
@@ -16,9 +26,11 @@ import time
 import gpiod
 from gpiod.line import Direction, Drive, Value
 
+# Using outer button, GPIO10/PEE.02 on Orin NX, which is mapped to gpiochip1, line offset 25
 BUTTON_DEVICE = "/dev/gpiochip1"
 BUTTON_OFFSET = 25
 
+# Using outer green LED, GPIO11/PQ.06 on Orin NX, which is mapped to gpiochip0, line offset 106 
 LED_DEVICE = "/dev/gpiochip0"
 LED_OFFSET = 106
 
@@ -49,7 +61,7 @@ led_request = gpiod.request_lines(
 )
 
 try:
-    print("Press the button to activate Edge green LED")
+    print("Press the button to activate outer green LED")
 
     last_button_value = Value.INACTIVE
     led_state = False
@@ -61,9 +73,9 @@ try:
         button_value = button_request.get_value(BUTTON_OFFSET)
         
         if button_value is not last_button_value:
-            last_debounce_time = time.monotonic_ns() // 1_000_000  # Convert to milliseconds
+            last_debounce_time = time.monotonic_ns() // 1_000_000 
         
-        current_time = time.monotonic_ns() // 1_000_000  # Convert to milliseconds
+        current_time = time.monotonic_ns() // 1_000_000  
         
         if (current_time - last_debounce_time) > DEBOUNCE_MS:
             if button_value != button_state:

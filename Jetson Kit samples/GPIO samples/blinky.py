@@ -1,6 +1,13 @@
 """
+This is a sample code demonstrating the use of output GPIO on the Jetson Kit.
+Outer green LED (GPIO11) is used in the sample, to avoid the need for any hardware setup.
+Libgpiod is used for GPIO control.
 
-TODO: Lorem ipsum
+Workflow:
+- Initialize GPIO line for output, inverse logic
+- Blink the LED in a loop
+
+Abort the program with Ctrl+C.
 
 Libgpiod documentation:
 https://libgpiod.readthedocs.io/en/latest/python_api.html
@@ -10,7 +17,7 @@ import time
 import gpiod
 from gpiod.line import Direction, Drive, Value
 
-#Using edge green LED, GPIO11/PQ.06 on Orin NX, which is mapped to gpiochip0, line offset 106 
+#Using outer green LED, GPIO11/PQ.06 on Orin NX, which is mapped to gpiochip0, line offset 106 
 DEVICE = "/dev/gpiochip0"
 OFFSET = 106
 
@@ -24,7 +31,7 @@ request = gpiod.request_lines(
 )
 
 try:
-    print("Blinking edge LED GREEN.")
+    print("Blinking outer LED GREEN.")
 
     for i in range(100):
         request.set_value(OFFSET,Value.ACTIVE)

@@ -1,5 +1,13 @@
 """
-TODO: Lorem ipsum
+This is a sample code for demonstrating SPI communication on the Jetson Kit.
+BMP280 sensor embedded in an Adafruit board is used as communication target.
+PySpidev is used for SPI communication.
+
+Workflow:
+- Initialize SPI communication
+- Read BMP280 chip ID
+- Read calibration parameters from BMP280
+- Trigger and read temperature measurement in a loop
 
 Connect:
 Vin to gpio header pin 5 (3V3)
@@ -27,8 +35,6 @@ from numpy import double
 
 # Using device spidev0.0, which is the SPI0 on Orin NX, chip select 0
 # Set to 3V3 logic
-# Pins on gpio header:
-# 22 (MISO), 23 (CLK), 24 (MOSI), 25 (CS0), 26 (CS1)
 
 BUS = 0
 CS  = 0  
@@ -51,6 +57,8 @@ def compensate_temperature(adc_T,dig_T1,dig_T2,dig_T3):
     t_fine = var1 + var2
     temp = (t_fine * 5 + 128) >> 8
     return (double (temp) / 100.0)
+
+print("BMP280 SPI sample")
 
 # Initialize SpiDev device
 spi = spidev.SpiDev()

@@ -1,5 +1,15 @@
 """
-Docstring for uart_loopback
+This is a sample code for demonstrating UART communication on the Jetson Kit.
+A UART loopback test is performed by connecting the TX and RX pins together.
+PySerial is used for UART communication.
+
+Workflow:
+- Initialize UART communication
+- In a loop:
+-- Send data through TX pin
+-- Read data from RX pin
+
+Abort the program with Ctrl+C.
 
 Connect:
 Gpio header pin 20 (UART1 TX) to gpio header pin 21 (UART1 RX)

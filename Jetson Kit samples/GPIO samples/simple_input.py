@@ -1,13 +1,13 @@
 """
-Read one GPIO input line using libgpiod's Python bindings.
-Button sample demonstrating simple input pin using gpiod library
+This is a sample code demonstrating the use of input GPIO on the Jetson Kit.
+Outer button (GPIO10) is used in the sample, to avoid the need for any hardware setup.
+Libgpiod is used for GPIO control.
 
-Using edge button
+Workflow:
+- Initialize GPIO line for input, inverse logic
+- Read the button state in a loop
 
-Chip:   /dev/gpiochip
-Line:   offset
-
-TODO: Lorem ipsum
+Abort the program with Ctrl+C.
 
 Libgpiod documentation:
 https://libgpiod.readthedocs.io/en/latest/python_api.html
@@ -16,6 +16,7 @@ import time
 import gpiod
 from gpiod.line import Direction, Drive
 
+#Using outer button, GPIO10/PEE.02 on Orin NX, which is mapped to gpiochip1, line offset 25
 DEVICE = "/dev/gpiochip1"
 OFFSET = 25
 
@@ -31,7 +32,7 @@ try:
     for i in range(100):
         # Reading value
         value = request.get_value(OFFSET)
-        print(f"Edge button value: {value.value}")
+        print(f"Outer button value: {value.value}")
         time.sleep(0.5)
 
 except KeyboardInterrupt:

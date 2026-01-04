@@ -1,6 +1,15 @@
 '''
-Docstring for Jetson Kit samples.GPIO samples.bmp280_i2c
+This is a sample code for demonstrating I2C communication on the Jetson Kit.
+BMP280 sensor embedded in an Adafruit board is used as communication target.
+Pylibi2c is used for I2C communication.
 
+Workflow:
+- Initialize I2C communication
+- Read BMP280 chip ID
+- Read calibration parameters from BMP280
+- Trigger and read temperature measurement in a loop
+
+Abort the program with Ctrl+C.
 
 Connect:
 Vin to gpio header pin 5 (3V3)
