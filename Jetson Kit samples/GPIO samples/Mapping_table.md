@@ -70,7 +70,7 @@ Debug UART usage is further documented in the technical manual.
 
 ### UART0
 
-In ls /dev/ the UART0 is device *ttyS3*
+In ls /dev/ the UART0 is device *ttyTHS3*
 
 | *GPIO header pin number* | *Function* |
 | --- | --- |
@@ -78,6 +78,10 @@ In ls /dev/ the UART0 is device *ttyS3*
 | 17 | CTS# |
 | 18 | RX |
 | 19 | TX |
+
+Note:
+The mapping to ttyTHS3 is available from Tegra image 2026-02-10.
+Tegra image 2025-12-17 has UART0 mapped to ttyS3.
 
 ### UART1
 

@@ -13,7 +13,7 @@ SPI:
 
 UART:
  - Loopback
- - P2P communication (planned)
+ - P2P communication 
 
 ## See also
 - requirements.txt

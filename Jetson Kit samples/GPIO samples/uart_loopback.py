@@ -11,8 +11,11 @@ Workflow:
 
 Abort the program with Ctrl+C.
 
-Connect:
+UART1 connection:
 Gpio header pin 20 (UART1 TX) to gpio header pin 21 (UART1 RX)
+
+UART0 connection:
+Gpio header pin 18 (UART0 TX) to gpio header pin 19 (UART0 RX)
 
 PySerial documentation:
 https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial
@@ -24,24 +27,29 @@ import serial
 print("UART Loopback sample")
 
 # Using device ttyHS1, which is mapped to UART1 on Orin NX, GPIO header pins 20 (TX) and 21 (RX)
+# Alternately using device ttyTHS3, which is mapped to UART0 on Orin NX, GPIO header pins 18 (TX) and 19 (RX)
 serial_port = serial.Serial(
-    port="/dev/ttyTHS1",
+    port="/dev/ttyTHS1", #For UART1
+    #port="/dev/ttyTHS3", #For UART0  
     baudrate=115200,
     bytesize=serial.EIGHTBITS,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
+    rtscts=False 
 )
 
 # Wait a second to let the port initialize
 time.sleep(1)
 
 try:
+    # Clear buffers before starting
+    serial_port.reset_input_buffer()
+    serial_port.reset_output_buffer()
+
     for i in range(100):
         #Sending data
         send_data = f'Loopback iteration {i}\n'.encode()
         serial_port.write(send_data)
-        
-        time.sleep(0.1)
         
         #Receiving data
         read_data = serial_port.read_until(b'\n')
