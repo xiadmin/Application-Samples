@@ -22,6 +22,8 @@ YELLOW wire (RX) - GPIO header pin 19 (TX)
 GREEN wire (RTS#) - GPIO header pin 17 (CTS#)
 BROWN wire (CTS#) - GPIO header pin 16 (RTS#)
 
+Leave RED wire unconnected.
+
 USB to UART Converter:
 https://ftdichip.com/products/ttl-232rg-vreg1v8-we/
 Datasheet:
