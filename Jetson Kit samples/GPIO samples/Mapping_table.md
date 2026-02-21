@@ -147,5 +147,5 @@ For the samples the work without sudo, the user needs to be added to the followi
 The user can be added to a group with:
 _sudo usermod -aG group nvidia_
 
-The user will be added automatically the these groups from the next SSD image release.
+The user is added automatically the these groups from SSD image version 2026-01-06.
 
