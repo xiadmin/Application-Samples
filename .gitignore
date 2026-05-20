@@ -1,2 +1,9 @@
 *.tif
 *.o
+*.html
+*.md
+
+!README.md
+
+build/*
+!build/.gitkeep
