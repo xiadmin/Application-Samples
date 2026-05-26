@@ -12,15 +12,21 @@ $cmakeTmpRoot = Join-Path $rootDir ".cmake-tmp"
 if (Test-Path $cmakeTmpRoot) { Remove-Item -Recurse -Force $cmakeTmpRoot }
 if (Test-Path $finalBuildRoot) { Remove-Item -Recurse -Force $finalBuildRoot }
 
-Write-Host "Finding C samples in $samplesRoot..."
+Write-Host "Finding C and C++ samples in $samplesRoot..."
 
 $cmakeFiles = Get-ChildItem -Path $samplesRoot -Filter "CMakeLists.txt" -Recurse
+
+$totalFound  = 0
+$totalOk     = 0
+$failed      = [System.Collections.Generic.List[string]]::new()
 
 foreach ($cmakeFile in $cmakeFiles) {
     $sampleDir = $cmakeFile.Directory.FullName
     
-    # Only process if the current directory is 'c'
-    if ($sampleDir -match '[\\/]c$') {
+    # Only process C and C++ sample folders (language is the leaf directory)
+    if ($sampleDir -match '[\\/]c(pp)?$') {
+        $totalFound++
+
         # Extract relative path from samples root
         $relativePath = $sampleDir.Substring($samplesRoot.Length).Trim('\', '/')
         # Convert slashes to hyphens
@@ -37,6 +43,7 @@ foreach ($cmakeFile in $cmakeFiles) {
         & cmake -S $sampleDir -B $tmpBuildDir
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "CMake configure failed for $folderName"
+            $failed.Add($folderName)
             continue
         }
 
@@ -44,6 +51,7 @@ foreach ($cmakeFile in $cmakeFiles) {
         & cmake --build $tmpBuildDir --config Release
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "CMake build failed for $folderName"
+            $failed.Add($folderName)
             continue
         }
 
@@ -72,6 +80,8 @@ foreach ($cmakeFile in $cmakeFiles) {
                 Copy-Item -Path $_.FullName -Destination $targetBuildDir -Force
             }
         }
+
+        $totalOk++
     }
 }
 
@@ -80,4 +90,20 @@ Write-Host "=========================================="
 Write-Host "Cleaning up temporary CMake files..."
 if (Test-Path $cmakeTmpRoot) { Remove-Item -Recurse -Force $cmakeTmpRoot }
 
-Write-Host "Done! All executables are organized in the '$finalBuildRoot' directory."
+# ── summary ───────────────────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "  Build summary" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "  Samples found  : $totalFound"
+Write-Host "  Succeeded      : $totalOk" -ForegroundColor $(if ($totalOk -eq $totalFound) { 'Green' } else { 'Yellow' })
+Write-Host "  Failed         : $($failed.Count)" -ForegroundColor $(if ($failed.Count -eq 0) { 'Green' } else { 'Red' })
+if ($failed.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  Failed samples:" -ForegroundColor Red
+    foreach ($name in $failed) {
+        Write-Host "    - $name" -ForegroundColor Red
+    }
+}
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host ""
