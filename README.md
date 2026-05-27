@@ -32,6 +32,7 @@ self-contained, and includes its own README.md file.
 | Sample | Language | What it shows |
 |--------|----------|---------------|
 | [acquisition/capture-10-images/c](samples/acquisition/capture-10-images/c/) | C | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [acquisition/capture-10-images/csharp](samples/acquisition/capture-10-images/csharp/) | C# | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 
 ---
 
@@ -135,11 +136,91 @@ Single-character names are acceptable for loop indices (`i`, `j`, `k`) only.
 - Module and public function/class docstrings required; tiny helpers do not
   need boilerplate.
 
+### Naming
+
+| Construct | Style | Example |
+|-----------|-------|---------|
+| Functions | snake_case | `run_capture`, `get_frame_count` |
+| Classes | UpperCamelCase (PascalCase) | `FrameBuffer`, `CameraConfig` |
+| Constants (module-level) | SCREAMING_SNAKE_CASE | `MAX_FRAME_COUNT`, `DEFAULT_TIMEOUT_MS` |
+| Local variables | snake_case | `grab_timeout_ms`, `frame_count` |
+| Parameters | snake_case | `exposure_us`, `serial_number` |
+| Instance attributes | snake_case | `self.width`, `self.frame_buffer` |
+| Private attributes / methods | snake_case with `_` prefix | `_width`, `_validate_params` |
+| Boolean variables | prefix `is_`, `has_`, `can_`, `should_` | `is_valid`, `has_data` |
+| Type aliases | UpperCamelCase | `FrameList`, `ConfigDict` |
+| Enum types | UpperCamelCase | `PixelFormat`, `TriggerMode` |
+| Enum values | SCREAMING_SNAKE_CASE | `PIXEL_FORMAT_RAW8` |
+| File names | snake_case | `main.py`, `frame_buffer.py` |
+
+Note: module-level `Final` constants use SCREAMING_SNAKE_CASE; all other names do not.
+Single-character names are acceptable for loop indices (`i`, `j`, `k`) only.
+
+### File and project structure
+
+- `main.py` is the entry point at the sample implementation root.
+- Reusable helpers may be extracted into sibling modules (e.g. `camera_utils.py`)
+  inside the same sample folder; do not copy helpers across samples.
+- Every sample with external dependencies includes `requirements.txt`.
+
+### Code quality
+
+- Use context managers (`with` statements) for resource cleanup — camera
+  handles, file handles, etc.
+- Write errors to `sys.stderr` (or via `argparse` error handling) and exit
+  with a non-zero code on failure; do not silently swallow exceptions.
+- Prefer f-strings over `%`-formatting or `.format()`.
+- Do not use bare `except:` clauses; catch specific exception types.
+- Comments explain non-obvious reasoning, hardware quirks, and API caveats —
+  not obvious code.
+
 ---
 
 ## .NET conventions
 
-- 
+- Target the latest LTS .NET version by default; add legacy targets only when there is a real compatibility requirement.
+- Prefer one multi-target project over duplicated per-version folders when the code is materially the same.
+- Catch exceptions at sensible boundaries and print actionable errors to `Console.Error`; do not wrap every single API call in a one-line `try/catch`.
+
+### Naming
+
+| Construct | Style | Example |
+|-----------|-------|---------|
+| Namespaces | PascalCase | `Ximea.Samples.Acquisition` |
+| Classes / structs / records | PascalCase | `FrameBuffer`, `CameraConfig` |
+| Interfaces | PascalCase with `I` prefix | `IFrameSource`, `ICameraHandle` |
+| Methods | PascalCase | `RunCapture`, `GetFrameCount` |
+| Properties | PascalCase | `ExposureUs`, `FrameCount` |
+| Events | PascalCase | `FrameArrived`, `CameraDisconnected` |
+| Constants (`const` / `static readonly`) | PascalCase | `MaxFrameCount`, `DefaultTimeoutMs` |
+| Enum types | PascalCase | `PixelFormat`, `TriggerMode` |
+| Enum values | PascalCase | `PixelFormatRaw8`, `TriggerModeSoftware` |
+| Local variables | camelCase | `grabTimeoutMs`, `frameCount` |
+| Parameters | camelCase | `exposureUs`, `serialNumber` |
+| Private fields | camelCase with `_` prefix | `_width`, `_frameBuffer` |
+| Boolean members | prefix `Is`, `Has`, `Can`, `Should` | `IsValid`, `HasData` |
+| File names | PascalCase | `Main.cs`, `FrameBuffer.cs` |
+
+Note: Microsoft naming guidelines do not use SCREAMING_SNAKE_CASE for any C# construct.
+Single-character names are acceptable for loop indices (`i`, `j`, `k`) and generic type parameters (`T`, `TKey`) only.
+
+### File and project structure
+
+- One class (or closely related types) per file; file name matches the primary type name.
+- `Program.cs` is the entry point at the sample implementation root.
+- Every sample includes a `.csproj` file.
+- Shared utility code lives in a separate project or folder — do not copy it across samples.
+
+### Code quality
+
+- Use `using` declarations / `IDisposable` patterns for resource cleanup; avoid manual `try/finally` dispose chains where `using` suffices.
+- Prefer `async`/`await` over blocking `.Result` / `.Wait()` calls.
+- Prefer `var` when the type is obvious from the right-hand side; use explicit types when it aids clarity.
+- Use C# 8+ nullable reference types (`#nullable enable`) in new code.
+- Do not use `goto`.
+- Write XML doc comments (`/// <summary>`) for public types and members; tiny private helpers do not need boilerplate documentation.
+
+
 
 ---
 
