@@ -21,7 +21,8 @@ function Render-Menu {
     param(
         [string]   $Prompt,
         [string[]] $AllItems,
-        [int]      $Selected
+        [int]      $Selected,
+        [bool]     $HasNew = $false
     )
     # Move cursor back to the top of the menu each redraw.
     # On the first draw $script:menuLines is 0 so nothing moves.
@@ -34,7 +35,7 @@ function Render-Menu {
     for ($i = 0; $i -lt $AllItems.Count; $i++) {
         if ($i -eq $Selected) {
             Write-Host ("  > $($AllItems[$i])") -ForegroundColor Green
-        } elseif ($i -eq $AllItems.Count - 1) {
+        } elseif ($HasNew -and $i -eq $AllItems.Count - 1) {
             Write-Host ("    $($AllItems[$i])") -ForegroundColor Yellow
         } else {
             Write-Host ("    $($AllItems[$i])")
@@ -59,20 +60,21 @@ function Read-Selection {
     else         { [string[]] $allItems = @($Items) + @("+ $NewLabel") }
     $selected = 0
     $script:menuLines = 0
+    $hasNew = -not $NoNew
 
     [Console]::CursorVisible = $false
     try {
-        Render-Menu -Prompt $Prompt -AllItems $allItems -Selected $selected
+        Render-Menu -Prompt $Prompt -AllItems $allItems -Selected $selected -HasNew $hasNew
         while ($true) {
             $key = $host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
             switch ($key.VirtualKeyCode) {
                 38 {  # Up
                     if ($selected -gt 0) { $selected-- }
-                    Render-Menu -Prompt $Prompt -AllItems $allItems -Selected $selected
+                    Render-Menu -Prompt $Prompt -AllItems $allItems -Selected $selected -HasNew $hasNew
                 }
                 40 {  # Down
                     if ($selected -lt $allItems.Count - 1) { $selected++ }
-                    Render-Menu -Prompt $Prompt -AllItems $allItems -Selected $selected
+                    Render-Menu -Prompt $Prompt -AllItems $allItems -Selected $selected -HasNew $hasNew
                 }
                 13 {  # Enter
                     Write-Host ''
@@ -175,7 +177,7 @@ if ($null -eq $topic) {
 
 # ── step 3: language ──────────────────────────────────────────────────────────
 
-$langs = @('c', 'cpp')
+$langs = @('c', 'cpp', 'csharp')
 $lang  = Read-Selection -Items $langs -Prompt 'Step 3 -- Select language:' -NoNew
 
 # ── derive names ──────────────────────────────────────────────────────────────
@@ -183,12 +185,24 @@ $lang  = Read-Selection -Items $langs -Prompt 'Step 3 -- Select language:' -NoNe
 $sampleDir   = Join-Path (Join-Path (Join-Path $samplesDir $feature) $topic) $lang
 $binaryName  = "$feature-$topic-$lang"
 $targetName  = $binaryName -replace '-', '_'
+$cmakePath   = "samples/$feature/$topic/$lang"
+
+# C / C++ specifics
 $sourceFile  = if ($lang -eq 'c') { 'main.c' } else { 'main.cpp' }
 $langStd     = if ($lang -eq 'c') { 'c_std_11' }  else { 'cxx_std_17' }
 $projectLang = if ($lang -eq 'c') { 'C' }         else { 'CXX' }
-$langLabel   = if ($lang -eq 'c') { 'C' }         else { 'C++' }
 $ximeaTarget = if ($lang -eq 'c') { 'XIMEA::xiAPI' } else { 'XIMEA::xiAPIplus' }
-$cmakePath   = "samples/$feature/$topic/$lang"
+
+$langLabel   = switch ($lang) {
+    'c'      { 'C' }
+    'cpp'    { 'C++' }
+    'csharp' { 'C#' }
+}
+
+# C# specifics — PascalCase project name derived from binary name segments
+$csProjectName = ($binaryName -split '-' | ForEach-Object {
+    $_.Substring(0,1).ToUpper() + $_.Substring(1)
+}) -join ''
 
 # ── confirm ───────────────────────────────────────────────────────────────────
 
@@ -216,6 +230,190 @@ if (Test-Path $sampleDir) {
 }
 
 New-Item -ItemType Directory -Path $sampleDir -Force | Out-Null
+
+if ($lang -eq 'csharp') {
+
+# ── C# scaffold ───────────────────────────────────────────────────────────────
+
+$emDash    = [char]0x2014
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+
+$csprojContent = @"
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Target latest LTS .NET; update when a new LTS ships. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>$binaryName</AssemblyName>
+    <RootNamespace>Ximea.Samples</RootNamespace>
+    <!-- Force x64 $emDash xiApi.NETX64.dll is 64-bit only. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--
+      Resolve SDK location from either:
+        - Command-line override:  dotnet build -p:XimeaSpPath=D:\XIMEA
+        - Environment variable:  XIMEA_SP_PATH (set by the XIMEA installer, default C:\XIMEA)
+      XimeaSpPath takes precedence when both are present.
+    -->
+    <XimeaSpPath Condition="'`$(XimeaSpPath)' == ''">`$(XIMEA_SP_PATH)</XimeaSpPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="xiApi.NETX64">
+      <!-- XIMEA ships up to net7.0; the net7.0 assembly is forward-compatible with net8.0. -->
+      <HintPath>`$(XimeaSpPath)\API\xiAPI.NET.NET.7.0\xiApi.NETX64.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Fail fast with an actionable message when no SDK path could be resolved. -->
+  <Target Name="CheckXimeaSpPath" BeforeTargets="Build">
+    <Error Condition="'`$(XimeaSpPath)' == ''"
+           Text="XIMEA SDK path is not set. Run the XIMEA installer (which sets XIMEA_SP_PATH) or pass -p:XimeaSpPath=&lt;path&gt; to dotnet build." />
+  </Target>
+
+</Project>
+"@
+
+[System.IO.File]::WriteAllText((Join-Path $sampleDir "$csProjectName.csproj"), $csprojContent, $utf8NoBom)
+
+$programContent = @"
+#nullable enable
+
+using System;
+using xiApi.NET;
+
+// TODO: describe what this sample does.
+
+var cam = new xiCam();
+bool isDeviceOpen = false;
+try
+{
+    cam.GetNumberDevices(out int numDevices);
+
+    if (numDevices == 0)
+    {
+        Console.Error.WriteLine("Error: no XIMEA cameras detected.");
+        return 1;
+    }
+
+    Console.WriteLine(`$"Found {numDevices} camera(s), opening index 0.");
+    cam.OpenDevice(0);
+    isDeviceOpen = true;
+
+    // TODO: implement
+    Console.WriteLine("${binaryName}: not yet implemented");
+    return 0;
+}
+catch (xiExc ex)
+{
+    Console.Error.WriteLine(`$"Error: {ex.Message}");
+    return 1;
+}
+finally
+{
+    if (isDeviceOpen)
+        cam.CloseDevice();
+}
+"@
+
+[System.IO.File]::WriteAllText((Join-Path $sampleDir 'Program.cs'), $programContent, $utf8NoBom)
+
+$csReadmeContent = @"
+# $topic $emDash C# sample
+
+TODO: one-line description of what this sample demonstrates.
+
+---
+
+## Prerequisites
+
+| Item | Requirement |
+|------|-------------|
+| OS | Windows 10/11 |
+| Hardware | Any XIMEA USB3 / PCIe camera |
+| XIMEA SDK | 4.32 or newer |
+| .NET SDK | 8.0 or newer |
+
+---
+
+## Build
+
+### Using build.ps1 (builds all samples)
+
+``````powershell
+cd <repo-root>
+.\build.ps1
+``````
+
+Binary and supporting files land in:
+
+``````
+build\$binaryName\
+``````
+
+### Directly with dotnet
+
+``````powershell
+cd $cmakePath
+dotnet build $csProjectName.csproj -c Release --output .dotnet-tmp
+``````
+
+Binary lands in ``.dotnet-tmp\\`` inside the sample folder.
+
+---
+
+## Run
+
+### After build.ps1
+
+``````powershell
+.\build\$binaryName\$binaryName.exe
+``````
+
+### After a direct dotnet build
+
+``````powershell
+.\\$cmakePath\\.dotnet-tmp\\$binaryName.exe
+``````
+
+Or use ``dotnet run`` (no separate build step needed):
+
+``````powershell
+cd $cmakePath
+dotnet run --project $csProjectName.csproj
+``````
+
+---
+
+## Expected output
+
+``````
+TODO: paste expected console output here.
+``````
+
+---
+
+## Known limitations / caveats
+
+- Windows-only: the XIMEA .NET wrapper is not available for Linux or macOS.
+- The project targets net8.0 but links against the net7.0 ``xiApi.NETX64.dll`` (the latest
+  version shipped with the SDK). Forward compatibility is supported by the .NET runtime.
+
+---
+
+## Links
+
+- [xiAPI.NET documentation](https://www.ximea.com/support/wiki/apis/XiAPINET_Manual)
+- [XIMEA Software Packages](https://www.ximea.com/software-downloads)
+"@
+
+[System.IO.File]::WriteAllText((Join-Path $sampleDir 'README.md'), $csReadmeContent, $utf8NoBom)
+
+} else {
 
 # ── CMakeLists.txt ────────────────────────────────────────────────────────────
 # Single-quoted here-string = no interpolation; substitute placeholders after.
@@ -390,6 +588,8 @@ if ($lang -eq 'cpp') {
 
 Set-Content -Path (Join-Path $sampleDir 'README.md') -Value $readmeContent -Encoding UTF8
 
+} # end if csharp / else
+
 # ── done ──────────────────────────────────────────────────────────────────────
 
 Write-Host ''
@@ -397,7 +597,13 @@ Write-Host 'Sample scaffold created:' -ForegroundColor Green
 Get-ChildItem -Path $sampleDir | ForEach-Object { Write-Host "  $($_.Name)" }
 Write-Host ''
 Write-Host 'Next steps:' -ForegroundColor Cyan
-Write-Host "  1. Fill in the TODO sections in $sourceFile"
-Write-Host '  2. Update README.md (description, expected output, limitations)'
-Write-Host "  3. Build: cd $cmakePath && cmake -B .cmake-tmp && cmake --build .cmake-tmp"
+if ($lang -eq 'csharp') {
+    Write-Host '  1. Fill in the TODO sections in Program.cs'
+    Write-Host '  2. Update README.md (description, expected output, limitations)'
+    Write-Host "  3. Build: cd $cmakePath && dotnet build $csProjectName.csproj"
+} else {
+    Write-Host "  1. Fill in the TODO sections in $sourceFile"
+    Write-Host '  2. Update README.md (description, expected output, limitations)'
+    Write-Host "  3. Build: cd $cmakePath && cmake -B .cmake-tmp && cmake --build .cmake-tmp"
+}
 Write-Host ''
