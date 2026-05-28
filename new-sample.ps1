@@ -503,7 +503,7 @@ TODO: paste expected console output here.
 
 ## Links
 
-- [XIMEA Python API documentation](https://www.ximea.com/support/wiki/apis/Python)
+- [XIMEA Python API documentation](https://www.ximea.com/support/wiki/apis/XiAPI_Python_Manual)
 - [XIMEA Software Packages](https://www.ximea.com/software-downloads)
 "@
 

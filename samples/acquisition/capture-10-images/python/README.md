@@ -10,7 +10,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SDK | 4.29+ (installs Python bindings into site-packages/ximea) |
+| XIMEA SDK | 4.29+ |
 | Python | 3.9+ |
 
 No separate pip install is needed — the `ximea` package is placed into `site-packages/ximea`
@@ -52,8 +52,7 @@ Done
 
 ## Known limitations / caveats
 
-- Opens the first detected camera (index 0). No CLI argument for camera selection.
-- Pixel dimensions and first_byte values depend on the connected camera model and scene.
+-
 
 ---
 
