@@ -68,7 +68,7 @@ dotnet run --project CaptureImages.csproj
 ## Expected output
 
 ```
-Found 1 camera(s), opening index 0.
+Found 1 camera(s), opening index 0
 Exposure: 100000 us (100 ms)
 Capturing 10 frames
 Frame 1/10: 1280x1024 nframe=1

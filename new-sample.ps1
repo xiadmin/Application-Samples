@@ -177,7 +177,7 @@ if ($null -eq $topic) {
 
 # ── step 3: language ──────────────────────────────────────────────────────────
 
-$langs = @('c', 'cpp', 'csharp')
+$langs = @('c', 'cpp', 'csharp', 'python')
 $lang  = Read-Selection -Items $langs -Prompt 'Step 3 -- Select language:' -NoNew
 
 # ── derive names ──────────────────────────────────────────────────────────────
@@ -197,6 +197,7 @@ $langLabel   = switch ($lang) {
     'c'      { 'C' }
     'cpp'    { 'C++' }
     'csharp' { 'C#' }
+    'python' { 'Python' }
 }
 
 # C# specifics — PascalCase project name derived from binary name segments
@@ -413,6 +414,101 @@ TODO: paste expected console output here.
 
 [System.IO.File]::WriteAllText((Join-Path $sampleDir 'README.md'), $csReadmeContent, $utf8NoBom)
 
+} elseif ($lang -eq 'python') {
+
+# ── Python scaffold ────────────────────────────────────────────────────────────
+
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+$emDash    = [char]0x2014
+
+$mainContent = @"
+"""${binaryName} -- XIMEA xiAPI sample (Python)
+
+TODO: describe what this sample does.
+"""
+
+import ximea.xiapi as xiapi
+
+
+def main() -> int:
+    cam = xiapi.Camera()
+    cam.open_device()
+
+    # TODO: implement
+    print("${binaryName}: not yet implemented", flush=True)
+
+    cam.close_device()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+"@
+
+[System.IO.File]::WriteAllText((Join-Path $sampleDir 'main.py'), $mainContent, $utf8NoBom)
+
+$pyReadmeContent = @"
+# $topic $emDash Python sample
+
+TODO: one-line description of what this sample demonstrates.
+
+---
+
+## Prerequisites
+
+| Item | Requirement |
+|------|-------------|
+| OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
+| Hardware | Any XIMEA USB3 / PCIe camera |
+| XIMEA SDK | 4.33 or newer |
+| Python | 3.9 or newer |
+
+No separate pip install is needed -- the ``ximea`` package must be placed into ``site-packages/ximea``.
+
+---
+
+## Run
+
+### Directly
+
+``````bash
+# Linux / macOS
+python $cmakePath/main.py
+
+# Windows PowerShell
+python $cmakePath\main.py
+``````
+
+### After build.ps1 (Windows)
+
+``````powershell
+.\build\$binaryName\run.ps1
+``````
+
+---
+
+## Expected output
+
+``````
+TODO: paste expected console output here.
+``````
+
+---
+
+## Known limitations / caveats
+
+-
+
+---
+
+## Links
+
+- [XIMEA Python API documentation](https://www.ximea.com/support/wiki/apis/Python)
+- [XIMEA Software Packages](https://www.ximea.com/software-downloads)
+"@
+
+[System.IO.File]::WriteAllText((Join-Path $sampleDir 'README.md'), $pyReadmeContent, $utf8NoBom)
+
 } else {
 
 # ── CMakeLists.txt ────────────────────────────────────────────────────────────
@@ -601,6 +697,11 @@ if ($lang -eq 'csharp') {
     Write-Host '  1. Fill in the TODO sections in Program.cs'
     Write-Host '  2. Update README.md (description, expected output, limitations)'
     Write-Host "  3. Build: cd $cmakePath && dotnet build $csProjectName.csproj"
+} elseif ($lang -eq 'python') {
+    Write-Host '  1. Fill in the TODO sections in main.py'
+    Write-Host '  2. Update README.md (description, expected output, limitations)'
+    Write-Host "  3. Run: python $cmakePath/main.py"
+    Write-Host '  (No pip install needed -- ximea is installed by the XIMEA SDK into site-packages)'
 } else {
     Write-Host "  1. Fill in the TODO sections in $sourceFile"
     Write-Host '  2. Update README.md (description, expected output, limitations)'

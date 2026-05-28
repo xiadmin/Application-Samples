@@ -18,11 +18,11 @@ try
 
     if (numDevices == 0)
     {
-        Console.Error.WriteLine("Error: no XIMEA cameras detected.");
+        Console.Error.WriteLine("Error: no XIMEA cameras detected");
         return 1;
     }
 
-    Console.WriteLine($"Found {numDevices} camera(s), opening index 0.");
+    Console.WriteLine($"Found {numDevices} camera(s), opening index 0");
     cam.OpenDevice(0);
     isDeviceOpen = true;
 

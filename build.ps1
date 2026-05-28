@@ -141,6 +141,46 @@ Write-Host "=========================================="
 Write-Host "Cleaning up dotnet temporary files..."
 if (Test-Path $dotnetTmpRoot) { Remove-Item -Recurse -Force $dotnetTmpRoot }
 
+# ── Python samples (leaf folders named 'python' containing main.py) ───────────
+
+Write-Host ""
+Write-Host "Finding Python samples in $samplesRoot..."
+
+$pyMains = Get-ChildItem -Path $samplesRoot -Filter "main.py" -Recurse |
+    Where-Object { $_.Directory.Name -eq 'python' }
+
+foreach ($pyMain in $pyMains) {
+    $sampleDir = $pyMain.Directory.FullName
+
+    $totalFound++
+
+    $relativePath = $sampleDir.Substring($samplesRoot.Length).Trim('\', '/')
+    $folderName   = $relativePath -replace '[\/\\]', '-'
+
+    Write-Host "=========================================="
+    Write-Host "Checking Python sample: $folderName"
+    Write-Host "=========================================="
+
+    # Verify the XIMEA Python bindings are installed (SDK installs into site-packages/ximea)
+    $ximeaCheck = & python -c "import ximea" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "ximea module not found for $folderName -- install the XIMEA SDK to get site-packages/ximea"
+        $failed.Add($folderName)
+        continue
+    }
+
+    # Generate a launcher script in the build output folder
+    # launcher lives at build/<folderName>/run.ps1
+    # main.py lives at samples/<relativePath>/main.py (relativePath uses OS path separators)
+    $targetBuildDir = Join-Path $finalBuildRoot $folderName
+    New-Item -ItemType Directory -Force -Path $targetBuildDir | Out-Null
+
+    $launcherContent = "& python `"`$PSScriptRoot\..\..\samples\$relativePath\main.py`" @args`n"
+    Set-Content -Path (Join-Path $targetBuildDir "run.ps1") -Value $launcherContent -Encoding UTF8
+
+    $totalOk++
+}
+
 # ── summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan

@@ -33,12 +33,13 @@ self-contained, and includes its own README.md file.
 |--------|----------|---------------|
 | [acquisition/capture-10-images/c](samples/acquisition/capture-10-images/c/) | C | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [acquisition/capture-10-images/csharp](samples/acquisition/capture-10-images/csharp/) | C# | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [acquisition/capture-10-images/python](samples/acquisition/capture-10-images/python/) | Python | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 
 ---
 
 ## Building samples
 
-You may use `bulild.ps1` to build all samples directly.
+You may use `build.ps1` to build all samples directly.
 Alternatively, you can build each sample separately by following the instructions in its own README.md file.
 
 ---
@@ -131,8 +132,9 @@ Single-character names are acceptable for loop indices (`i`, `j`, `k`) only.
 ## Python conventions
 
 - Target Python 3.9+.
-- External dependencies declared in `requirements.txt` inside the sample folder.
-- Use `argparse` for user inputs; include `if __name__ == "__main__":`.
+- The `ximea` package is installed by the XIMEA SDK into `site-packages/ximea` — no pip install needed.
+- External runtime dependencies beyond the SDK are declared in `requirements.txt` inside the sample folder.
+- Use `argparse` for user inputs when the sample accepts parameters; include `if __name__ == "__main__":`.
 - Module and public function/class docstrings required; tiny helpers do not
   need boilerplate.
 
@@ -161,7 +163,7 @@ Single-character names are acceptable for loop indices (`i`, `j`, `k`) only.
 - `main.py` is the entry point at the sample implementation root.
 - Reusable helpers may be extracted into sibling modules (e.g. `camera_utils.py`)
   inside the same sample folder; do not copy helpers across samples.
-- Every sample with external dependencies includes `requirements.txt`.
+- Every sample with pip-installable external dependencies includes `requirements.txt`.
 
 ### Code quality
 
