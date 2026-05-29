@@ -79,5 +79,4 @@ Done
 
 ## Links
 
-- [xiAPIplus documentation](https://www.ximea.com/support/wiki/apis/XiAPIplus_Manual)
 - [xiAPI documentation](https://www.ximea.com/support/wiki/apis/xiapi_manual)
