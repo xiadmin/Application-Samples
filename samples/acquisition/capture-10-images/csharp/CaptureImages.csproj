@@ -2,33 +2,23 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- Target latest LTS .NET; update when a new LTS ships. -->
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>acquisition-capture-10-images-csharp</AssemblyName>
     <RootNamespace>Ximea.Samples.Acquisition</RootNamespace>
-    <!-- Force x64 — xiApi.NETX64.dll is 64-bit only. -->
     <PlatformTarget>x64</PlatformTarget>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!--
-      Resolve SDK location from either:
-        - Command-line override:  dotnet build -p:XimeaSpPath=D:\XIMEA
-        - Environment variable:  XIMEA_SP_PATH (set by the XIMEA installer, default C:\XIMEA)
-      XimeaSpPath takes precedence when both are present.
-    -->
     <XimeaSpPath Condition="'$(XimeaSpPath)' == ''">$(XIMEA_SP_PATH)</XimeaSpPath>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="xiApi.NETX64">
-      <!-- XIMEA ships up to net7.0; the net7.0 assembly is forward-compatible with net8.0. -->
       <HintPath>$(XimeaSpPath)\API\xiAPI.NET.NET.7.0\xiApi.NETX64.dll</HintPath>
     </Reference>
   </ItemGroup>
 
-  <!-- Fail fast with an actionable message when no SDK path could be resolved. -->
   <Target Name="CheckXimeaSpPath" BeforeTargets="Build">
     <Error Condition="'$(XimeaSpPath)' == ''"
            Text="XIMEA SDK path is not set. Run the XIMEA installer (which sets XIMEA_SP_PATH) or pass -p:XimeaSpPath=&lt;path&gt; to dotnet build." />

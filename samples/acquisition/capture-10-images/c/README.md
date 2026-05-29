@@ -10,7 +10,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SDK | tested with 4.32 |
+| XIMEA SDK | 4.32+ |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
 

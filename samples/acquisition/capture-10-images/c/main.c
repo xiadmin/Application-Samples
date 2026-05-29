@@ -3,7 +3,7 @@
  * Opens the first available XIMEA camera, sets exposure to 100 ms,
  * captures 10 frames, prints per-frame metadata, then closes.
  *
- * Build: see CMakeLists.txt or build.sh / build.bat at the repo root.
+ * Build: see CMakeLists.txt or build.ps1 at the repo root.
  */
 
 #include <stdio.h>

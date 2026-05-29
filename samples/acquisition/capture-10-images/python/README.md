@@ -10,7 +10,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SDK | 4.29+ |
+| XIMEA SDK | 4.32+ |
 | Python | 3.9+ |
 
 No separate pip install is needed — the `ximea` package is placed into `site-packages/ximea`

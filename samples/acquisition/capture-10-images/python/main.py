@@ -30,6 +30,7 @@ def run_capture(cam):
     print(f"Capturing {frame_count} frames")
 
     img = xiapi.Image()
+    i = 0
     try:
         for i in range(frame_count):
             cam.get_image(img, timeout=grab_timeout_ms)
@@ -43,10 +44,10 @@ def run_capture(cam):
             )
     except xiapi.Xi_error as e:
         print(f"Error: failed on frame {i + 1}/{frame_count}: {e}", file=sys.stderr)
-        cam.stop_acquisition()
         return 1
+    finally:
+        cam.stop_acquisition()
 
-    cam.stop_acquisition()
     print("Done")
     return 0
 
@@ -61,12 +62,16 @@ if __name__ == "__main__":
 
     print(f"Found {count} camera(s), opening index 0")
 
+    is_device_open = False
+    exit_code = 1
     try:
         cam.open_device()
+        is_device_open = True
+        exit_code = run_capture(cam)
     except xiapi.Xi_error as e:
         print(f"Error: could not open camera: {e}", file=sys.stderr)
-        sys.exit(1)
+    finally:
+        if is_device_open:
+            cam.close_device()
 
-    ret = run_capture(cam)
-    cam.close_device()
-    sys.exit(ret)
+    sys.exit(exit_code)
