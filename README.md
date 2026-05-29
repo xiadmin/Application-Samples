@@ -7,7 +7,7 @@ self-contained, and includes its own README.md file.
 
 ## General prerequisites
 
-- XIMEA Software Package installed.
+- XIMEA Software Package installed (latest beta).
 - CMake 3.16+.
 
 ---
@@ -32,6 +32,7 @@ self-contained, and includes its own README.md file.
 | Sample | Language | What it shows |
 |--------|----------|---------------|
 | [acquisition/capture-10-images/c](samples/acquisition/capture-10-images/c/) | C | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [acquisition/capture-10-images/cpp](samples/acquisition/capture-10-images/cpp/) | C++ | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [acquisition/capture-10-images/csharp](samples/acquisition/capture-10-images/csharp/) | C# | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [acquisition/capture-10-images/python](samples/acquisition/capture-10-images/python/) | Python | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 
