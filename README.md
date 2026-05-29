@@ -64,7 +64,7 @@ Alternatively, you can build each sample separately by following the instruction
 - C11.
 - C++17 or newer.
 - Python 3.9 or newer.
-
+- .NET 8 or newer.
 ---
 
 ## Naming convention
