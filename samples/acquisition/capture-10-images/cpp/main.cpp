@@ -43,7 +43,8 @@ static int runCapture(xiAPIplus_Camera& cam)
 
 int main()
 {
-    unsigned long count = xiAPIplus_Camera::GetNumberOfConnectedCameras();
+    xiAPIplus_Camera cam;
+    unsigned long count = cam.GetNumberOfConnectedCameras();
 
     if (count == 0)
     {
@@ -53,7 +54,6 @@ int main()
 
     std::cout << "Found " << count << " camera(s), opening index 0\n";
 
-    xiAPIplus_Camera cam;
     cam.OpenByID(0);
     int ret = runCapture(cam);
     cam.Close();
