@@ -47,15 +47,7 @@ Alternatively, you can build each sample separately by following the instruction
 
 ## Adding a new sample
 
-1. Create `samples/<feature>/<concrete>/<language>/`.
-2. Write a `README.md` that includes: one-line purpose, prerequisites, build
-   steps, run command, expected output, known limitations, and links to XIMEA
-   docs.
-3. For C/C++: add `CMakeLists.txt` using `find_package(XIMEA REQUIRED)` and
-   prepend `cmake/` to `CMAKE_MODULE_PATH`.
-4. Do not hardcode camera serial numbers, IP addresses, or machine-specific
-   paths — use CLI arguments, environment variables, or a config file.
-5. Follow the naming and structure rules below.
+Use `new-sample.ps1` script and follow the instructions.
 
 ---
 
