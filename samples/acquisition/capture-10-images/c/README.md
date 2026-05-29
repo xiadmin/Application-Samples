@@ -39,7 +39,7 @@ cmake -B .cmake-tmp -A x64
 cmake --build .cmake-tmp --config Release
 ```
 
-Binary lands in `.cmake-tmp\build\Release\`.
+Binary lands in `.cmake-tmp\build\`.
 
 ## Run
 
@@ -50,7 +50,7 @@ After a direct CMake build:
 .cmake-tmp/build/acquisition-capture-10-images-c
 
 # Windows PowerShell
-.\.cmake-tmp\build\Release\acquisition-capture-10-images-c.exe
+.\.cmake-tmp\build\acquisition-capture-10-images-c.exe
 ```
 
 ---

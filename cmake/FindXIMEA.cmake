@@ -84,9 +84,40 @@ endif()
 
 # xiAPIplus -- C++ wrapper with its own include directory.
 if(XIMEA_FOUND AND NOT TARGET XIMEA::xiAPIplus)
-    add_library(XIMEA::xiAPIplus INTERFACE IMPORTED)
-    target_include_directories(XIMEA::xiAPIplus INTERFACE "${XIMEA_INCLUDE_PLUS_DIR}")
-    target_link_libraries(XIMEA::xiAPIplus INTERFACE XIMEA::xiAPI)
+    if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
+        # Find libtiff for xiAPIplus_tiff.cpp if we're building the source wrapper
+        find_package(TIFF QUIET)
+        
+        # Determine if we should build the tiff part
+        set(_ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
+        
+        # Don't add xiAPIplus_parameters.cpp because its functions are already
+        # defined in xiAPIplus_core.cpp according to MSVC linker errors,
+        # or at least we only need one of them to link properly. Actually
+        # earlier we saw xiAPIplusLib in original CMakeList only uses xiAPIplus_core.cpp
+        
+        if(TIFF_FOUND)
+            list(APPEND _ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_tiff.cpp")
+        endif()
+
+        add_library(XIMEA_xiAPIplus_obj OBJECT ${_ximea_plus_sources})
+        # Enable C++ language explicitly for the OBJECT library
+        set_target_properties(XIMEA_xiAPIplus_obj PROPERTIES LINKER_LANGUAGE CXX)
+        # The sources expect to include <xiAPIplus/xiapiplus.h>, so we add the parent dir _libs
+        get_filename_component(_ximea_libs_dir "${XIMEA_INCLUDE_PLUS_DIR}" DIRECTORY)
+        target_include_directories(XIMEA_xiAPIplus_obj PUBLIC "${XIMEA_INCLUDE_PLUS_DIR}" "${_ximea_libs_dir}" "${_ximea_libs_dir}/libtiff")
+        target_link_libraries(XIMEA_xiAPIplus_obj PUBLIC XIMEA::xiAPI)
+        
+        if(TIFF_FOUND)
+            target_link_libraries(XIMEA_xiAPIplus_obj PUBLIC TIFF::TIFF)
+        endif()
+        
+        add_library(XIMEA::xiAPIplus ALIAS XIMEA_xiAPIplus_obj)
+    else()
+        add_library(XIMEA::xiAPIplus INTERFACE IMPORTED)
+        target_include_directories(XIMEA::xiAPIplus INTERFACE "${XIMEA_INCLUDE_PLUS_DIR}")
+        target_link_libraries(XIMEA::xiAPIplus INTERFACE XIMEA::xiAPI)
+    endif()
 endif()
 
 # Hide internal cache vars from the default cmake-gui / ccmake view
