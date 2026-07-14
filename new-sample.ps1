@@ -3,15 +3,16 @@
 .SYNOPSIS
     Interactive scaffold for a new Application-Samples entry.
 .DESCRIPTION
-    Walks through feature -> concrete-topic -> language selection,
-    then generates the folder, README.md, CMakeLists.txt, and stub source.
+    Walks through API -> (Cross-Platform | Hardware-specific, XiAPI only) ->
+    sample-name -> language selection, then generates the folder, README.md,
+    CMakeLists.txt / csproj, and stub source.
 #>
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repoRoot   = $PSScriptRoot
-$samplesDir = Join-Path $repoRoot 'samples'
+$samplesDir = Join-Path $repoRoot 'Samples'
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -91,16 +92,20 @@ function Read-Selection {
 function Read-KebabName {
     param([string] $Prompt)
 
+    # Naming convention for API/sample folders is officially TBD (see design doc), and
+    # existing folders already mix PascalCase, dots, '#', and spaces (e.g. "XiAPI.NET-C#",
+    # "GPIO samples-Jetson"). We only reject characters that are illegal in file/folder
+    # names on Windows or Linux, rather than forcing a specific case convention.
     $input   = ''
-    $pattern = '^[a-z0-9]+(-[a-z0-9]+)*$'
+    $pattern = '^[^\\/:\*\?"<>\|]+$'
 
     # Render the current input line in place.
     function Render-Input {
         param([string] $Text)
-        $isValid = $Text -cmatch $pattern
-        $hint    = if ($Text.Length -eq 0) { ' (lowercase letters, digits, hyphens)' }
+        $isValid = $Text.Length -gt 0 -and $Text -notmatch '[\\/:\*\?"<>\|]' -and $Text.Trim() -eq $Text
+        $hint    = if ($Text.Length -eq 0) { ' (any valid folder name)' }
                    elseif ($isValid)        { ' [valid]' }
-                   else                     { ' [invalid -- lowercase letters/digits separated by single hyphens]' }
+                   else                     { ' [invalid -- no \ / : * ? " < > | and no leading/trailing spaces]' }
         $color   = if ($isValid) { 'Green' } else { 'Red' }
 
         # Overwrite the line
@@ -120,7 +125,7 @@ function Read-KebabName {
 
         switch ($key.VirtualKeyCode) {
             13 {  # Enter
-                if ($input -cmatch $pattern) {
+                if ($input -match $pattern -and $input.Trim() -eq $input) {
                     Write-Host ''
                     return $input
                 }
@@ -137,8 +142,8 @@ function Read-KebabName {
             }
             default {
                 $ch = $key.Character
-                # Accept only printable ASCII; uppercase will show as invalid (red)
-                if ($ch -ge 0x20 -and $ch -le 0x7E) {
+                # Accept printable ASCII (and beyond); illegal path characters are filtered on Enter
+                if ($ch -ge 0x20) {
                     $input += [char]$ch
                     Render-Input -Text $input
                 }
@@ -147,45 +152,92 @@ function Read-KebabName {
     }
 }
 
-# ── step 1: feature ───────────────────────────────────────────────────────────
+# ── step 1: API ───────────────────────────────────────────────────────────────
+# Samples/<API>/... -- e.g. XiAPI, XiAPI.NET-C#, XiApiPython. XiAPI additionally
+# splits into Cross-Platform / Hardware-specific (see repository layout in README.md).
 
-$features = @(Get-ChildItem -Path $samplesDir -Directory |
-    Where-Object { $_.Name -match '^[a-z0-9]' } |
+$apis = @(Get-ChildItem -Path $samplesDir -Directory |
     Sort-Object Name |
     Select-Object -ExpandProperty Name)
 
-$feature = Read-Selection -Items $features -Prompt 'Step 1 -- Select a feature folder:'
-if ($null -eq $feature) {
-    $feature = Read-KebabName -Prompt '  New feature name (kebab-case)'
+$api = Read-Selection -Items $apis -Prompt 'Step 1 -- Select an API folder:'
+if ($null -eq $api) {
+    $api = Read-KebabName -Prompt '  New API folder name'
 }
 
-# ── step 2: concrete topic ────────────────────────────────────────────────────
+# ── step 2: Cross-Platform / Hardware-specific (XiAPI only), then sample name ──
 
-$featureDir = Join-Path $samplesDir $feature
-$concretes  = @()
-if (Test-Path $featureDir) {
-    $concretes = @(Get-ChildItem -Path $featureDir -Directory |
-        Where-Object { $_.Name -match '^[a-z0-9]' } |
+$group = $null
+if ($api -eq 'XiAPI') {
+    $group = Read-Selection -Items @('Cross-Platform', 'Hardware-specific') -Prompt 'Step 2 -- Select sample group:' -NoNew
+    $parentDir = Join-Path (Join-Path $samplesDir $api) $group
+} else {
+    $parentDir = Join-Path $samplesDir $api
+}
+
+$samples = @()
+if (Test-Path $parentDir) {
+    $samples = @(Get-ChildItem -Path $parentDir -Directory |
         Sort-Object Name |
         Select-Object -ExpandProperty Name)
 }
 
-$topic = Read-Selection -Items $concretes -Prompt 'Step 2 -- Select a concrete topic:'
+$stepNum = if ($api -eq 'XiAPI') { 'Step 3' } else { 'Step 2' }
+$topic = Read-Selection -Items $samples -Prompt "$stepNum -- Select a sample:"
 if ($null -eq $topic) {
-    $topic = Read-KebabName -Prompt '  New topic name (kebab-case)'
+    $topic = Read-KebabName -Prompt '  New sample name'
 }
 
-# ── step 3: language ──────────────────────────────────────────────────────────
+# ── step 3/4: language ────────────────────────────────────────────────────────
+# XiAPI Cross-Platform samples pick c/cpp and get a language subfolder (the same
+# sample is offered in both languages). XiAPI Hardware-specific samples are tied
+# to one specific implementation, so the language only picks the source stub --
+# no extra subfolder. Other APIs imply their language from the API folder itself.
 
-$langs = @('c', 'cpp', 'csharp', 'python')
-$lang  = Read-Selection -Items $langs -Prompt 'Step 3 -- Select language:' -NoNew
+$langStepNum = if ($api -eq 'XiAPI') { 'Step 4' } else { 'Step 3' }
+if ($api -eq 'XiAPI') {
+    $lang = Read-Selection -Items @('c', 'cpp') -Prompt "$langStepNum -- Select language:" -NoNew
+} elseif ($api -eq 'XiAPI.NET-C#') {
+    $lang = 'csharp'
+} elseif ($api -eq 'XiApiPython') {
+    $lang = 'python'
+} else {
+    Write-Host ''
+    Write-Host "  '$api' is a new API folder -- pick the closest matching language template:" -ForegroundColor DarkGray
+    $lang = Read-Selection -Items @('c', 'cpp', 'csharp', 'python') -Prompt "$langStepNum -- Select language:" -NoNew
+}
 
 # ── derive names ──────────────────────────────────────────────────────────────
 
-$sampleDir   = Join-Path (Join-Path (Join-Path $samplesDir $feature) $topic) $lang
-$binaryName  = "$feature-$topic-$lang"
-$targetName  = $binaryName -replace '-', '_'
-$cmakePath   = "samples/$feature/$topic/$lang"
+if ($api -eq 'XiAPI' -and $group -eq 'Cross-Platform') {
+    # Cross-Platform: Samples/XiAPI/Cross-Platform/<sample-name>/<lang>/
+    $sampleDir  = Join-Path (Join-Path (Join-Path (Join-Path $samplesDir $api) $group) $topic) $lang
+    $folderName = "$api-$group-$topic-$lang"
+    $cmakePath  = "Samples/$api/$group/$topic/$lang"
+} elseif ($api -eq 'XiAPI') {
+    # Hardware-specific: Samples/XiAPI/Hardware-specific/<sample-name>/ (no lang subfolder)
+    $sampleDir  = Join-Path (Join-Path (Join-Path $samplesDir $api) $group) $topic
+    $folderName = "$api-$group-$topic"
+    $cmakePath  = "Samples/$api/$group/$topic"
+} else {
+    # Other APIs: Samples/<API>/<sample-name>/ (language implied by the API folder)
+    $sampleDir  = Join-Path (Join-Path $samplesDir $api) $topic
+    $folderName = "$api-$topic"
+    $cmakePath  = "Samples/$api/$topic"
+}
+
+# Relative path from the sample folder up to the repo root's shared cmake/ folder,
+# computed from path depth so it stays correct regardless of API/group nesting.
+$cmakeDepth       = ($cmakePath -split '/').Count
+$cmakeIncludePath = ((@('..') * $cmakeDepth) -join '/') + '/cmake'
+
+# Binary/assembly name: for compiled C/C++ samples this must match the OUTPUT_NAME
+# that cmake/SampleDefaults.cmake derives from the full folder path (== $folderName).
+# For C#/Python it is just a display name, kept short and independent of the API
+# folder (which may contain characters like '.' or '#' that don't belong in an
+# assembly name), matching the convention used by existing samples.
+$binaryName = if ($lang -eq 'c' -or $lang -eq 'cpp') { $folderName } else { "$topic-$lang" }
+$targetName = $binaryName -replace '[^a-zA-Z0-9]', '_'
 
 # C / C++ specifics
 $sourceFile  = if ($lang -eq 'c') { 'main.c' } else { 'main.cpp' }
@@ -201,7 +253,7 @@ $langLabel   = switch ($lang) {
 }
 
 # C# specifics — PascalCase project name derived from binary name segments
-$csProjectName = ($binaryName -split '-' | ForEach-Object {
+$csProjectName = ($binaryName -split '[^a-zA-Z0-9]+' | Where-Object { $_.Length -gt 0 } | ForEach-Object {
     $_.Substring(0,1).ToUpper() + $_.Substring(1)
 }) -join ''
 
@@ -209,8 +261,9 @@ $csProjectName = ($binaryName -split '-' | ForEach-Object {
 
 Write-Host ''
 Write-Host '-----------------------------------------' -ForegroundColor DarkGray
-Write-Host " Feature  : $feature"
-Write-Host " Topic    : $topic"
+Write-Host " API      : $api"
+if ($group) { Write-Host " Group    : $group" }
+Write-Host " Sample   : $topic"
 Write-Host " Language : $lang"
 Write-Host " Path     : $cmakePath"
 Write-Host " Binary   : $binaryName"
@@ -226,7 +279,7 @@ if ($confirm -ne 'Yes') {
 
 if (Test-Path $sampleDir) {
     Write-Host ''
-    Write-Host "Error: samples/$feature/$topic/$lang already exists. Nothing was created." -ForegroundColor Red
+    Write-Host "Error: $cmakePath already exists. Nothing was created." -ForegroundColor Red
     exit 1
 }
 
@@ -520,7 +573,7 @@ cmake_minimum_required(VERSION 3.16)
 project(%%BINARY_NAME%% VERSION 0.1.0 LANGUAGES %%PROJECT_LANG%%)
 
 # Include shared CMake modules
-list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../../../cmake")
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/%%CMAKE_INCLUDE_PATH%%")
 include(SampleDefaults)
 find_package(XIMEA REQUIRED)
 
@@ -533,12 +586,13 @@ sample_flat_output_directories(TARGET %%TARGET_NAME%%)
 '@
 
 $cmakeContent = $cmakeTemplate `
-    -replace '%%BINARY_NAME%%',  $binaryName `
-    -replace '%%PROJECT_LANG%%', $projectLang `
-    -replace '%%TARGET_NAME%%',  $targetName `
-    -replace '%%SOURCE_FILE%%',  $sourceFile `
-    -replace '%%LANG_STD%%',     $langStd `
-    -replace '%%XIMEA_TARGET%%', $ximeaTarget
+    -replace '%%BINARY_NAME%%',       $binaryName `
+    -replace '%%PROJECT_LANG%%',      $projectLang `
+    -replace '%%TARGET_NAME%%',       $targetName `
+    -replace '%%SOURCE_FILE%%',       $sourceFile `
+    -replace '%%LANG_STD%%',          $langStd `
+    -replace '%%XIMEA_TARGET%%',      $ximeaTarget `
+    -replace '%%CMAKE_INCLUDE_PATH%%', $cmakeIncludePath
 
 Set-Content -Path (Join-Path $sampleDir 'CMakeLists.txt') -Value $cmakeContent -Encoding UTF8
 

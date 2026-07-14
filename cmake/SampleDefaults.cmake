@@ -4,19 +4,19 @@
 # Provide a helper function to set target properties locally instead.
 
 # Derive the canonical sample name from the directory layout:
-#   samples/<feature>/<concrete>/<lang>/  -->  <feature>-<concrete>-<lang>
+#   Samples/<API>/<Cross-Platform|Hardware-specific>/<sample-name>/<lang>/  -->  <API>-<group>-<sample-name>-<lang>
 # This matches the name that build.ps1 computes for the output folder.
 # CMAKE_CURRENT_LIST_DIR is this module file; CMAKE_SOURCE_DIR is the sample root.
-# Walk up from the sample root to find the relative path under samples/.
+# Walk up from the sample root to find the relative path under Samples/.
 function(_sample_derive_output_name out_var)
-    # Locate the samples/ ancestor by looking for it in CMAKE_SOURCE_DIR
+    # Locate the Samples/ ancestor by looking for it in CMAKE_SOURCE_DIR
     set(_src "${CMAKE_SOURCE_DIR}")
     string(REPLACE "\\" "/" _src "${_src}")  # normalise Windows separators
 
-    string(REGEX MATCH ".*/samples/(.+)$" _match "${_src}")
+    string(REGEX MATCH ".*/Samples/(.+)$" _match "${_src}")
     if(_match)
-        set(_rel "${CMAKE_MATCH_1}")          # e.g. acquisition/capture-10-images/c
-        string(REPLACE "/" "-" _name "${_rel}")  # acquisition-capture-10-images-c
+        set(_rel "${CMAKE_MATCH_1}")          # e.g. XiAPI/Cross-Platform/Capture-10-images/c
+        string(REPLACE "/" "-" _name "${_rel}")  # XiAPI-Cross-Platform-Capture-10-images-c
     else()
         # Fallback: just use the immediate directory name
         get_filename_component(_name "${_src}" NAME)

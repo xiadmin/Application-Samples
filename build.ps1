@@ -5,7 +5,7 @@ if ([string]::IsNullOrEmpty($rootDir)) {
     $rootDir = Get-Location
 }
 
-$samplesRoot     = Join-Path $rootDir "samples"
+$samplesRoot     = Join-Path $rootDir "Samples"
 $finalBuildRoot  = Join-Path $rootDir "build"
 $cmakeTmpRoot    = Join-Path $rootDir ".cmake-tmp"
 $dotnetTmpRoot   = Join-Path $rootDir ".dotnet-tmp"
@@ -31,7 +31,7 @@ foreach ($cmakeFile in $cmakeFiles) {
     if ($sampleDir -match '[\/\\]c(pp)?$') {
         $totalFound++
 
-        # Extract relative path from samples root
+        # Extract relative path from Samples root
         $relativePath = $sampleDir.Substring($samplesRoot.Length).Trim('\', '/')
         # Convert slashes to hyphens
         $folderName = $relativePath -replace '[\/\\]', '-'
@@ -94,7 +94,7 @@ Write-Host "=========================================="
 Write-Host "Cleaning up CMake temporary files..."
 if (Test-Path $cmakeTmpRoot) { Remove-Item -Recurse -Force $cmakeTmpRoot }
 
-# ── C# samples (.csproj in a leaf folder named 'csharp') ──────────────────────
+# ── C# samples (any .csproj under Samples/, e.g. Samples/XiAPI.NET-C#/<sample>) ─
 
 Write-Host ""
 Write-Host "Finding C# samples in $samplesRoot..."
@@ -104,36 +104,34 @@ $csprojFiles = Get-ChildItem -Path $samplesRoot -Filter "*.csproj" -Recurse
 foreach ($csprojFile in $csprojFiles) {
     $sampleDir = $csprojFile.Directory.FullName
 
-    if ($sampleDir -match '[\/\\]csharp$') {
-        $totalFound++
+    $totalFound++
 
-        $relativePath = $sampleDir.Substring($samplesRoot.Length).Trim('\', '/')
-        $folderName   = $relativePath -replace '[\/\\]', '-'
+    $relativePath = $sampleDir.Substring($samplesRoot.Length).Trim('\', '/')
+    $folderName   = $relativePath -replace '[\/\\]', '-'
 
-        Write-Host "=========================================="
-        Write-Host "Building: $folderName"
-        Write-Host "=========================================="
+    Write-Host "=========================================="
+    Write-Host "Building: $folderName"
+    Write-Host "=========================================="
 
-        $tmpBuildDir    = Join-Path $dotnetTmpRoot $folderName
-        $targetBuildDir = Join-Path $finalBuildRoot $folderName
+    $tmpBuildDir    = Join-Path $dotnetTmpRoot $folderName
+    $targetBuildDir = Join-Path $finalBuildRoot $folderName
 
-        # Build and output into the temp directory so nothing lands in the source tree
-        & dotnet build $csprojFile.FullName -c Release --output $tmpBuildDir -p:BaseIntermediateOutputPath="$tmpBuildDir\obj\\"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warning "dotnet build failed for $folderName"
-            $failed.Add($folderName)
-            continue
-        }
-
-        New-Item -ItemType Directory -Force -Path $targetBuildDir | Out-Null
-
-        # Copy everything dotnet produced (exe, dll, runtime config, pdb)
-        Get-ChildItem -Path $tmpBuildDir -File | ForEach-Object {
-            Copy-Item -Path $_.FullName -Destination $targetBuildDir -Force
-        }
-
-        $totalOk++
+    # Build and output into the temp directory so nothing lands in the source tree
+    & dotnet build $csprojFile.FullName -c Release --output $tmpBuildDir -p:BaseIntermediateOutputPath="$tmpBuildDir\obj\\"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "dotnet build failed for $folderName"
+        $failed.Add($folderName)
+        continue
     }
+
+    New-Item -ItemType Directory -Force -Path $targetBuildDir | Out-Null
+
+    # Copy everything dotnet produced (exe, dll, runtime config, pdb)
+    Get-ChildItem -Path $tmpBuildDir -File | ForEach-Object {
+        Copy-Item -Path $_.FullName -Destination $targetBuildDir -Force
+    }
+
+    $totalOk++
 }
 
 # Clean up dotnet temporary files
@@ -141,13 +139,12 @@ Write-Host "=========================================="
 Write-Host "Cleaning up dotnet temporary files..."
 if (Test-Path $dotnetTmpRoot) { Remove-Item -Recurse -Force $dotnetTmpRoot }
 
-# ── Python samples (leaf folders named 'python' containing main.py) ───────────
+# ── Python samples (any 'main.py' under Samples/, e.g. Samples/XiApiPython/<sample>) ─
 
 Write-Host ""
 Write-Host "Finding Python samples in $samplesRoot..."
 
-$pyMains = Get-ChildItem -Path $samplesRoot -Filter "main.py" -Recurse |
-    Where-Object { $_.Directory.Name -eq 'python' }
+$pyMains = Get-ChildItem -Path $samplesRoot -Filter "main.py" -Recurse
 
 foreach ($pyMain in $pyMains) {
     $sampleDir = $pyMain.Directory.FullName
@@ -171,11 +168,11 @@ foreach ($pyMain in $pyMains) {
 
     # Generate a launcher script in the build output folder
     # launcher lives at build/<folderName>/run.ps1
-    # main.py lives at samples/<relativePath>/main.py (relativePath uses OS path separators)
+    # main.py lives at Samples/<relativePath>/main.py (relativePath uses OS path separators)
     $targetBuildDir = Join-Path $finalBuildRoot $folderName
     New-Item -ItemType Directory -Force -Path $targetBuildDir | Out-Null
 
-    $launcherContent = "& python `"`$PSScriptRoot\..\..\samples\$relativePath\main.py`" @args`n"
+    $launcherContent = "& python `"`$PSScriptRoot\..\..\Samples\$relativePath\main.py`" @args`n"
     Set-Content -Path (Join-Path $targetBuildDir "run.ps1") -Value $launcherContent -Encoding UTF8
 
     $totalOk++

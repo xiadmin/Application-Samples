@@ -1,9 +1,0 @@
-# GPIO samples
-gpiod==2.4.0
-# SPI samples
-spidev==3.8
-# I2C lib is installed separately
-#UART samples
-pyserial==3.5
-
-
