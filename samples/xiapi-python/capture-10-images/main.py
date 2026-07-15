@@ -1,4 +1,4 @@
-"""main - XIMEA xiAPI capture sample (Python 3.9+)
+"""main - XIMEA xiAPI capture sample (Python 3.11+)
 
 Opens the first available XIMEA camera, sets exposure to 100 ms,
 captures 10 frames, prints per-frame metadata, then closes.
@@ -10,68 +10,65 @@ import sys
 from ximea import xiapi
 
 frame_count = 10
-exposure_us = 100000   # 100 ms in microseconds
-grab_timeout_ms = 5000  # must exceed exposure
+exposure_us = 100000  
+grab_timeout_ms = 5000
 
 
-def run_capture(cam):
-    """Set exposure, acquire frames, print per-frame metadata.
+def main():
+    cam = xiapi.Camera()
+    is_device_open = False
+    is_acquiring = False
+    current_frame = None
+    ret = 0
 
-    Args:
-        cam: Open xiapi.Camera instance.
-
-    Returns:
-        0 on success, 1 on failure.
-    """
-    cam.set_exposure(exposure_us)
-    print(f"Exposure: {exposure_us} us ({exposure_us // 1000} ms)")
-
-    cam.start_acquisition()
-    print(f"Capturing {frame_count} frames")
-
-    img = xiapi.Image()
-    i = 0
     try:
+        count = cam.get_number_devices()
+        if count == 0:
+            print("Error: no XIMEA cameras detected", file=sys.stderr)
+            return 1
+
+        print(f"Found {count} camera(s), opening index 0")
+
+        cam.open_device()
+        is_device_open = True
+
+        cam.set_exposure(exposure_us)
+        print(f"Exposure: {exposure_us} us ({exposure_us // 1000} ms)")
+
+        cam.start_acquisition()
+        is_acquiring = True
+
+        print(f"Capturing {frame_count} frames")
+
+        img = xiapi.Image()
         for i in range(frame_count):
+            current_frame = i + 1
             cam.get_image(img, timeout=grab_timeout_ms)
             data = img.get_image_data_numpy()
             first_byte = int(data.flat[0]) if data is not None and data.size > 0 else -1
             print(
-                f"Frame {i + 1}/{frame_count}: "
+                f"Frame {current_frame}/{frame_count}: "
                 f"{img.width}x{img.height} "
                 f"nframe={img.nframe} "
                 f"first_byte={first_byte}"
             )
     except xiapi.Xi_error as e:
-        print(f"Error: failed on frame {i + 1}/{frame_count}: {e}", file=sys.stderr)
-        return 1
+        if current_frame is not None:
+            print(f"Error: failed on frame {current_frame}/{frame_count}: {e}", file=sys.stderr)
+        else:
+            print(f"Error: xiAPI call failed: {e}", file=sys.stderr)
+        ret = 1
     finally:
-        cam.stop_acquisition()
-
-    print("Done")
-    return 0
-
-
-if __name__ == "__main__":
-    cam = xiapi.Camera()
-
-    count = cam.get_number_devices()
-    if count == 0:
-        print("Error: no XIMEA cameras detected", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"Found {count} camera(s), opening index 0")
-
-    is_device_open = False
-    exit_code = 1
-    try:
-        cam.open_device()
-        is_device_open = True
-        exit_code = run_capture(cam)
-    except xiapi.Xi_error as e:
-        print(f"Error: could not open camera: {e}", file=sys.stderr)
-    finally:
+        if is_acquiring:
+            cam.stop_acquisition()
         if is_device_open:
             cam.close_device()
 
-    sys.exit(exit_code)
+    if ret == 0:
+        print("Done")
+
+    return ret
+
+
+if __name__ == "__main__":
+    sys.exit(main())

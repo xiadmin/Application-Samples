@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-# This file is intentionally self-contained. It can be used in two ways:
-#   1. Root build entry: cmake -S cmake -B .cmake-tmp
-#   2. Included by an individual sample CMakeLists.txt for shared helpers.
-
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_LIST_DIR)
     project(ximea-application-samples LANGUAGES C CXX)
     set(_XIMEA_SAMPLES_ROOT_ENTRY ON)
