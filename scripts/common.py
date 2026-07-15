@@ -15,7 +15,7 @@ def repo_root() -> Path:
 
 
 def find_samples_root(root: Path, *, create: bool = False) -> Path:
-    for name in ("Samples", "samples"):
+    for name in ("samples", "Samples"):
         candidate = root / name
         if candidate.is_dir():
             return candidate
@@ -25,7 +25,7 @@ def find_samples_root(root: Path, *, create: bool = False) -> Path:
         candidate.mkdir(parents=True, exist_ok=True)
         return candidate
 
-    raise FileNotFoundError(f"Could not find Samples/ or samples/ under {root}")
+    raise FileNotFoundError(f"Could not find samples/ under {root}")
 
 
 def clean(value: str) -> str:

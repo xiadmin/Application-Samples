@@ -5,7 +5,11 @@
 
 !README.md
 
-build/*
+build/
 !build/.gitkeep
 .cmake-tmp/
+.dotnet-tmp/
+**/.cmake-tmp/
+**/.dotnet-tmp/
 __pycache__/
+**/__pycache__/

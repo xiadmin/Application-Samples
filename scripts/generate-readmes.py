@@ -203,7 +203,7 @@ def extra_prerequisites(info: SampleInfo, language: str) -> str:
     elif norm_lang == "csharp":
         rows.append((".NET SDK", "8.0 or newer"))
     elif norm_lang == "python":
-        rows.append(("Python", "3.9+"))
+        rows.append(("Python", "3.11+"))
 
     for library in split_list(info.libraries):
         rows.append(("Library", library))
@@ -226,7 +226,7 @@ def build_section(samples_root: Path, sample_dir: Path, language: str) -> str:
 
     if norm_lang in {"c", "cpp"}:
         return (
-            "Build from the sample folder using CMake directly, or use `scripts/build.py`/`build.ps1` "
+            "Build from the sample folder using CMake directly, or use `scripts/build.py` "
             "at the repo root to build all samples in one shot.\n\n"
             "### CMake directly — Linux\n\n"
             "```bash\n"
@@ -246,11 +246,11 @@ def build_section(samples_root: Path, sample_dir: Path, language: str) -> str:
     if norm_lang == "csharp":
         csproj = next((path.name for path in sorted(sample_dir.glob("*.csproj"))), "<project>.csproj")
         return (
-            "### Using scripts/build.py / build.ps1 (builds all samples)\n\n"
+            "### Using scripts/build.py (builds all samples)\n\n"
             "```powershell\n"
             "cd <repo-root>\n"
             "python scripts/build.py\n"
-            "# or: .\\build.ps1\n"
+
             "```\n\n"
             "Binary and supporting files land in:\n\n"
             "```\n"
@@ -292,7 +292,7 @@ def run_section(samples_root: Path, sample_dir: Path, language: str) -> str:
         exe_name = f"{Path(binary).name}.exe"
         csproj = next((path.name for path in sorted(sample_dir.glob("*.csproj"))), "<project>.csproj")
         return (
-            "### After scripts/build.py / build.ps1\n\n"
+            "### After scripts/build.py\n\n"
             "```powershell\n"
             f".\\build\\{binary}\\{exe_name}\n"
             "```\n\n"
@@ -314,7 +314,7 @@ def run_section(samples_root: Path, sample_dir: Path, language: str) -> str:
             f"cd {rel_posix}\n"
             "python main.py\n"
             "```\n\n"
-            "### After scripts/build.py / build.ps1\n\n"
+            "### After scripts/build.py\n\n"
             "```powershell\n"
             f".\\build\\{binary}\\run.ps1\n"
             "```"
@@ -384,7 +384,7 @@ def parse_args() -> argparse.Namespace:
     root = repo_root()
     parser = argparse.ArgumentParser(description="Generate sample README.md files from a template and samples CSV.")
     parser.add_argument("--csv", type=Path, default=root / CSV_NAME, help="Path to samples CSV file.")
-    parser.add_argument("--samples", type=Path, default=None, help="Path to Samples/ or samples/ directory.")
+    parser.add_argument("--samples", type=Path, default=None, help="Path to samples/ directory.")
     parser.add_argument("--template", type=Path, default=root / DEFAULT_TEMPLATE, help="Markdown template path.")
     parser.add_argument("--write", action="store_true", help="Write README.md files. Default is dry-run.")
     parser.add_argument("--check", action="store_true", help="Fail if any README.md would change.")

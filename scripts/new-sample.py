@@ -12,11 +12,12 @@ from pathlib import Path
 from common import CSV_NAME, find_samples_root, repo_root, write_text as write
 
 INVALID_NAME = re.compile(r'[\\/:*?"<>|]')
+KEBAB_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 TEMPLATE_DIR = repo_root() / "scripts" / "templates"
 
 
 def valid_folder_name(name: str) -> bool:
-    return bool(name) and name == name.strip() and INVALID_NAME.search(name) is None
+    return bool(name) and name == name.strip() and INVALID_NAME.search(name) is None and KEBAB_NAME.fullmatch(name) is not None
 
 
 def ask_name(prompt: str) -> str:
@@ -24,7 +25,7 @@ def ask_name(prompt: str) -> str:
         value = input(f"{prompt}: ").strip()
         if valid_folder_name(value):
             return value
-        print('Invalid name. Do not use \\ / : * ? " < > | and avoid leading/trailing spaces.')
+        print('Invalid name. Use lowercase kebab-case and do not use \\ / : * ? " < > |.')
 
 
 def choose(items: list[str], prompt: str, allow_new: bool = True) -> str | None:
@@ -113,26 +114,13 @@ def run_generator(root: Path, args: list[str]) -> bool:
     return result.returncode == 0
 
 
-def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path, source_file: Path) -> bool:
+def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path) -> bool:
     csv_path = root / CSV_NAME
     if not csv_path.is_file():
-        print(f"WARNING: {CSV_NAME} not found; skipped generated intro comment and README.", file=sys.stderr)
+        print(f"WARNING: {CSV_NAME} not found; skipped generated README.", file=sys.stderr)
         return True
 
     ok = True
-    print()
-    print("Generating intro comment from CSV...")
-    ok &= run_generator(
-        root,
-        [
-            str(root / "scripts" / "generate-intro-comments.py"),
-            "--csv", str(csv_path),
-            "--samples", str(samples_dir),
-            "--write",
-            "--file", str(source_file),
-        ],
-    )
-
     print()
     print("Generating README from CSV...")
     ok &= run_generator(
@@ -150,8 +138,8 @@ def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path, sou
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create a new Application-Samples scaffold.")
-    parser.add_argument("--api", help="API folder, e.g. XiAPI, XiAPI.NET, XiApiPython")
-    parser.add_argument("--group", choices=["Cross-Platform", "Hardware-specific"], help="XiAPI group")
+    parser.add_argument("--api", help="API folder, e.g. xiapi, xiapi-net, xiapi-python")
+    parser.add_argument("--group", choices=["cross-platform", "hardware-specific"], help="xiAPI group")
     parser.add_argument("--sample", help="Sample name/folder")
     parser.add_argument("--lang", choices=["c", "cpp", "csharp", "python"], help="Language/template")
     parser.add_argument("--yes", action="store_true", help="Create without confirmation when all required values are supplied.")
@@ -172,8 +160,8 @@ def main() -> int:
         return 1
 
     group: str | None = None
-    if api == "XiAPI":
-        group = args.group or choose(["Cross-Platform", "Hardware-specific"], "Step 2 -- Select sample group:", allow_new=False)
+    if api == "xiapi":
+        group = args.group or choose(["cross-platform", "hardware-specific"], "Step 2 -- Select sample group:", allow_new=False)
         if group is None:
             print("No sample group selected.", file=sys.stderr)
             return 1
@@ -182,7 +170,7 @@ def main() -> int:
         parent_dir = samples_dir / api
 
     samples = sorted(p.name for p in parent_dir.iterdir() if p.is_dir()) if parent_dir.is_dir() else []
-    step_num = "Step 3" if api == "XiAPI" else "Step 2"
+    step_num = "Step 3" if api == "xiapi" else "Step 2"
     topic = args.sample or choose(samples, f"{step_num} -- Select a sample:")
     if topic is None:
         topic = ask_name("New sample name")
@@ -192,22 +180,22 @@ def main() -> int:
 
     if args.lang:
         lang = args.lang
-    elif api == "XiAPI":
+    elif api == "xiapi":
         lang = choose(["c", "cpp"], "Step 4 -- Select language:", allow_new=False)
-    elif api == "XiAPI.NET":
+    elif api == "xiapi-net":
         lang = "csharp"
-    elif api == "XiApiPython":
+    elif api == "xiapi-python":
         lang = "python"
     else:
         lang = choose(["c", "cpp", "csharp", "python"], "Step 3 -- Select language:", allow_new=False)
 
     assert lang in {"c", "cpp", "csharp", "python"}
 
-    if api == "XiAPI" and group == "Cross-Platform":
+    if api == "xiapi" and group == "cross-platform":
         sample_dir = samples_dir / api / group / topic / lang
         folder_name = f"{api}-{group}-{topic}-{lang}"
         sample_path = f"{samples_dir.name}/{api}/{group}/{topic}/{lang}"
-    elif api == "XiAPI":
+    elif api == "xiapi":
         sample_dir = samples_dir / api / group / topic
         folder_name = f"{api}-{group}-{topic}"
         sample_path = f"{samples_dir.name}/{api}/{group}/{topic}"
@@ -244,13 +232,13 @@ def main() -> int:
 
     sample_dir.mkdir(parents=True)
     if lang == "csharp":
-        source_file = make_csharp(sample_dir, binary_name, cs_project_name)
+        make_csharp(sample_dir, binary_name, cs_project_name)
     elif lang == "python":
-        source_file = make_python(sample_dir, binary_name)
+        make_python(sample_dir, binary_name)
     else:
-        source_file = make_cmake(sample_dir, lang, binary_name, cmake_include_path)
+        make_cmake(sample_dir, lang, binary_name, cmake_include_path)
 
-    if not run_metadata_generators(root, samples_dir, sample_dir, source_file):
+    if not run_metadata_generators(root, samples_dir, sample_dir):
         return 1
 
     print()

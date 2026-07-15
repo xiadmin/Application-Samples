@@ -60,15 +60,58 @@ def copy_cmake_outputs(tmp_build_dir: Path, target_build_dir: Path) -> None:
             shutil.copy2(item, target_build_dir / item.name)
 
 
-def build_cmake_samples(samples_root: Path, cmake_tmp_root: Path, final_build_root: Path, failed: list[str]) -> tuple[int, int]:
+def copy_root_cmake_output(root_build_dir: Path, folder_name: str, target_build_dir: Path) -> int:
+    """Copy one root-CMake sample executable into its final build folder."""
+    copied = 0
+    for bin_dir in (root_build_dir / "build" / "Release", root_build_dir / "build"):
+        if not bin_dir.is_dir():
+            continue
+        for name in (folder_name, f"{folder_name}.exe"):
+            candidate = bin_dir / name
+            if candidate.is_file():
+                target_build_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(candidate, target_build_dir / candidate.name)
+                copied += 1
+    return copied
+
+
+def build_cmake_samples(root: Path, samples_root: Path, cmake_tmp_root: Path, final_build_root: Path, failed: list[str]) -> tuple[int, int]:
     found = ok = 0
     print(f"Finding C and C++ samples in {samples_root}...")
-    for cmake_file in sorted(samples_root.rglob("CMakeLists.txt")):
-        sample_dir = cmake_file.parent
-        if sample_dir.name not in {"c", "cpp"}:
-            continue
+    sample_dirs = [
+        cmake_file.parent
+        for cmake_file in sorted(samples_root.rglob("CMakeLists.txt"))
+    ]
+    found = len(sample_dirs)
 
-        found += 1
+    if not sample_dirs:
+        return found, ok
+
+    root_cmake = root / "cmake" / "CMakeLists.txt"
+    if root_cmake.is_file():
+        print("==========================================")
+        print("Configuring all C/C++ samples through cmake/CMakeLists.txt")
+        print("==========================================")
+        if not run(["cmake", "-S", str(root / "cmake"), "-B", str(cmake_tmp_root)]):
+            print("WARNING: root CMake configure failed", file=sys.stderr)
+            failed.extend(folder_name_for(samples_root, sample_dir) for sample_dir in sample_dirs)
+            return found, ok
+        if not run(["cmake", "--build", str(cmake_tmp_root), "--config", "Release"]):
+            print("WARNING: root CMake build failed", file=sys.stderr)
+            failed.extend(folder_name_for(samples_root, sample_dir) for sample_dir in sample_dirs)
+            return found, ok
+
+        for sample_dir in sample_dirs:
+            folder_name = folder_name_for(samples_root, sample_dir)
+            copied = copy_root_cmake_output(cmake_tmp_root, folder_name, final_build_root / folder_name)
+            if copied:
+                ok += 1
+            else:
+                print(f"WARNING: no root CMake output found for {folder_name}", file=sys.stderr)
+                failed.append(folder_name)
+        return found, ok
+
+    for sample_dir in sample_dirs:
         folder_name = folder_name_for(samples_root, sample_dir)
         print("==========================================")
         print(f"Building: {folder_name}")
@@ -213,7 +256,7 @@ def main() -> int:
 
     try:
         if not args.skip_cmake:
-            found, ok = build_cmake_samples(samples_root, cmake_tmp_root, final_build_root, failed)
+            found, ok = build_cmake_samples(root, samples_root, cmake_tmp_root, final_build_root, failed)
             total_found += found
             total_ok += ok
             print("==========================================")

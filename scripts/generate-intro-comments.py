@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from common import CSV_NAME, clean, normalize, normalize_language, read_sample_rows, repo_root
+from common import CSV_NAME, clean, find_samples_root, normalize, normalize_language, read_sample_rows, repo_root
 
 SUPPORTED_FILES = {"main.c": "C", "main.cpp": "C++", "Program.cs": "C#", "main.py": "Python"}
 TEMPLATE_DIR = repo_root() / "scripts" / "templates"
@@ -121,7 +121,7 @@ def wrap_text(value: str, *, width: int = 78, indent: str = "") -> list[str]:
 def build_note(language: str) -> str:
     if normalize_language(language) == "python":
         return "Build: no build step needed — run directly with Python."
-    return "Build: see README.md, scripts/build.py, or build.ps1 at the repo root."
+    return "Build: see README.md or scripts/build.py at the repo root."
 
 
 def title_for(info: SampleInfo, language: str) -> str:
@@ -129,7 +129,7 @@ def title_for(info: SampleInfo, language: str) -> str:
     if normalized == "cpp":
         return f"{info.name} - XIMEA xiAPIplus sample (C++17)"
     if normalized == "python":
-        return f"{info.name} - XIMEA xiAPI capture sample (Python 3.9+)"
+        return f"{info.name} - XIMEA xiAPI capture sample (Python 3.11+)"
     return f"{info.name} - XIMEA xiAPI sample ({language})"
 
 
@@ -219,7 +219,7 @@ def parse_args() -> argparse.Namespace:
     root = repo_root()
     parser = argparse.ArgumentParser(description="Generate intro comments for C/C++/C#/Python sample files from the samples CSV.")
     parser.add_argument("--csv", type=Path, default=root / CSV_NAME, help="Path to samples CSV file.")
-    parser.add_argument("--samples", type=Path, default=root / "samples", help="Path to samples directory.")
+    parser.add_argument("--samples", type=Path, default=None, help="Path to samples directory.")
     parser.add_argument("--write", action="store_true", help="Write changes. Default is dry-run.")
     parser.add_argument("--check", action="store_true", help="Fail if any file would change.")
     parser.add_argument("--file", action="append", type=Path, help="Only process this sample source file; can be repeated.")
@@ -228,8 +228,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    root = repo_root()
     args.csv = args.csv.resolve()
-    args.samples = args.samples.resolve()
+    args.samples = args.samples.resolve() if args.samples else find_samples_root(root).resolve()
     samples = read_samples(args.csv)
     files = [path.resolve() for path in args.file] if args.file else iter_sample_files(args.samples)
 

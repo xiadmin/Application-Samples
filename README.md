@@ -1,27 +1,30 @@
 # Application-Samples
 
-Code samples for XIMEA cameras, showing how to control
-your camera using the XIMEA APIs. Each sample is self-contained and includes
-its own README.md file with detailed instructions.
+Code samples for XIMEA cameras, showing how to control your camera using the XIMEA APIs. Each sample is self-contained and includes its own README.md file with detailed instructions.
 
 ---
 
 ## Prerequisites
 
 - [XIMEA Software Package](https://www.ximea.com/software-downloads) installed (latest beta).
-- Python 3.11 or newer.
+- Python 3.11 or newer for Python samples and maintenance scripts.
+- CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
+- .NET SDK 8.0 or newer for xiAPI.NET samples.
 
 ---
 
 ## Repository layout
 
-    Samples/
-      XiAPI/                    <- C/C++ samples using xiAPI
-      XiAPI.NET/                <- C# samples using xiAPI.NET
-      XiApiPython/              <- Python samples using xiAPI Python bindings
+```text
+samples/
+  xiapi/                    # C/C++ samples using xiAPI or xiAPIplus
+  xiapi-net/                # C# samples using xiAPI.NET
+  xiapi-python/             # Python samples using xiAPI Python bindings
+cmake/                      # shared/root CMake support files
+scripts/                    # maintenance, generation, and build helpers
+```
 
-Each sample folder contains everything needed to build and run it, along
-with a README.md explaining what the sample does and how to use it.
+Each sample folder contains everything needed to build and run it, along with a README.md explaining what the sample does and how to use it.
 
 ---
 
@@ -29,19 +32,31 @@ with a README.md explaining what the sample does and how to use it.
 
 | Sample | API / Language | What it shows |
 |--------|-----------------|---------------|
-| [XiAPI/Cross-Platform/Capture-10-images/c](Samples/XiAPI/Cross-Platform/Capture-10-images/c/) | XiAPI (C) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [XiAPI/Cross-Platform/Capture-10-images/cpp](Samples/XiAPI/Cross-Platform/Capture-10-images/cpp/) | XiAPI (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [XiAPI.NET/Capture-10-images](Samples/XiAPI.NET/Capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [XiApiPython/Capture-10-images](Samples/XiApiPython/Capture-10-images/) | XiApiPython | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [XiAPI/Hardware-specific/Jetson-Demosaic-Sample](Samples/XiAPI/Hardware-specific/Jetson-Demosaic-Sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
-| [XiApiPython/GPIO samples-Jetson](<Samples/XiApiPython/GPIO samples-Jetson/>) | XiApiPython | GPIO, I2C, SPI and UART samples for the Jetson kit |
+| [xiapi/cross-platform/capture-10-images/c](samples/xiapi/cross-platform/capture-10-images/c/) | XiAPI (C) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi/cross-platform/capture-10-images/cpp](samples/xiapi/cross-platform/capture-10-images/cpp/) | XiAPI (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi-net/capture-10-images](samples/xiapi-net/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi-python/capture-10-images](samples/xiapi-python/capture-10-images/) | XiApiPython | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
+| [xiapi-python/gpio-samples-jetson](samples/xiapi-python/gpio-samples-jetson/) | XiApiPython | GPIO, I2C, SPI and UART samples for the Jetson kit |
 
 ---
 
 ## Building samples
 
-You may use `build.ps1` or `scripts/build.py` to build all samples directly.
-Alternatively, you can build each sample separately by following the instructions in its own README.md file.
+Use the canonical full-repo build helper:
+
+```bash
+python3 scripts/build.py
+```
+
+For C/C++ samples only, you can also configure the root CMake entry directly:
+
+```bash
+cmake -S cmake -B .cmake-tmp
+cmake --build .cmake-tmp
+```
+
+Alternatively, build each sample separately by following the instructions in its own README.md file.
 
 ---
 
