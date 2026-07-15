@@ -7,3 +7,5 @@
 
 build/*
 !build/.gitkeep
+.cmake-tmp/
+__pycache__/

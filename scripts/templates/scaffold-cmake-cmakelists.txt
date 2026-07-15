@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.16)
+
+project({{binary_name}} VERSION 0.1.0 LANGUAGES {{project_lang}})
+
+# Include shared CMake modules
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/{{cmake_include_path}}")
+include(SampleDefaults)
+find_package(XIMEA REQUIRED)
+
+add_executable({{target}} {{source_file}})
+target_compile_features({{target}} PRIVATE {{lang_std}})
+target_link_libraries({{target}} PRIVATE {{ximea_target}})
+
+# Apply output directory flattening to this target
+sample_flat_output_directories(TARGET {{target}})

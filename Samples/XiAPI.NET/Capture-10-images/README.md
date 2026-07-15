@@ -28,13 +28,13 @@ cd <repo-root>
 Binary and supporting files land in:
 
 ```
-build\XiAPI.NET-C#-Capture-10-images\
+build\XiAPI.NET-Capture-10-images\
 ```
 
 ### Directly with dotnet
 
 ```powershell
-cd Samples\XiAPI.NET-C#\Capture-10-images
+cd Samples\XiAPI.NET\Capture-10-images
 dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
 ```
 
@@ -47,19 +47,19 @@ Binary lands in `.dotnet-tmp\` inside the sample folder.
 ### After build.ps1
 
 ```powershell
-.\build\XiAPI.NET-C#-Capture-10-images\capture-10-images-csharp.exe
+.\build\XiAPI.NET-Capture-10-images\capture-10-images-csharp.exe
 ```
 
 ### After a direct dotnet build
 
 ```powershell
-.\\Samples\\XiAPI.NET-C#\\Capture-10-images\\.dotnet-tmp\\capture-10-images-csharp.exe
+.\\Samples\\XiAPI.NET\\Capture-10-images\\.dotnet-tmp\\capture-10-images-csharp.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):
 
 ```powershell
-cd Samples\XiAPI.NET-C#\Capture-10-images
+cd Samples\XiAPI.NET\Capture-10-images
 dotnet run --project CaptureImages.csproj
 ```
 

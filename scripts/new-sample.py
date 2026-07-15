@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+"""Create a new Application-Samples scaffold."""
+
+from __future__ import annotations
+
+import argparse
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+from common import CSV_NAME, find_samples_root, repo_root, write_text as write
+
+INVALID_NAME = re.compile(r'[\\/:*?"<>|]')
+TEMPLATE_DIR = repo_root() / "scripts" / "templates"
+
+
+def valid_folder_name(name: str) -> bool:
+    return bool(name) and name == name.strip() and INVALID_NAME.search(name) is None
+
+
+def ask_name(prompt: str) -> str:
+    while True:
+        value = input(f"{prompt}: ").strip()
+        if valid_folder_name(value):
+            return value
+        print('Invalid name. Do not use \\ / : * ? " < > | and avoid leading/trailing spaces.')
+
+
+def choose(items: list[str], prompt: str, allow_new: bool = True) -> str | None:
+    all_items = list(items)
+    if allow_new:
+        all_items.append("+ Create new")
+
+    while True:
+        print()
+        print(prompt)
+        for i, item in enumerate(all_items, start=1):
+            print(f"  {i}. {item}")
+        raw = input("Select number: ").strip()
+        try:
+            idx = int(raw)
+        except ValueError:
+            print("Please enter a number.")
+            continue
+        if 1 <= idx <= len(all_items):
+            if allow_new and idx == len(all_items):
+                return None
+            return all_items[idx - 1]
+        print("Selection out of range.")
+
+
+def pascal_case(value: str) -> str:
+    return "".join(part[:1].upper() + part[1:] for part in re.split(r"[^a-zA-Z0-9]+", value) if part)
+
+
+def target_name(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9]", "_", value)
+
+
+def render_template(name: str, **values: str) -> str:
+    text = (TEMPLATE_DIR / name).read_text(encoding="utf-8")
+    for key, value in values.items():
+        text = text.replace("{{" + key + "}}", value)
+    return text
+
+
+def make_csharp(sample_dir: Path, binary_name: str, cs_project_name: str) -> Path:
+    write(
+        sample_dir / f"{cs_project_name}.csproj",
+        render_template("scaffold-csharp-csproj.xml", binary_name=binary_name),
+    )
+    source_file = sample_dir / "Program.cs"
+    write(source_file, render_template("scaffold-csharp-program.cs", binary_name=binary_name))
+    return source_file
+
+
+def make_python(sample_dir: Path, binary_name: str) -> Path:
+    source_file = sample_dir / "main.py"
+    write(source_file, render_template("scaffold-python-main.py", binary_name=binary_name))
+    return source_file
+
+
+def make_cmake(sample_dir: Path, lang: str, binary_name: str, cmake_include_path: str) -> Path:
+    source_file = "main.c" if lang == "c" else "main.cpp"
+    template_file = "scaffold-c-main.c" if lang == "c" else "scaffold-cpp-main.cpp"
+    lang_std = "c_std_11" if lang == "c" else "cxx_std_17"
+    project_lang = "C" if lang == "c" else "CXX"
+    ximea_target = "XIMEA::xiAPI" if lang == "c" else "XIMEA::xiAPIplus"
+    target = target_name(binary_name)
+
+    write(
+        sample_dir / "CMakeLists.txt",
+        render_template(
+            "scaffold-cmake-cmakelists.txt",
+            binary_name=binary_name,
+            cmake_include_path=cmake_include_path,
+            lang_std=lang_std,
+            project_lang=project_lang,
+            source_file=source_file,
+            target=target,
+            ximea_target=ximea_target,
+        ),
+    )
+    source_path = sample_dir / source_file
+    write(source_path, render_template(template_file, binary_name=binary_name))
+    return source_path
+
+
+def run_generator(root: Path, args: list[str]) -> bool:
+    sys.stdout.flush()
+    result = subprocess.run([sys.executable, *args], cwd=root)
+    return result.returncode == 0
+
+
+def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path, source_file: Path) -> bool:
+    csv_path = root / CSV_NAME
+    if not csv_path.is_file():
+        print(f"WARNING: {CSV_NAME} not found; skipped generated intro comment and README.", file=sys.stderr)
+        return True
+
+    ok = True
+    print()
+    print("Generating intro comment from CSV...")
+    ok &= run_generator(
+        root,
+        [
+            str(root / "scripts" / "generate-intro-comments.py"),
+            "--csv", str(csv_path),
+            "--samples", str(samples_dir),
+            "--write",
+            "--file", str(source_file),
+        ],
+    )
+
+    print()
+    print("Generating README from CSV...")
+    ok &= run_generator(
+        root,
+        [
+            str(root / "scripts" / "generate-readmes.py"),
+            "--csv", str(csv_path),
+            "--samples", str(samples_dir),
+            "--write",
+            "--sample-dir", str(sample_dir),
+        ],
+    )
+    return ok
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Create a new Application-Samples scaffold.")
+    parser.add_argument("--api", help="API folder, e.g. XiAPI, XiAPI.NET, XiApiPython")
+    parser.add_argument("--group", choices=["Cross-Platform", "Hardware-specific"], help="XiAPI group")
+    parser.add_argument("--sample", help="Sample name/folder")
+    parser.add_argument("--lang", choices=["c", "cpp", "csharp", "python"], help="Language/template")
+    parser.add_argument("--yes", action="store_true", help="Create without confirmation when all required values are supplied.")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    root = repo_root()
+    samples_dir = find_samples_root(root, create=True)
+
+    apis = sorted(p.name for p in samples_dir.iterdir() if p.is_dir())
+    api = args.api or choose(apis, "Step 1 -- Select an API folder:")
+    if api is None:
+        api = ask_name("New API folder name")
+    if not valid_folder_name(api):
+        print(f"Invalid API folder name: {api}", file=sys.stderr)
+        return 1
+
+    group: str | None = None
+    if api == "XiAPI":
+        group = args.group or choose(["Cross-Platform", "Hardware-specific"], "Step 2 -- Select sample group:", allow_new=False)
+        if group is None:
+            print("No sample group selected.", file=sys.stderr)
+            return 1
+        parent_dir = samples_dir / api / group
+    else:
+        parent_dir = samples_dir / api
+
+    samples = sorted(p.name for p in parent_dir.iterdir() if p.is_dir()) if parent_dir.is_dir() else []
+    step_num = "Step 3" if api == "XiAPI" else "Step 2"
+    topic = args.sample or choose(samples, f"{step_num} -- Select a sample:")
+    if topic is None:
+        topic = ask_name("New sample name")
+    if not valid_folder_name(topic):
+        print(f"Invalid sample name: {topic}", file=sys.stderr)
+        return 1
+
+    if args.lang:
+        lang = args.lang
+    elif api == "XiAPI":
+        lang = choose(["c", "cpp"], "Step 4 -- Select language:", allow_new=False)
+    elif api == "XiAPI.NET":
+        lang = "csharp"
+    elif api == "XiApiPython":
+        lang = "python"
+    else:
+        lang = choose(["c", "cpp", "csharp", "python"], "Step 3 -- Select language:", allow_new=False)
+
+    assert lang in {"c", "cpp", "csharp", "python"}
+
+    if api == "XiAPI" and group == "Cross-Platform":
+        sample_dir = samples_dir / api / group / topic / lang
+        folder_name = f"{api}-{group}-{topic}-{lang}"
+        sample_path = f"{samples_dir.name}/{api}/{group}/{topic}/{lang}"
+    elif api == "XiAPI":
+        sample_dir = samples_dir / api / group / topic
+        folder_name = f"{api}-{group}-{topic}"
+        sample_path = f"{samples_dir.name}/{api}/{group}/{topic}"
+    else:
+        sample_dir = samples_dir / api / topic
+        folder_name = f"{api}-{topic}"
+        sample_path = f"{samples_dir.name}/{api}/{topic}"
+
+    cmake_depth = len(sample_path.split("/"))
+    cmake_include_path = "/".join([".."] * cmake_depth) + "/cmake"
+    binary_name = folder_name if lang in {"c", "cpp"} else f"{topic}-{lang}"
+    cs_project_name = pascal_case(binary_name)
+
+    print()
+    print("-----------------------------------------")
+    print(f" API      : {api}")
+    if group:
+        print(f" Group    : {group}")
+    print(f" Sample   : {topic}")
+    print(f" Language : {lang}")
+    print(f" Path     : {sample_path}")
+    print(f" Binary   : {binary_name}")
+    print("-----------------------------------------")
+
+    if not args.yes:
+        confirm = choose(["Yes", "No"], "Create this sample?", allow_new=False)
+        if confirm != "Yes":
+            print("Aborted.")
+            return 0
+
+    if sample_dir.exists():
+        print(f"Error: {sample_path} already exists. Nothing was created.", file=sys.stderr)
+        return 1
+
+    sample_dir.mkdir(parents=True)
+    if lang == "csharp":
+        source_file = make_csharp(sample_dir, binary_name, cs_project_name)
+    elif lang == "python":
+        source_file = make_python(sample_dir, binary_name)
+    else:
+        source_file = make_cmake(sample_dir, lang, binary_name, cmake_include_path)
+
+    if not run_metadata_generators(root, samples_dir, sample_dir, source_file):
+        return 1
+
+    print()
+    print("Sample scaffold created:")
+    for item in sorted(sample_dir.iterdir()):
+        print(f"  {item.name}")
+    print()
+    print("Next steps:")
+    if lang == "csharp":
+        print("  1. Fill in the TODO sections in Program.cs")
+        print("  2. Review generated README.md, or add a CSV row if it was skipped")
+        print(f"  3. Build: cd {sample_path} && dotnet build {cs_project_name}.csproj")
+    elif lang == "python":
+        print("  1. Fill in the TODO sections in main.py")
+        print("  2. Review generated README.md, or add a CSV row if it was skipped")
+        print(f"  3. Run: python {sample_path}/main.py")
+    else:
+        source_name = "main.c" if lang == "c" else "main.cpp"
+        print(f"  1. Fill in the TODO sections in {source_name}")
+        print("  2. Review generated README.md, or add a CSV row if it was skipped")
+        print(f"  3. Build: cd {sample_path} && cmake -B .cmake-tmp && cmake --build .cmake-tmp")
+    print()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
