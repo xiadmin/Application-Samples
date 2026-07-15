@@ -17,8 +17,9 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 
 ```text
 samples/
-  xiapi/                    # C/C++ samples using xiAPI or xiAPIplus
-  xiapi-net/                # C# samples using xiAPI.NET
+  xiapi/                    # C samples using xiAPI, plus xiAPI-based hardware-specific samples
+  xiapiplus/                # C++ samples using xiAPIplus
+  xiapi.net-c#/             # C# samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
 cmake/                      # shared/root CMake support files
 scripts/                    # maintenance, generation, and build helpers
@@ -32,9 +33,9 @@ Each sample folder contains everything needed to build and run it, along with a 
 
 | Sample | API / Language | What it shows |
 |--------|-----------------|---------------|
-| [xiapi/cross-platform/capture-10-images/c](samples/xiapi/cross-platform/capture-10-images/c/) | XiAPI (C) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [xiapi/cross-platform/capture-10-images/cpp](samples/xiapi/cross-platform/capture-10-images/cpp/) | XiAPI (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [xiapi-net/capture-10-images](samples/xiapi-net/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapiplus/cross-platform/capture-10-images](samples/xiapiplus/cross-platform/capture-10-images/) | xiAPIplus (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi.net-c#/capture-10-images](samples/xiapi.net-c#/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-python/capture-10-images](samples/xiapi-python/capture-10-images/) | XiApiPython | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
 | [xiapi-python/gpio-samples-jetson](samples/xiapi-python/gpio-samples-jetson/) | XiApiPython | GPIO, I2C, SPI and UART samples for the Jetson kit |

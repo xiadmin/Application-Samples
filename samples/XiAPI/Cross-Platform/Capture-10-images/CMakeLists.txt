@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(capture-10-images-c VERSION 0.1.0 LANGUAGES C)
+project(xiapi-cross-platform-capture-10-images VERSION 0.1.0 LANGUAGES C)
 
-include("${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/CMakeLists.txt")
 ximea_find_sdk(REQUIRED)
 
 add_executable(capture_images_c main.c)

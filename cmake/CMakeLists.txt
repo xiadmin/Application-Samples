@@ -180,8 +180,9 @@ if(_XIMEA_SAMPLES_ROOT_ENTRY)
     endif()
 
     set(_sample_dirs
-        "xiapi/cross-platform/capture-10-images/c"
-        "xiapi/cross-platform/capture-10-images/cpp"
+        "xiapi/cross-platform/capture-10-images"
+        "xiapiplus/cross-platform/capture-10-images"
+        "xiapiplus/cross-platform/caputer-n-images"
         "xiapi/hardware-specific/jetson-demosaic-sample"
     )
 

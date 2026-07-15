@@ -13,7 +13,6 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 | XIMEA SDK | 4.32 or newer |
 | .NET SDK | 8.0 or newer |
 
-
 ---
 
 ## Build
@@ -28,13 +27,13 @@ python scripts/build.py
 Binary and supporting files land in:
 
 ```
-build\xiapi-net-capture-10-images\
+build\xiapi.net-c#-capture-10-images\
 ```
 
 ### Directly with dotnet
 
 ```powershell
-cd samples/xiapi-net/capture-10-images
+cd samples\xiapi.net-c#\capture-10-images
 dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
 ```
 
@@ -47,19 +46,19 @@ Binary lands in `.dotnet-tmp\` inside the sample folder.
 ### After scripts/build.py
 
 ```powershell
-.\build\xiapi-net-capture-10-images\capture-10-images-csharp.exe
+.\build\xiapi.net-c#-capture-10-images\capture-10-images-csharp.exe
 ```
 
 ### After a direct dotnet build
 
 ```powershell
-./samples/xiapi-net/capture-10-images/.dotnet-tmp/capture-10-images-csharp.exe
+.\samples\xiapi.net-c#\capture-10-images\.dotnet-tmp\capture-10-images-csharp.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):
 
 ```powershell
-cd samples/xiapi-net/capture-10-images
+cd samples\xiapi.net-c#\capture-10-images
 dotnet run --project CaptureImages.csproj
 ```
 
