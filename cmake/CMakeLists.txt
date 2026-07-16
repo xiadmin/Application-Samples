@@ -106,15 +106,9 @@ function(ximea_find_sdk)
     )
 
     include(FindPackageHandleStandardArgs)
-    if(ARG_REQUIRED)
-        find_package_handle_standard_args(XIMEA
-            REQUIRED_VARS XIMEA_LIBRARY XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR
-        )
-    else()
-        find_package_handle_standard_args(XIMEA
-            REQUIRED_VARS XIMEA_LIBRARY XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR
-        )
-    endif()
+    find_package_handle_standard_args(XIMEA
+        REQUIRED_VARS XIMEA_LIBRARY XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR
+    )
 
     if(NOT XIMEA_FOUND)
         message(WARNING
@@ -144,23 +138,23 @@ function(ximea_find_sdk)
                 list(APPEND _ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_tiff.cpp")
             endif()
 
-            if(NOT TARGET XIMEA_xiAPIplus_obj)
-                add_library(XIMEA_xiAPIplus_obj OBJECT ${_ximea_plus_sources})
-                set_target_properties(XIMEA_xiAPIplus_obj PROPERTIES LINKER_LANGUAGE CXX)
+            if(NOT TARGET XIMEA_xiAPIplus)
+                add_library(XIMEA_xiAPIplus STATIC ${_ximea_plus_sources})
+                set_target_properties(XIMEA_xiAPIplus PROPERTIES LINKER_LANGUAGE CXX)
                 get_filename_component(_ximea_libs_dir "${XIMEA_INCLUDE_PLUS_DIR}" DIRECTORY)
-                target_include_directories(XIMEA_xiAPIplus_obj PUBLIC
+                target_include_directories(XIMEA_xiAPIplus PUBLIC
                     "${XIMEA_INCLUDE_PLUS_DIR}"
                     "${_ximea_libs_dir}"
                     "${_ximea_libs_dir}/libtiff"
                 )
-                target_link_libraries(XIMEA_xiAPIplus_obj PUBLIC XIMEA::xiAPI)
+                target_link_libraries(XIMEA_xiAPIplus PUBLIC XIMEA::xiAPI)
 
                 if(TIFF_FOUND)
-                    target_link_libraries(XIMEA_xiAPIplus_obj PUBLIC TIFF::TIFF)
+                    target_link_libraries(XIMEA_xiAPIplus PUBLIC TIFF::TIFF)
                 endif()
             endif()
 
-            add_library(XIMEA::xiAPIplus ALIAS XIMEA_xiAPIplus_obj)
+            add_library(XIMEA::xiAPIplus ALIAS XIMEA_xiAPIplus)
         else()
             add_library(XIMEA::xiAPIplus INTERFACE IMPORTED)
             target_include_directories(XIMEA::xiAPIplus INTERFACE "${XIMEA_INCLUDE_PLUS_DIR}")
@@ -179,20 +173,15 @@ if(_XIMEA_SAMPLES_ROOT_ENTRY)
         message(FATAL_ERROR "Expected lowercase samples/ directory at ${_samples_root}")
     endif()
 
-    set(_sample_dirs
-        "xiapi/cross-platform/capture-10-images"
-        "xiapiplus/cross-platform/capture-10-images"
-        "xiapiplus/cross-platform/caputer-n-images"
-        "xiapi/hardware-specific/jetson-demosaic-sample"
+    file(GLOB_RECURSE _sample_cmake_lists CONFIGURE_DEPENDS
+        "${_samples_root}/*/CMakeLists.txt"
     )
+    list(SORT _sample_cmake_lists)
 
-    foreach(_sample_rel IN LISTS _sample_dirs)
-        set(_sample_dir "${_samples_root}/${_sample_rel}")
-        if(EXISTS "${_sample_dir}/CMakeLists.txt")
-            string(REPLACE "/" "-" _binary_dir "${_sample_rel}")
-            add_subdirectory("${_sample_dir}" "${CMAKE_BINARY_DIR}/${_binary_dir}")
-        else()
-            message(WARNING "Skipping missing CMake sample: samples/${_sample_rel}")
-        endif()
+    foreach(_sample_cmake IN LISTS _sample_cmake_lists)
+        get_filename_component(_sample_dir "${_sample_cmake}" DIRECTORY)
+        file(RELATIVE_PATH _sample_rel "${_samples_root}" "${_sample_dir}")
+        string(REPLACE "/" "-" _binary_dir "${_sample_rel}")
+        add_subdirectory("${_sample_dir}" "${CMAKE_BINARY_DIR}/${_binary_dir}")
     endforeach()
 endif()

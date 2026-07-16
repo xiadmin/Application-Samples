@@ -1,79 +1,56 @@
-"""
-This is a sample code demonstrating Peer-to-Peer UART communication between a Linux PC and the Jetson kit.
-The PC sends a "PING" message to the Jetson, and the Jetson replies with a "PONG" message. This process is repeated in a loop.
-UART0 is used to demonstrate the functionality of RTS#/CTS# flow control.
-PySerial is used for UART communication. 
+"""Run the Jetson side of a peer-to-peer UART PING/PONG sample.
 
-Assumptions taken:
-- The PC is running Linux, Ubuntu.
-- 5 pin 1V8 USB to TTL UART converter is used for communication.   
-
-Workflow:
-- Initialize UART communication
-- In a loop:
--- Receive "PING" message from PC
--- Send "PONG" message to PC 
-
-Connect: 
-
-BLACK wire (GND) - GPIO header pin 6 (GND)
-ORANGE wire (TX) - GPIO header pin 18 (RX)
-YELLOW wire (RX) - GPIO header pin 19 (TX)
-GREEN wire (RTS#) - GPIO header pin 17 (CTS#)
-BROWN wire (CTS#) - GPIO header pin 16 (RTS#)
-
-Leave RED wire unconnected.
-
-USB to UART Converter:
-https://ftdichip.com/products/ttl-232rg-vreg1v8-we/
-Datasheet:
-https://ftdichip.com/wp-content/uploads/2023/07/DS_TTL-232RG_CABLES.pdf
-
+The PC sends a PING message to the Jetson, and the Jetson replies with PONG.
+UART0 is used to demonstrate RTS#/CTS# flow control.
 """
 
-import time
 import serial
-   
-# Using UART0, which has RTS#/CTS# flow control
-serial_port= serial.Serial(
-    port = "/dev/ttyTHS3",  # For UART0
-    baudrate=115200,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-    timeout=2.0,
-    write_timeout=2.0,
-    rtscts=True #Enabling Flow control to demonstrate funtionality
-)
+
+PORT = "/dev/ttyTHS3"
+BAUDRATE = 115_200
+ITERATION_COUNT = 1_000
+SERIAL_TIMEOUT_S = 2.0
 
 
-try:
-    serial_port.reset_input_buffer()
-    serial_port.reset_output_buffer()
+def main() -> int:
+    serial_port = serial.Serial(
+        port=PORT,
+        baudrate=BAUDRATE,
+        bytesize=serial.EIGHTBITS,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE,
+        timeout=SERIAL_TIMEOUT_S,
+        write_timeout=SERIAL_TIMEOUT_S,
+        rtscts=True,
+    )
 
-    for i in range(1000):
-        read_data = serial_port.read_until(b'\n')  
+    try:
+        serial_port.reset_input_buffer()
+        serial_port.reset_output_buffer()
 
-        if read_data.strip() == b"PING":
-            print(f"Iteration {i}: \nSuccess: Received PING, sending PONG")
-            
-            serial_port.write(b"PONG\n")
-            serial_port.flush()
-        
-        elif read_data == b'':
-            print(f"Iteration {i}: \nError: Received no data.")
-        
-        else:
-            print(f"Iteration {i}: \n Error: Received: " + read_data.decode().strip())
+        for i in range(ITERATION_COUNT):
+            read_data = serial_port.read_until(b"\n")
+
+            if read_data.strip() == b"PING":
+                print(f"Iteration {i}:\nSuccess: Received PING, sending PONG")
+                serial_port.write(b"PONG\n")
+                serial_port.flush()
+            elif read_data == b"":
+                print(f"Iteration {i}:\nError: Received no data.")
+            else:
+                decoded_data = read_data.decode(errors="replace").strip()
+                print(f"Iteration {i}:\nError: Received: {decoded_data}")
+    except serial.SerialTimeoutException as error:
+        print("Timeout occurred. Aborting!")
+        print(f"Error: {error}")
+        return 1
+    except KeyboardInterrupt:
+        print("Aborting!")
+    finally:
+        serial_port.close()
+
+    return 0
 
 
-except serial.SerialTimeoutException as exception_error:
-    print("Timeout occurred. Aborting!")
-    print("Error: " + str(exception_error))
-
-except KeyboardInterrupt:
-    print("Aborting!")
-
-finally:
-    serial_port.close()
-
+if __name__ == "__main__":
+    raise SystemExit(main())

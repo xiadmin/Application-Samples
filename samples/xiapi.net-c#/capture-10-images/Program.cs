@@ -6,12 +6,14 @@
 using System;
 using xiApi.NET;
 
-const int frameCount    = 10;
-const int exposureUs    = 100_000;  // 100 ms
-const int grabTimeoutMs = 5_000;    // must exceed exposure
+const int FrameCount = 10;
+const int ExposureUs = 100_000;  // 100 ms
+const int GrabTimeoutMs = 5_000; // must exceed exposure
 
 var cam = new xiCam();
 bool isDeviceOpen = false;
+bool isAcquiring = false;
+
 try
 {
     cam.GetNumberDevices(out int numDevices);
@@ -26,19 +28,19 @@ try
     cam.OpenDevice(0);
     isDeviceOpen = true;
 
-    cam.SetParam(PRM.EXPOSURE, exposureUs);
-    Console.WriteLine($"Exposure: {exposureUs} us ({exposureUs / 1000} ms)");
+    cam.SetParam(PRM.EXPOSURE, ExposureUs);
+    Console.WriteLine($"Exposure: {ExposureUs} us ({ExposureUs / 1000} ms)");
 
     cam.StartAcquisition();
-    Console.WriteLine($"Capturing {frameCount} frames");
+    isAcquiring = true;
+    Console.WriteLine($"Capturing {FrameCount} frames");
 
-    for (int i = 0; i < frameCount; i++)
+    for (int i = 0; i < FrameCount; i++)
     {
-        xiApi.XI_IMG img = cam.GetXI_IMG(grabTimeoutMs);
-        Console.WriteLine($"Frame {i + 1}/{frameCount}: {img.width}x{img.height} nframe={img.acq_nframe}");
+        xiApi.XI_IMG img = cam.GetXI_IMG(GrabTimeoutMs);
+        Console.WriteLine($"Frame {i + 1}/{FrameCount}: {img.width}x{img.height} nframe={img.acq_nframe}");
     }
 
-    cam.StopAcquisition();
     Console.WriteLine("Done");
     return 0;
 }
@@ -49,6 +51,13 @@ catch (xiExc ex)
 }
 finally
 {
+    if (isAcquiring)
+    {
+        cam.StopAcquisition();
+    }
+
     if (isDeviceOpen)
+    {
         cam.CloseDevice();
+    }
 }

@@ -7,14 +7,15 @@ Build: no build step needed — run directly with Python.
 """
 
 import sys
+
 from ximea import xiapi
 
-frame_count = 10
-exposure_us = 100000  
-grab_timeout_ms = 5000
+FRAME_COUNT = 10
+EXPOSURE_US = 100_000
+GRAB_TIMEOUT_MS = 5_000
 
 
-def main():
+def main() -> int:
     cam = xiapi.Camera()
     is_device_open = False
     is_acquiring = False
@@ -32,31 +33,31 @@ def main():
         cam.open_device()
         is_device_open = True
 
-        cam.set_exposure(exposure_us)
-        print(f"Exposure: {exposure_us} us ({exposure_us // 1000} ms)")
+        cam.set_exposure(EXPOSURE_US)
+        print(f"Exposure: {EXPOSURE_US} us ({EXPOSURE_US // 1000} ms)")
 
         cam.start_acquisition()
         is_acquiring = True
 
-        print(f"Capturing {frame_count} frames")
+        print(f"Capturing {FRAME_COUNT} frames")
 
         img = xiapi.Image()
-        for i in range(frame_count):
+        for i in range(FRAME_COUNT):
             current_frame = i + 1
-            cam.get_image(img, timeout=grab_timeout_ms)
+            cam.get_image(img, timeout=GRAB_TIMEOUT_MS)
             data = img.get_image_data_numpy()
             first_byte = int(data.flat[0]) if data is not None and data.size > 0 else -1
             print(
-                f"Frame {current_frame}/{frame_count}: "
+                f"Frame {current_frame}/{FRAME_COUNT}: "
                 f"{img.width}x{img.height} "
                 f"nframe={img.nframe} "
                 f"first_byte={first_byte}"
             )
-    except xiapi.Xi_error as e:
+    except xiapi.Xi_error as error:
         if current_frame is not None:
-            print(f"Error: failed on frame {current_frame}/{frame_count}: {e}", file=sys.stderr)
+            print(f"Error: failed on frame {current_frame}/{FRAME_COUNT}: {error}", file=sys.stderr)
         else:
-            print(f"Error: xiAPI call failed: {e}", file=sys.stderr)
+            print(f"Error: xiAPI call failed: {error}", file=sys.stderr)
         ret = 1
     finally:
         if is_acquiring:

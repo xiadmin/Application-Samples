@@ -1,116 +1,93 @@
-'''
-This is a sample code for demonstrating I2C communication on the Jetson Kit.
+"""Read BMP280 temperature over I2C on the Jetson Kit.
+
 BMP280 sensor embedded in an Adafruit board is used as communication target.
-Pylibi2c is used for I2C communication.
+Pylibi2c is used for I2C communication. Abort the program with Ctrl+C.
+"""
 
-Workflow:
-- Initialize I2C communication
-- Read BMP280 chip ID
-- Read calibration parameters from BMP280
-- Trigger and read temperature measurement in a loop
-
-Abort the program with Ctrl+C.
-
-Connect:
-Vin to gpio header pin 5 (3V3)
-GND to gpio header pin 6 (GND)
-SCK to gpio header pin 27 (I2C1 SCL)
-SDI to gpio header pin 28 (I2C1 SDA)
-
-Adafruit board:
-https://learn.adafruit.com/adafruit-bmp280-barometric-pressure-plus-temperature-sensor-breakout
-
-BMP280 Datasheet:
-https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp280-ds001.pdf
-
-Pylibi2c documentation: 
-https://github.com/amaork/libi2c
-'''
-
-import time
 import sys
+import time
+
 import pylibi2c
-from numpy import double
 
-#Using device i2c-7, which is mapped to I2C1 on Orin NX, GPIO header pins 27 (SCL) and 28 (SDA)
-I2C_BUS = "/dev/i2c-7"   
-BMP280_ADDR = 0x77  # 0x76 if SDO=GND, 0x77 if SDO=VDDIO (datasheet chapter 5.2)
+# Device i2c-7 is mapped to I2C1 on Orin NX GPIO header pins 27 (SCL) and 28 (SDA).
+I2C_BUS = "/dev/i2c-7"
+BMP280_ADDR = 0x77  # 0x76 if SDO=GND, 0x77 if SDO=VDDIO.
+EXPECTED_CHIP_ID = 0x58
+TEMPERATURE_READ_COUNT = 100
+TEMPERATURE_READ_DELAY_S = 0.5
+MEASUREMENT_RETRY_COUNT = 10
+MEASUREMENT_RETRY_DELAY_S = 0.01
+OSRS_T = 0b001
+OSRS_P = 0b000
+MODE_FORCED = 0b01
+CTRL_MEAS_FORCED = (OSRS_T << 5) | (OSRS_P << 2) | MODE_FORCED
 
 
-def read_register(address, n=1) -> bytes:
-    # write register address, repeated-start read
-    return i2c.read(address & 0xFF, n)
+def read_register(i2c, address: int, byte_count: int = 1) -> bytes:
+    return i2c.read(address & 0xFF, byte_count)
 
-def write_register(address, value: int) -> None:
-    # Write a single byte to a register
+
+def write_register(i2c, address: int, value: int) -> None:
     i2c.write(address & 0xFF, bytes([value & 0xFF]))
 
-def compensate_temperature(adc_T,dig_T1,dig_T2,dig_T3):
-    #From chapter 3.11.3 of the datasheet
-    var1 = (((int(adc_T)>>3) - (int(dig_T1) <<1))* int(dig_T2)) >> 11
-    var2 = (((((int(adc_T)>>4) - int(dig_T1)) * ((int(adc_T)>>4) - int(dig_T1))) >> 12 ) * int(dig_T3)) >>14
 
+def compensate_temperature(adc_temperature: int, dig_t1: int, dig_t2: int, dig_t3: int) -> float:
+    # Formula from BMP280 datasheet chapter 3.11.3.
+    var1 = (((adc_temperature >> 3) - (dig_t1 << 1)) * dig_t2) >> 11
+    var2 = (((((adc_temperature >> 4) - dig_t1) * ((adc_temperature >> 4) - dig_t1)) >> 12) * dig_t3) >> 14
     t_fine = var1 + var2
     temp = (t_fine * 5 + 128) >> 8
-    return (double (temp) / 100.0)
+    return temp / 100.0
 
-print("BMP280 I2C sample")
 
-# Initialize I2C device
-i2c = pylibi2c.I2CDevice(I2C_BUS, BMP280_ADDR, iaddr_bytes=1)
+def read_calibration(i2c) -> tuple[int, int, int]:
+    dig_t1 = int.from_bytes(read_register(i2c, 0x88, 2), "little")
+    dig_t2 = int.from_bytes(read_register(i2c, 0x8A, 2), "little", signed=True)
+    dig_t3 = int.from_bytes(read_register(i2c, 0x8C, 2), "little", signed=True)
+    return dig_t1, dig_t2, dig_t3
 
-# Read chip ID
-chip_id = read_register(0xD0, 1)[0] # Datacheet chapter 4.3.1
-print("BMP280 chip id:", hex(chip_id))  # expected 0x58
 
-if chip_id != 0x58:
-    i2c.close()
-    sys.exit("BMP280 not found on I2C bus")
+def wait_for_measurement(i2c) -> None:
+    for i in range(MEASUREMENT_RETRY_COUNT):
+        status = read_register(i2c, 0xF3, 1)[0]
+        if (status & 0b00001000) == 0:
+            return
+        time.sleep(MEASUREMENT_RETRY_DELAY_S)
+    raise TimeoutError("Temperature measurement timed out")
 
-# Reading compensation parameters, Datasheet chapter 3.11.2
-dig_T1 = int.from_bytes(read_register(0x88, 2), 'little')
-dig_T2 = int.from_bytes(read_register(0x8A, 2), 'little', signed=True)
-dig_T3 = int.from_bytes(read_register(0x8C, 2), 'little', signed=True)
 
-# Datasheet chapter 4.3.4
-OSRS_T = 0b001       # temperature oversampling x1
-OSRS_P = 0b000       # pressure oversampling x0, measurement skipped, 
-MODE_FORCED = 0b01   # forced mode (one-shot)
+def main() -> int:
+    print("BMP280 I2C sample")
+    i2c = pylibi2c.I2CDevice(I2C_BUS, BMP280_ADDR, iaddr_bytes=1)
 
-ctrl_meas_forced = (OSRS_T << 5) | (OSRS_P << 2) | MODE_FORCED
+    try:
+        chip_id = read_register(i2c, 0xD0, 1)[0]
+        print("BMP280 chip id:", hex(chip_id))
+        if chip_id != EXPECTED_CHIP_ID:
+            print("BMP280 not found on I2C bus", file=sys.stderr)
+            return 1
 
-try:
-    for _ in range(100):
+        dig_t1, dig_t2, dig_t3 = read_calibration(i2c)
 
-        # Trigger one temperature measurement
-        write_register(0xF4, ctrl_meas_forced)
-        
-        # Wait for measurement to complete
-        for i in range(10):
-            status = read_register(0xF3, 1)[0] # datasheet chapter 4.3.3
-            if (status & 0b00001000) == 0:
-                break
-            time.sleep(0.01) 
+        for _ in range(TEMPERATURE_READ_COUNT):
+            write_register(i2c, 0xF4, CTRL_MEAS_FORCED)
+            wait_for_measurement(i2c)
+            msb, lsb, xlsb = read_register(i2c, 0xFA, 3)
+            raw_value = (msb << 12) | (lsb << 4) | (xlsb >> 4)
+            temp_value = compensate_temperature(raw_value, dig_t1, dig_t2, dig_t3)
+            print(f"Temperature reading: {temp_value:.2f} °C")
+            time.sleep(TEMPERATURE_READ_DELAY_S)
+    except Exception as error:
+        print("Error occurred. Aborting!")
+        print(f"Error: {error}")
+        return 1
+    except KeyboardInterrupt:
+        print("Aborting!")
+    finally:
+        i2c.close()
 
-        if i == 9:
-            raise Exception("Temperature measurement timed out")
-        
-        # Reading raw temperature data
-        msb, lsb, xlsb = read_register(0xFA, 3) # Datasheet chapter 4.3.7
-        raw_value = (msb << 12) | (lsb << 4) | (xlsb >> 4) # temp[19:0] = msb[7:0] lsb[7:0] xlsb[7:4]
-        
-        #Cauculated calibrated temperature
-        temp_value = compensate_temperature(raw_value, dig_T1, dig_T2, dig_T3)
-        print(f"Temperature reading: {temp_value:.2f} °C")
+    return 0
 
-        time.sleep(0.5)
 
-except Exception as exception_error:
-    print("Error occurred. Aborting!")
-    print("Error: " + str(exception_error))    
-
-except KeyboardInterrupt:
-    print("Aborting!")
-
-finally:
-    i2c.close()
+if __name__ == "__main__":
+    raise SystemExit(main())

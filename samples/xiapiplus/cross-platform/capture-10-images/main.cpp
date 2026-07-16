@@ -11,9 +11,9 @@
 
 #include <xiApiPlus.h>
 
-static constexpr int   frameCount    = 10;
-static constexpr float exposureUs    = 100000.0f; 
-static constexpr int   grabTimeoutMs = 5000;       
+static constexpr int frameCount = 10;
+static constexpr float exposureUs = 100000.0f;
+static constexpr int grabTimeoutMs = 5000;
 
 int main()
 {
@@ -65,10 +65,10 @@ int main()
         cameraOpened = false;
         return EXIT_SUCCESS;
     }
-    catch (xiAPIplus_Exception exception)
-	{
-		exception.PrintError();
-	}
+    catch (xiAPIplus_Exception& exception)
+    {
+        exception.PrintError();
+    }
     catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << "\n";
@@ -80,11 +80,23 @@ int main()
 
     if (acquisitionStarted)
     {
-        try { cam.StopAcquisition(); } catch (...) {}
+        try
+        {
+            cam.StopAcquisition();
+        }
+        catch (...)
+        {
+        }
     }
     if (cameraOpened)
     {
-        try { cam.Close(); } catch (...) {}
+        try
+        {
+            cam.Close();
+        }
+        catch (...)
+        {
+        }
     }
 
     return EXIT_FAILURE;
