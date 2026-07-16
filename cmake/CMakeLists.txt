@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_LIST_DIR)
-    project(ximea-application-samples LANGUAGES C CXX)
-    set(_XIMEA_SAMPLES_ROOT_ENTRY ON)
-else()
-    set(_XIMEA_SAMPLES_ROOT_ENTRY OFF)
+    project(ximea-sample-cmake-helpers LANGUAGES C CXX)
 endif()
 
 function(_sample_derive_output_name out_var)
@@ -164,24 +161,3 @@ function(ximea_find_sdk)
 
     mark_as_advanced(XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR XIMEA_LIBRARY)
 endfunction()
-
-if(_XIMEA_SAMPLES_ROOT_ENTRY)
-    set(_repo_root "${CMAKE_CURRENT_LIST_DIR}/..")
-    set(_samples_root "${_repo_root}/samples")
-
-    if(NOT IS_DIRECTORY "${_samples_root}")
-        message(FATAL_ERROR "Expected lowercase samples/ directory at ${_samples_root}")
-    endif()
-
-    file(GLOB_RECURSE _sample_cmake_lists CONFIGURE_DEPENDS
-        "${_samples_root}/*/CMakeLists.txt"
-    )
-    list(SORT _sample_cmake_lists)
-
-    foreach(_sample_cmake IN LISTS _sample_cmake_lists)
-        get_filename_component(_sample_dir "${_sample_cmake}" DIRECTORY)
-        file(RELATIVE_PATH _sample_rel "${_samples_root}" "${_sample_dir}")
-        string(REPLACE "/" "-" _binary_dir "${_sample_rel}")
-        add_subdirectory("${_sample_dir}" "${CMAKE_BINARY_DIR}/${_binary_dir}")
-    endforeach()
-endif()

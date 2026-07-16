@@ -36,9 +36,9 @@ Each sample folder contains everything needed to build and run it, along with a 
 | [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapiplus/cross-platform/capture-10-images](samples/xiapiplus/cross-platform/capture-10-images/) | xiAPIplus (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi.net-c#/capture-10-images](samples/xiapi.net-c#/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [xiapi-python/capture-10-images](samples/xiapi-python/capture-10-images/) | XiApiPython | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi-python/cross-platform/capture-10-images](samples/xiapi-python/cross-platform/capture-10-images/) | XiApiPython | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
-| [xiapi-python/gpio-samples-jetson](samples/xiapi-python/gpio-samples-jetson/) | XiApiPython | GPIO, I2C, SPI and UART samples for the Jetson kit |
+| [xiapi-python/hardware-specific/gpio-samples-jetson](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | XiApiPython | GPIO, I2C, SPI and UART samples for the Jetson kit |
 
 ---
 
@@ -48,13 +48,6 @@ Use the canonical full-repo build helper:
 
 ```bash
 python3 scripts/build.py
-```
-
-For C/C++ samples only, you can also configure the root CMake entry directly:
-
-```bash
-cmake -S cmake -B .cmake-tmp
-cmake --build .cmake-tmp
 ```
 
 Alternatively, build each sample separately by following the instructions in its own README.md file.

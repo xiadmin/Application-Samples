@@ -32,12 +32,12 @@ No build step is required for this Python sample.
 python main.py
 ```
 
-### After scripts/build.py
+### From repository build checks
 
-`scripts/build.py` checks for the `ximea` module and generates launcher scripts:
+`scripts/build.py` runs a Python syntax check for this sample:
 
-```powershell
-.\build\xiapi-python-capture-10-images\run.ps1
+```bash
+python3 scripts/build.py --sample xiapi-python-cross-platform-capture-10-images
 ```
 
 ---

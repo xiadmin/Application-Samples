@@ -139,7 +139,7 @@ def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path) -> 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create a new Application-Samples scaffold.")
     parser.add_argument("--api", help="API folder, e.g. xiapi, xiapiplus, xiapi.net-c#, xiapi-python")
-    parser.add_argument("--group", choices=["cross-platform", "hardware-specific"], help="xiAPI/xiAPIplus group")
+    parser.add_argument("--group", choices=["cross-platform", "hardware-specific"], help="sample group for APIs that use grouped samples")
     parser.add_argument("--sample", help="Sample name/folder")
     parser.add_argument("--lang", choices=["c", "cpp", "csharp", "python"], help="Language/template")
     parser.add_argument("--yes", action="store_true", help="Create without confirmation when all required values are supplied.")
@@ -160,7 +160,7 @@ def main() -> int:
         return 1
 
     group: str | None = None
-    if api in {"xiapi", "xiapiplus"}:
+    if api in {"xiapi", "xiapiplus", "xiapi-python"}:
         group = args.group or choose(["cross-platform", "hardware-specific"], "Step 2 -- Select sample group:", allow_new=False)
         if group is None:
             print("No sample group selected.", file=sys.stderr)
@@ -170,7 +170,7 @@ def main() -> int:
         parent_dir = samples_dir / api
 
     samples = sorted(p.name for p in parent_dir.iterdir() if p.is_dir()) if parent_dir.is_dir() else []
-    step_num = "Step 3" if api in {"xiapi", "xiapiplus"} else "Step 2"
+    step_num = "Step 3" if api in {"xiapi", "xiapiplus", "xiapi-python"} else "Step 2"
     topic = args.sample or choose(samples, f"{step_num} -- Select a sample:")
     if topic is None:
         topic = ask_name("New sample name")
@@ -200,7 +200,7 @@ def main() -> int:
         print("Error: xiapiplus samples must use lang=cpp.", file=sys.stderr)
         return 1
 
-    if api in {"xiapi", "xiapiplus"}:
+    if api in {"xiapi", "xiapiplus", "xiapi-python"}:
         assert group is not None
         sample_dir = samples_dir / api / group / topic
         folder_name = f"{api}-{group}-{topic}"

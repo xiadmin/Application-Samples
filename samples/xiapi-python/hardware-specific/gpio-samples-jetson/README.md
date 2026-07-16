@@ -23,7 +23,7 @@ No build step is required for these Python scripts.
 Install the documented Python dependencies before running a script:
 
 ```bash
-cd samples/xiapi-python/gpio-samples-jetson
+cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
 python3 -m pip install -r requirements.txt
 ```
 
@@ -34,7 +34,7 @@ python3 -m pip install -r requirements.txt
 Run the script that matches the hardware interface you want to test:
 
 ```bash
-cd samples/xiapi-python/gpio-samples-jetson
+cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
 python3 blinky.py
 python3 simple_input.py
 python3 polling_button.py

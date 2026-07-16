@@ -1,17 +1,48 @@
 #!/usr/bin/env python3
-"""Build all samples."""
+"""Build or check selected Application-Samples entries."""
 
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import os
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
 from common import find_samples_root, folder_name_for, repo_root
+
+
+class SampleType(str, Enum):
+    CMAKE = "cmake"
+    DOTNET = "dotnet"
+    PYTHON = "python"
+
+
+class SampleStatus(str, Enum):
+    OK = "ok"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    MISSING_DEPENDENCY = "missing_dependency"
+
+
+@dataclass(frozen=True)
+class Sample:
+    name: str
+    sample_type: SampleType
+    path: Path
+    entry: Path
+    is_platform_specific: bool
+
+
+@dataclass
+class BuildResult:
+    sample: Sample
+    status: SampleStatus
+    message: str = ""
+    copied_files: int = 0
 
 
 def remove_tree(path: Path) -> None:
@@ -19,9 +50,18 @@ def remove_tree(path: Path) -> None:
         shutil.rmtree(path)
 
 
+def remove_sample_work_dirs(sample_dir: Path) -> None:
+    for name in (".cmake-tmp", ".dotnet-tmp", "__pycache__", "build", "bin", "obj"):
+        remove_tree(sample_dir / name)
+
+
 def run(cmd: list[str]) -> bool:
-    print("+ " + " ".join(str(x) for x in cmd), flush=True)
-    return subprocess.run(cmd).returncode == 0
+    print("+ " + " ".join(str(item) for item in cmd), flush=True)
+    try:
+        return subprocess.run(cmd).returncode == 0
+    except FileNotFoundError as error:
+        print(f"ERROR: command not found: {error.filename}", file=sys.stderr)
+        return False
 
 
 def copy_files(src: Path, dst: Path) -> int:
@@ -36,254 +76,405 @@ def copy_files(src: Path, dst: Path) -> int:
     return count
 
 
-def copy_cmake_outputs(tmp_build_dir: Path, target_build_dir: Path) -> None:
+def copy_cmake_outputs(tmp_build_dir: Path, target_build_dir: Path, configuration: str) -> int:
+    copied = 0
     built_bin_dir = tmp_build_dir / "build"
-    built_release_dir = built_bin_dir / "Release"
+    built_config_dir = built_bin_dir / configuration
 
-    if built_release_dir.is_dir():
-        copy_files(built_release_dir, target_build_dir)
-        return
+    if built_config_dir.is_dir():
+        copied += copy_files(built_config_dir, target_build_dir)
     if built_bin_dir.is_dir():
-        copy_files(built_bin_dir, target_build_dir)
-        return
+        copied += copy_files(built_bin_dir, target_build_dir)
 
-    # Fallback matching the PowerShell script: copy .exe files and extensionless
-    # binaries, avoiding obvious CMake metadata.
+    if copied:
+        return copied
+
     target_build_dir.mkdir(parents=True, exist_ok=True)
     for item in tmp_build_dir.rglob("*"):
         if not item.is_file():
             continue
-        as_text = str(item)
-        if "CMakeFiles" in as_text or item.name == "Makefile":
+        item_text = str(item)
+        if "CMakeFiles" in item_text or item.name in {"Makefile", "cmake_install.cmake"}:
             continue
         if item.suffix == ".exe" or item.suffix == "":
             shutil.copy2(item, target_build_dir / item.name)
-
-
-def copy_root_cmake_output(root_build_dir: Path, folder_name: str, target_build_dir: Path) -> int:
-    """Copy one root-CMake sample executable into its final build folder."""
-    copied = 0
-    for bin_dir in (root_build_dir / "build" / "Release", root_build_dir / "build"):
-        if not bin_dir.is_dir():
-            continue
-        for name in (folder_name, f"{folder_name}.exe"):
-            candidate = bin_dir / name
-            if candidate.is_file():
-                target_build_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(candidate, target_build_dir / candidate.name)
-                copied += 1
+            copied += 1
     return copied
 
 
-def build_cmake_samples(root: Path, samples_root: Path, cmake_tmp_root: Path, final_build_root: Path, failed: list[str]) -> tuple[int, int]:
-    found = ok = 0
-    print(f"Finding C and C++ samples in {samples_root}...")
-    sample_dirs = [
-        cmake_file.parent
-        for cmake_file in sorted(samples_root.rglob("CMakeLists.txt"))
-    ]
-    found = len(sample_dirs)
-
-    if not sample_dirs:
-        return found, ok
-
-    root_cmake = root / "cmake" / "CMakeLists.txt"
-    if root_cmake.is_file():
-        print("==========================================")
-        print("Configuring all C/C++ samples through cmake/CMakeLists.txt")
-        print("==========================================")
-        if not run(["cmake", "-S", str(root / "cmake"), "-B", str(cmake_tmp_root)]):
-            print("WARNING: root CMake configure failed", file=sys.stderr)
-            failed.extend(folder_name_for(samples_root, sample_dir) for sample_dir in sample_dirs)
-            return found, ok
-        if not run(["cmake", "--build", str(cmake_tmp_root), "--config", "Release"]):
-            print("WARNING: root CMake build failed", file=sys.stderr)
-            failed.extend(folder_name_for(samples_root, sample_dir) for sample_dir in sample_dirs)
-            return found, ok
-
-        for sample_dir in sample_dirs:
-            folder_name = folder_name_for(samples_root, sample_dir)
-            copied = copy_root_cmake_output(cmake_tmp_root, folder_name, final_build_root / folder_name)
-            if copied:
-                ok += 1
-            else:
-                print(f"WARNING: no root CMake output found for {folder_name}", file=sys.stderr)
-                failed.append(folder_name)
-        return found, ok
-
-    for sample_dir in sample_dirs:
-        folder_name = folder_name_for(samples_root, sample_dir)
-        print("==========================================")
-        print(f"Building: {folder_name}")
-        print("==========================================")
-
-        tmp_build_dir = cmake_tmp_root / folder_name
-        target_build_dir = final_build_root / folder_name
-
-        if not run(["cmake", "-S", str(sample_dir), "-B", str(tmp_build_dir)]):
-            print(f"WARNING: CMake configure failed for {folder_name}", file=sys.stderr)
-            failed.append(folder_name)
-            continue
-
-        if not run(["cmake", "--build", str(tmp_build_dir), "--config", "Release"]):
-            print(f"WARNING: CMake build failed for {folder_name}", file=sys.stderr)
-            failed.append(folder_name)
-            continue
-
-        copy_cmake_outputs(tmp_build_dir, target_build_dir)
-        ok += 1
-
-    return found, ok
+def is_platform_specific(sample_dir: Path) -> bool:
+    return "cross-platform" not in sample_dir.parts
 
 
-def build_dotnet_samples(samples_root: Path, dotnet_tmp_root: Path, final_build_root: Path, failed: list[str]) -> tuple[int, int]:
-    found = ok = 0
-    print()
-    print(f"Finding C# samples in {samples_root}...")
+def discover_samples(samples_root: Path) -> list[Sample]:
+    samples: dict[tuple[SampleType, Path], Sample] = {}
+
+    for cmake_file in sorted(samples_root.rglob("CMakeLists.txt")):
+        sample_dir = cmake_file.parent
+        sample = Sample(
+            name=folder_name_for(samples_root, sample_dir),
+            sample_type=SampleType.CMAKE,
+            path=sample_dir,
+            entry=cmake_file,
+            is_platform_specific=is_platform_specific(sample_dir),
+        )
+        samples[(sample.sample_type, sample.path)] = sample
+
     for csproj_file in sorted(samples_root.rglob("*.csproj")):
         sample_dir = csproj_file.parent
-        found += 1
-        folder_name = folder_name_for(samples_root, sample_dir)
-        print("==========================================")
-        print(f"Building: {folder_name}")
-        print("==========================================")
-
-        tmp_build_dir = dotnet_tmp_root / folder_name
-        target_build_dir = final_build_root / folder_name
-        obj_dir = tmp_build_dir / "obj"
-
-        if not run([
-            "dotnet", "build", str(csproj_file), "-c", "Release",
-            "--output", str(tmp_build_dir), f"-p:BaseIntermediateOutputPath={obj_dir}{os.sep}",
-        ]):
-            print(f"WARNING: dotnet build failed for {folder_name}", file=sys.stderr)
-            failed.append(folder_name)
-            continue
-
-        copy_files(tmp_build_dir, target_build_dir)
-        ok += 1
-
-    return found, ok
-
-
-def check_python_samples(samples_root: Path, final_build_root: Path, failed: list[str]) -> tuple[int, int]:
-    found = ok = 0
-    print()
-    print(f"Finding Python samples in {samples_root}...")
-    has_ximea = importlib.util.find_spec("ximea") is not None
+        sample = Sample(
+            name=folder_name_for(samples_root, sample_dir),
+            sample_type=SampleType.DOTNET,
+            path=sample_dir,
+            entry=csproj_file,
+            is_platform_specific=is_platform_specific(sample_dir),
+        )
+        samples[(sample.sample_type, sample.path)] = sample
 
     for py_main in sorted(samples_root.rglob("main.py")):
         sample_dir = py_main.parent
-        found += 1
-        folder_name = folder_name_for(samples_root, sample_dir)
-        relative_path = sample_dir.relative_to(samples_root)
-        print("==========================================")
-        print(f"Checking Python sample: {folder_name}")
-        print("==========================================")
+        sample = Sample(
+            name=folder_name_for(samples_root, sample_dir),
+            sample_type=SampleType.PYTHON,
+            path=sample_dir,
+            entry=py_main,
+            is_platform_specific=is_platform_specific(sample_dir),
+        )
+        samples[(sample.sample_type, sample.path)] = sample
 
-        if not has_ximea:
-            print(
-                f"WARNING: ximea module not found for {folder_name} -- "
-                "install the XIMEA SDK to get site-packages/ximea",
-                file=sys.stderr,
-            )
-            failed.append(folder_name)
+    return sorted(samples.values(), key=lambda sample: (sample.sample_type.value, sample.name))
+
+
+def normalize_selector(value: str, root: Path) -> str:
+    raw = value.strip()
+    try:
+        path = Path(raw)
+        if path.exists():
+            return str(path.resolve())
+        candidate = root / raw
+        if candidate.exists():
+            return str(candidate.resolve())
+    except OSError:
+        pass
+    return raw
+
+
+def sample_matches_selector(sample: Sample, root: Path, selector: str) -> bool:
+    sample_relative = sample.path.relative_to(root)
+    return selector in {
+        sample.name,
+        str(sample.path),
+        str(sample.path.resolve()),
+        str(sample_relative),
+        str(Path(root.name) / sample_relative),
+    }
+
+
+def dedupe_samples(samples: list[Sample]) -> list[Sample]:
+    seen: set[tuple[SampleType, Path]] = set()
+    deduped: list[Sample] = []
+    for sample in samples:
+        key = (sample.sample_type, sample.path)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(sample)
+    return deduped
+
+
+def resolve_sample_selectors(samples: list[Sample], root: Path, selectors: list[str]) -> tuple[list[Sample], list[str]]:
+    matched: list[Sample] = []
+    missing: list[str] = []
+
+    for selector in selectors:
+        normalized = normalize_selector(selector, root)
+        selector_matches = [
+            sample for sample in samples
+            if sample_matches_selector(sample, root, normalized)
+        ]
+        if selector_matches:
+            matched.extend(selector_matches)
+        else:
+            missing.append(selector)
+
+    return dedupe_samples(matched), missing
+
+
+def select_samples(samples: list[Sample], root: Path, args: argparse.Namespace) -> tuple[list[Sample], list[str]]:
+    selected = samples
+
+    if args.type:
+        allowed = {SampleType(value) for value in args.type}
+        selected = [sample for sample in selected if sample.sample_type in allowed]
+
+    missing: list[str] = []
+    if args.sample:
+        selected, missing = resolve_sample_selectors(selected, root, args.sample)
+
+    if getattr(args, "skip_cmake", False):
+        selected = [sample for sample in selected if sample.sample_type is not SampleType.CMAKE]
+    if getattr(args, "skip_dotnet", False):
+        selected = [sample for sample in selected if sample.sample_type is not SampleType.DOTNET]
+    if getattr(args, "skip_python", False):
+        selected = [sample for sample in selected if sample.sample_type is not SampleType.PYTHON]
+
+    return selected, missing
+
+
+def parse_selection(text: str, max_index: int) -> set[int]:
+    selected: set[int] = set()
+    for part in text.split(","):
+        part = part.strip()
+        if not part:
             continue
+        if "-" in part:
+            start_text, end_text = part.split("-", 1)
+            start = int(start_text)
+            end = int(end_text)
+            if start > end:
+                start, end = end, start
+            selected.update(range(start, end + 1))
+        else:
+            selected.add(int(part))
 
-        target_build_dir = final_build_root / folder_name
-        target_build_dir.mkdir(parents=True, exist_ok=True)
-
-        # Keep a PowerShell launcher for compatibility with the existing build layout,
-        # and add a cross-platform Python launcher.
-        ps_rel = "\\".join(("..", "..", samples_root.name, *relative_path.parts, "main.py"))
-        (target_build_dir / "run.ps1").write_text(
-            f'& python "$PSScriptRoot\\{ps_rel}" @args\n', encoding="utf-8"
-        )
-
-        py_rel = "/".join(("..", "..", samples_root.name, *relative_path.parts, "main.py"))
-        (target_build_dir / "run.py").write_text(
-            "#!/usr/bin/env python3\n"
-            "from pathlib import Path\n"
-            "import runpy\n"
-            "import sys\n\n"
-            f"target = Path(__file__).resolve().parent / {py_rel!r}\n"
-            "sys.argv = [str(target), *sys.argv[1:]]\n"
-            "runpy.run_path(str(target), run_name='__main__')\n",
-            encoding="utf-8",
-        )
-        ok += 1
-
-    return found, ok
+    invalid = [index for index in selected if index < 1 or index > max_index]
+    if invalid:
+        raise ValueError(f"Selection out of range: {invalid}")
+    return selected
 
 
-def print_summary(total_found: int, total_ok: int, failed: list[str]) -> None:
+def choose_samples_tui(samples: list[Sample], root: Path) -> list[Sample]:
+    if not samples:
+        return []
+
+    print("Available samples:")
+    for index, sample in enumerate(samples, start=1):
+        marker = " platform-specific" if sample.is_platform_specific else ""
+        rel = sample.path.relative_to(root)
+        print(f"  {index:2d}. [{sample.sample_type.value}]{marker} {sample.name} ({rel})")
+
+    while True:
+        choice = input("Select samples: a=all, q=quit, numbers/ranges like 1,3-5: ").strip().lower()
+        if choice in {"q", "quit", "exit"}:
+            return []
+        if choice in {"a", "all", ""}:
+            return samples
+        try:
+            selected_indexes = parse_selection(choice, len(samples))
+        except (ValueError, TypeError) as error:
+            print(f"Invalid selection: {error}")
+            continue
+        return [sample for index, sample in enumerate(samples, start=1) if index in selected_indexes]
+
+
+def build_cmake_sample(sample: Sample, cmake_tmp_root: Path, final_build_root: Path, configuration: str) -> BuildResult:
+    tmp_build_dir = cmake_tmp_root / sample.name
+    target_build_dir = final_build_root / sample.name
+
+    if shutil.which("cmake") is None:
+        return BuildResult(sample, SampleStatus.MISSING_DEPENDENCY, "cmake CLI not found")
+
+    if not run(["cmake", "-S", str(sample.path), "-B", str(tmp_build_dir)]):
+        return BuildResult(sample, SampleStatus.FAILED, "CMake configure failed")
+
+    if not run(["cmake", "--build", str(tmp_build_dir), "--config", configuration]):
+        return BuildResult(sample, SampleStatus.FAILED, "CMake build failed")
+
+    copied = copy_cmake_outputs(tmp_build_dir, target_build_dir, configuration)
+    if copied == 0:
+        return BuildResult(sample, SampleStatus.FAILED, "CMake build succeeded but no binary output was found")
+
+    return BuildResult(sample, SampleStatus.OK, copied_files=copied)
+
+
+def build_dotnet_sample(sample: Sample, dotnet_tmp_root: Path, final_build_root: Path, configuration: str) -> BuildResult:
+    tmp_build_dir = dotnet_tmp_root / sample.name
+    target_build_dir = final_build_root / sample.name
+    obj_dir = tmp_build_dir / "obj"
+
+    if shutil.which("dotnet") is None:
+        return BuildResult(sample, SampleStatus.MISSING_DEPENDENCY, "dotnet CLI not found")
+
+    if not run([
+        "dotnet", "build", str(sample.entry), "-c", configuration,
+        "--output", str(tmp_build_dir), f"-p:BaseIntermediateOutputPath={obj_dir}{os.sep}",
+    ]):
+        return BuildResult(sample, SampleStatus.FAILED, "dotnet build failed")
+
+    copied = copy_files(tmp_build_dir, target_build_dir)
+    if copied == 0:
+        return BuildResult(sample, SampleStatus.FAILED, "dotnet build succeeded but no output files were copied")
+
+    return BuildResult(sample, SampleStatus.OK, copied_files=copied)
+
+
+def check_python_sample(sample: Sample, samples_root: Path, final_build_root: Path) -> BuildResult:
+    del samples_root, final_build_root
+    compile_result = subprocess.run(
+        [sys.executable, "-m", "py_compile", str(sample.entry)],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if compile_result.returncode != 0:
+        print(compile_result.stdout, file=sys.stderr)
+        return BuildResult(sample, SampleStatus.FAILED, "Python syntax check failed")
+
+    return BuildResult(sample, SampleStatus.OK, "Python syntax check passed")
+
+
+def build_sample(
+    sample: Sample,
+    samples_root: Path,
+    cmake_tmp_root: Path,
+    dotnet_tmp_root: Path,
+    final_build_root: Path,
+    configuration: str,
+) -> BuildResult:
+    if sample.sample_type is SampleType.CMAKE:
+        return build_cmake_sample(sample, cmake_tmp_root, final_build_root, configuration)
+    if sample.sample_type is SampleType.DOTNET:
+        return build_dotnet_sample(sample, dotnet_tmp_root, final_build_root, configuration)
+    if sample.sample_type is SampleType.PYTHON:
+        return check_python_sample(sample, samples_root, final_build_root)
+    return BuildResult(sample, SampleStatus.FAILED, f"Unsupported sample type: {sample.sample_type}")
+
+
+def print_available_samples(samples: list[Sample], root: Path) -> None:
+    print("Available samples:")
+    for sample in samples:
+        rel = sample.path.relative_to(root)
+        marker = " platform-specific" if sample.is_platform_specific else ""
+        print(f"  - {sample.name} [{sample.sample_type.value}{marker}] ({rel})")
+
+
+def print_summary(results: list[BuildResult]) -> None:
+    counts = {status: 0 for status in SampleStatus}
+    for result in results:
+        counts[result.status] += 1
+
     print()
     print("==========================================")
     print("  Build summary")
     print("==========================================")
-    print(f"  Samples found  : {total_found}")
-    print(f"  Succeeded      : {total_ok}")
-    print(f"  Failed         : {len(failed)}")
-    if failed:
+    print(f"  Samples selected       : {len(results)}")
+    print(f"  Succeeded              : {counts[SampleStatus.OK]}")
+    print(f"  Missing dependencies   : {counts[SampleStatus.MISSING_DEPENDENCY]}")
+    print(f"  Skipped                : {counts[SampleStatus.SKIPPED]}")
+    print(f"  Failed                 : {counts[SampleStatus.FAILED]}")
+
+    notable = [result for result in results if result.status is not SampleStatus.OK]
+    if notable:
         print()
-        print("  Failed samples:")
-        for name in failed:
-            print(f"    - {name}")
+        print("  Non-ok samples:")
+        for result in notable:
+            message = f": {result.message}" if result.message else ""
+            print(f"    - {result.sample.name} [{result.status.value}]{message}")
     print("==========================================")
     print()
 
 
+def exit_code_for(results: list[BuildResult]) -> int:
+    failing_statuses = {SampleStatus.FAILED, SampleStatus.MISSING_DEPENDENCY}
+    return 1 if any(result.status in failing_statuses for result in results) else 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Build/check Application-Samples entries.")
+    parser.add_argument("--all", action="store_true", help="Build/check all discovered samples. This is the default when no selector is provided.")
+    parser.add_argument("--sample", action="append", default=[], help="Sample name or path to build/check. Can be passed multiple times.")
+    parser.add_argument("--type", choices=[item.value for item in SampleType], action="append", default=[], help="Sample type to build/check. Can be passed multiple times.")
+    parser.add_argument("--skip-platform-specific", action="store_true", help="Skip samples that are not under a cross-platform/ folder.")
+    parser.add_argument("--tui", action="store_true", help="Open an interactive terminal selector.")
+    parser.add_argument("--clean", action="store_true", help="Delete build and temporary directories before running.")
+    parser.add_argument("--keep-temp", action="store_true", help="Do not delete root .cmake-tmp/.dotnet-tmp directories after building.")
+    parser.add_argument("--configuration", default="Release", help="Build configuration for CMake and dotnet samples. Default: Release.")
+    parser.add_argument("--samples-root", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument("--output-root", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument("--skip-cmake", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--skip-dotnet", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--skip-python", action="store_true", help=argparse.SUPPRESS)
+    return parser
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build all Application-Samples entries.")
-    parser.add_argument("--keep-temp", action="store_true", help="Do not delete .cmake-tmp/.dotnet-tmp after building.")
-    parser.add_argument("--skip-cmake", action="store_true", help="Skip C/C++ CMake samples.")
-    parser.add_argument("--skip-dotnet", action="store_true", help="Skip C# .NET samples.")
-    parser.add_argument("--skip-python", action="store_true", help="Skip Python launcher generation.")
+    parser = build_parser()
     args = parser.parse_args()
 
     root = repo_root()
-    samples_root = find_samples_root(root)
-    final_build_root = root / "build"
-    cmake_tmp_root = root / ".cmake-tmp"
-    dotnet_tmp_root = root / ".dotnet-tmp"
+    samples_root = args.samples_root.resolve() if args.samples_root else find_samples_root(root)
+    output_root = args.output_root.resolve() if args.output_root else root
+    final_build_root = output_root / "build"
+    cmake_tmp_root = output_root / ".cmake-tmp"
+    dotnet_tmp_root = output_root / ".dotnet-tmp"
 
-    remove_tree(cmake_tmp_root)
-    remove_tree(dotnet_tmp_root)
-    remove_tree(final_build_root)
+    samples = discover_samples(samples_root)
+    if not samples:
+        print(f"No samples found under {samples_root}", file=sys.stderr)
+        return 1
 
-    total_found = total_ok = 0
-    failed: list[str] = []
+    selected_samples, missing_selectors = select_samples(samples, samples_root, args)
+    if missing_selectors:
+        for selector in missing_selectors:
+            print(f"Unknown sample selector: {selector}", file=sys.stderr)
+        print_available_samples(samples, samples_root)
+        return 1
 
+    if args.tui:
+        selected_samples = choose_samples_tui(selected_samples, samples_root)
+        if not selected_samples:
+            print("No samples selected.")
+            return 0
+
+    if not selected_samples:
+        print("No samples selected.", file=sys.stderr)
+        print_available_samples(samples, samples_root)
+        return 1
+
+    if args.clean:
+        remove_tree(cmake_tmp_root)
+        remove_tree(dotnet_tmp_root)
+        remove_tree(final_build_root)
+
+    results: list[BuildResult] = []
     try:
-        if not args.skip_cmake:
-            found, ok = build_cmake_samples(root, samples_root, cmake_tmp_root, final_build_root, failed)
-            total_found += found
-            total_ok += ok
+        for sample in selected_samples:
             print("==========================================")
-            print("Cleaning up CMake temporary files...")
-            if not args.keep_temp:
-                remove_tree(cmake_tmp_root)
-
-        if not args.skip_dotnet:
-            found, ok = build_dotnet_samples(samples_root, dotnet_tmp_root, final_build_root, failed)
-            total_found += found
-            total_ok += ok
+            print(f"{sample.sample_type.value}: {sample.name}")
             print("==========================================")
-            print("Cleaning up dotnet temporary files...")
-            if not args.keep_temp:
-                remove_tree(dotnet_tmp_root)
 
-        if not args.skip_python:
-            found, ok = check_python_samples(samples_root, final_build_root, failed)
-            total_found += found
-            total_ok += ok
+            if args.skip_platform_specific and sample.is_platform_specific:
+                results.append(BuildResult(
+                    sample,
+                    SampleStatus.SKIPPED,
+                    "platform-specific sample skipped by --skip-platform-specific",
+                ))
+                remove_sample_work_dirs(sample.path)
+                continue
+
+            remove_tree(final_build_root / sample.name)
+            result = build_sample(
+                sample,
+                samples_root,
+                cmake_tmp_root,
+                dotnet_tmp_root,
+                final_build_root,
+                args.configuration,
+            )
+            remove_sample_work_dirs(sample.path)
+            results.append(result)
+            status_line = result.status.value
+            if result.message:
+                status_line += f": {result.message}"
+            if result.copied_files:
+                status_line += f" ({result.copied_files} file(s))"
+            print(status_line)
     finally:
         if not args.keep_temp:
             remove_tree(cmake_tmp_root)
             remove_tree(dotnet_tmp_root)
 
-    print_summary(total_found, total_ok, failed)
-    return 0 if not failed else 1
+    print_summary(results)
+    return exit_code_for(results)
 
 
 if __name__ == "__main__":
