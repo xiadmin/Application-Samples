@@ -2,6 +2,11 @@
 
 GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 
+| Item | Value |
+|------|-------|
+| Category | Trigger / GPIO / I/O / strobe |
+| API type | None |
+
 ---
 
 ## Prerequisites

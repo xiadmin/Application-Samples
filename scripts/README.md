@@ -2,6 +2,8 @@
 
 This directory contains repository maintenance helpers for the application samples.
 
+User-facing command-line scripts are documented below. `common.py` is a shared helper module, and files under `scripts/templates/` are templates consumed by these scripts rather than standalone maintenance commands.
+
 ## `build.py`
 
 `build.py` is the canonical build/check entry point for the repository. It discovers samples under the lowercase `samples/` tree and runs the appropriate local build or check for each selected sample.
@@ -13,6 +15,20 @@ python3 scripts/build.py
 ```
 
 By default, this selects every discovered sample.
+
+### Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `-h`, `--help` | - | Show command help and exit. |
+| `--all` | - | Build/check all discovered samples. This is also the default when no selector is provided. |
+| `--sample` | sample name or path | Build/check one sample selected by generated sample name, repository-relative path, `samples/...` path, or absolute path. Can be passed multiple times. |
+| `--type` | `cmake`, `dotnet`, or `python` | Restrict the run to one sample type. Can be passed multiple times. |
+| `--skip-platform-specific` | - | Skip samples that are not under a `cross-platform/` folder. |
+| `--tui` | - | Open the interactive terminal selector after applying type/sample filters. |
+| `--clean` | - | Delete root `build/`, `.cmake-tmp/`, and `.dotnet-tmp/` before running. |
+| `--keep-temp` | - | Keep root `.cmake-tmp/` and `.dotnet-tmp/` directories after the run. |
+| `--configuration` | configuration name | Build configuration for CMake and .NET samples. Default: `Release`. |
 
 ### Discovered sample types
 
@@ -226,6 +242,182 @@ python3 scripts/build.py --type dotnet
 ```
 
 If those dependencies are not installed, the script reports `missing_dependency` and exits non-zero.
+
+## `new-sample.py`
+
+`new-sample.py` creates a new sample scaffold under the lowercase `samples/` tree.
+
+### Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `-h`, `--help` | - | Show command help and exit. |
+| `--path` | relative path | New sample path relative to `samples/`, for example `xiapi/cross-platform/capture-50-images`. This is the preferred non-interactive path selector. |
+| `--api` | API folder | API folder used by the legacy split form, for example `xiapi`, `xiapiplus`, `xiapi.net-c#`, or `xiapi-python`. |
+| `--group` | `cross-platform` or `hardware-specific` | Sample group used by the legacy split form for grouped APIs. Required with `--yes` when the selected API requires a group and `--path` is not used. |
+| `--sample` | folder name | Sample leaf folder used by the legacy split form. |
+| `--lang` | `c`, `cpp`, `csharp`, or `python` | Language/template to scaffold. Required with `--yes` when the path does not imply a known language. |
+| `--use-csv` | - | Populate generated README metadata from the samples CSV when `ximea-samples.csv` exists and a matching row is found. Without this flag, README metadata comes from template placeholders. |
+| `--yes` | - | Create without the final confirmation prompt when all required values are supplied. |
+
+Path and name values must use lowercase kebab-case for new folder segments. Existing path segments may be reused when they are directories. The script rejects empty path segments, `.` / `..`, and Windows-invalid path characters.
+
+Run the interactive prompt from the repository root:
+
+```bash
+python3 scripts/new-sample.py
+```
+
+Create a scaffold non-interactively by passing the full path relative to `samples/`:
+
+```bash
+python3 scripts/new-sample.py --path xiapi/cross-platform/capture-50-images --lang c --yes
+```
+
+The path form is preferred because it matches the repository layout directly. The script also accepts the legacy split fields when needed:
+
+```bash
+python3 scripts/new-sample.py --api xiapi --group cross-platform --sample capture-50-images --lang c --yes
+```
+
+Supported language templates are:
+
+- `c`
+- `cpp`
+- `csharp`
+- `python`
+
+Scaffold source files and README content are generated from files under `scripts/templates/`. By default, the generated README uses template placeholder metadata. Pass `--use-csv` to populate README metadata from the samples CSV when a matching row exists.
+
+```bash
+python3 scripts/new-sample.py --path xiapi/cross-platform/capture-50-images --lang c --yes --use-csv
+```
+
+## `generate-readmes.py`
+
+`generate-readmes.py` regenerates sample `README.md` files from `scripts/templates/sample-readme.md`. By default it writes template placeholder metadata and does not read the samples CSV. Pass `--use-csv` to populate metadata from the CSV.
+
+### Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `-h`, `--help` | - | Show command help and exit. |
+| `sample_dirs` | one or more sample directories | Optional positional list of sample directories to process. Defaults to all discovered sample directories. |
+| `--use-csv` | - | Populate README template metadata from the samples CSV. Without this flag, CSV is not read. |
+| `--csv` | CSV path | Path to the samples CSV used only with `--use-csv`. Default: `ximea-samples.csv` at the repository root. |
+| `--samples` | directory path | Samples root directory. Defaults to the repository `samples/` directory. |
+| `--template` | Markdown template path | README template path. Default: `scripts/templates/sample-readme.md`. |
+| `--write` | - | Write changed `README.md` files. Without this flag, the script is a dry run. |
+| `--check` | - | Return exit code `1` if any README would change. Intended for CI/check mode. |
+| `--sample-dir` | sample directory | Legacy repeated flag for selecting sample directories. Can be passed multiple times and can be combined with positional `sample_dirs`. |
+
+Dry-run all discovered sample directories:
+
+```bash
+python3 scripts/generate-readmes.py
+```
+
+Write all README changes:
+
+```bash
+python3 scripts/generate-readmes.py --write
+```
+
+Process one or more sample directories by passing folder paths as command parameters. In `--help`, these are shown as `[sample_dirs ...]`:
+
+```bash
+python3 scripts/generate-readmes.py samples/xiapi/cross-platform/capture-10-images
+python3 scripts/generate-readmes.py samples/xiapi/cross-platform/capture-10-images samples/xiapi-python/cross-platform/capture-10-images
+```
+
+The legacy repeated flag is still supported:
+
+```bash
+python3 scripts/generate-readmes.py --sample-dir samples/xiapi/cross-platform/capture-10-images
+```
+
+Use check mode in CI or before committing generated README changes:
+
+```bash
+python3 scripts/generate-readmes.py --check
+```
+
+Populate README metadata from the samples CSV only when explicitly requested:
+
+```bash
+python3 scripts/generate-readmes.py --use-csv --csv samples.csv --write
+```
+
+Use a different Markdown template with `--template`:
+
+```bash
+python3 scripts/generate-readmes.py --template scripts/templates/sample-readme.md
+```
+
+The script skips missing directories, directories without a supported sample source/project file, and directories outside `samples/`. In `--use-csv` mode, it also skips directories that cannot be matched to a CSV row.
+
+## `generate-intro-comments.py`
+
+`generate-intro-comments.py` adds generated intro comments/docstrings to supported sample source files. By default it writes template placeholder metadata and does not read the samples CSV. Pass `--use-csv` to populate metadata from the CSV.
+
+### Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `-h`, `--help` | - | Show command help and exit. |
+| `files` | one or more source files | Optional positional list of sample source files to process. Defaults to all supported sample entry files. |
+| `--use-csv` | - | Populate intro metadata from the samples CSV. Without this flag, CSV is not read. |
+| `--csv` | CSV path | Path to the samples CSV used only with `--use-csv`. Default: `ximea-samples.csv` at the repository root. |
+| `--samples` | directory path | Samples root directory. Defaults to the repository `samples/` directory. |
+| `--write` | - | Write missing intro comments/docstrings. Without this flag, the script is a dry run. |
+| `--check` | - | Return exit code `1` if any file would change. Intended for CI/check mode. |
+| `--file` | source file | Legacy repeated flag for selecting source files. Can be passed multiple times and can be combined with positional `files`. |
+
+Dry-run all supported sample source files:
+
+```bash
+python3 scripts/generate-intro-comments.py
+```
+
+Write missing intro comments:
+
+```bash
+python3 scripts/generate-intro-comments.py --write
+```
+
+Process one or more source files by passing file paths as command parameters. In `--help`, these are shown as `[files ...]`:
+
+```bash
+python3 scripts/generate-intro-comments.py samples/xiapi/cross-platform/capture-10-images/main.c
+python3 scripts/generate-intro-comments.py samples/xiapi/cross-platform/capture-10-images/main.c samples/xiapiplus/cross-platform/capture-10-images/main.cpp
+```
+
+The legacy repeated flag is still supported:
+
+```bash
+python3 scripts/generate-intro-comments.py --file samples/xiapi/cross-platform/capture-10-images/main.c
+```
+
+Use check mode in CI or before committing generated source-header changes:
+
+```bash
+python3 scripts/generate-intro-comments.py --check
+```
+
+Populate intro metadata from the samples CSV only when explicitly requested:
+
+```bash
+python3 scripts/generate-intro-comments.py --use-csv --csv samples.csv --write
+```
+
+Supported source entry files are:
+
+- `main.c` (`/* ... */` intro block)
+- `main.cpp` (`// ...` intro block)
+- `Program.cs` (`// ...` intro block)
+- `main.py` (module docstring, preserving a shebang or coding line)
+
+Existing intro comments/docstrings are left unchanged. Missing files, unsupported filenames, and files outside `samples/` are skipped. In `--use-csv` mode, files that cannot be matched to a CSV row are also skipped.
 
 ### Troubleshooting
 

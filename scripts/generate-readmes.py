@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate sample README.md files from a Markdown template and samples CSV."""
+"""Generate sample README.md files from a Markdown template."""
 
 from __future__ import annotations
 
@@ -96,6 +96,39 @@ def read_samples(csv_path: Path) -> list[SampleInfo]:
         )
         for data in read_sample_rows(csv_path)
     ]
+
+
+def api_type_for_path(sample_dir: Path, samples_root: Path, fallback: str) -> str:
+    rel_parts = sample_dir.relative_to(samples_root).parts
+    api_folder = rel_parts[0] if rel_parts else ""
+    api_types = {
+        "xiapi": "xiAPI",
+        "xiapiplus": "xiAPIplus",
+        "xiapi.net-c#": "xiAPI.NET",
+        "xiapi-python": "xiAPI Python",
+    }
+    return api_types.get(api_folder, fallback)
+
+
+def default_sample_info(sample_dir: Path, samples_root: Path, language: str) -> SampleInfo:
+    return SampleInfo(
+        name=sample_dir.name,
+        author="",
+        category="",
+        description="",
+        duplicate_group_id="",
+        os_platform="",
+        hardware_platform="",
+        api_type=api_type_for_path(sample_dir, samples_root, ""),
+        language=language,
+        libraries="",
+        year="",
+        location="",
+        path="",
+        copyright="",
+        note="",
+        done="",
+    )
 
 
 def language_for_dir(sample_dir: Path) -> str | None:
@@ -382,13 +415,15 @@ def render_readme(template: str, samples_root: Path, sample_dir: Path, info: Sam
 
 def parse_args() -> argparse.Namespace:
     root = repo_root()
-    parser = argparse.ArgumentParser(description="Generate sample README.md files from a template and samples CSV.")
-    parser.add_argument("--csv", type=Path, default=root / CSV_NAME, help="Path to samples CSV file.")
+    parser = argparse.ArgumentParser(description="Generate sample README.md files from a template.")
+    parser.add_argument("--use-csv", action="store_true", help="Populate template metadata from the samples CSV.")
+    parser.add_argument("--csv", type=Path, default=root / CSV_NAME, help="Path to samples CSV file used with --use-csv.")
     parser.add_argument("--samples", type=Path, default=None, help="Path to samples/ directory.")
     parser.add_argument("--template", type=Path, default=root / DEFAULT_TEMPLATE, help="Markdown template path.")
     parser.add_argument("--write", action="store_true", help="Write README.md files. Default is dry-run.")
     parser.add_argument("--check", action="store_true", help="Fail if any README.md would change.")
     parser.add_argument("--sample-dir", action="append", type=Path, help="Only process this sample directory; can be repeated.")
+    parser.add_argument("sample_dirs", nargs="*", type=Path, help="Sample directories to process. Defaults to all sample directories.")
     return parser.parse_args()
 
 
@@ -408,12 +443,13 @@ def main() -> int:
     samples_root = args.samples.resolve() if args.samples else find_samples_root(root).resolve()
     template_path = args.template.resolve()
 
-    samples = read_samples(csv_path)
+    samples = read_samples(csv_path) if args.use_csv else []
     template = template_path.read_text(encoding="utf-8")
 
+    requested_sample_dirs = [*(args.sample_dir or []), *args.sample_dirs]
     sample_dirs = (
-        [resolve_sample_dir(path, root, samples_root) for path in args.sample_dir]
-        if args.sample_dir
+        [resolve_sample_dir(path, root, samples_root) for path in requested_sample_dirs]
+        if requested_sample_dirs
         else iter_sample_dirs(samples_root)
     )
     changed = 0
@@ -430,7 +466,11 @@ def main() -> int:
             skipped += 1
             continue
         try:
-            info = find_sample_info(sample_dir, samples_root, samples, language)
+            info = (
+                find_sample_info(sample_dir, samples_root, samples, language)
+                if args.use_csv
+                else default_sample_info(sample_dir, samples_root, language)
+            )
         except ValueError as exc:
             print(f"SKIP outside samples root: {sample_dir} ({exc})")
             skipped += 1

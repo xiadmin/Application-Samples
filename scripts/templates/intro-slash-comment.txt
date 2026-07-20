@@ -1,1 +1,8 @@
-// {description}
+{sample_name}
+{category}
+{os_platform}
+{hardware_platform}
+{api_type}
+{short_description}
+//
+{copyright}

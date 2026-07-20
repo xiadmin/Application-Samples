@@ -1,34 +1,24 @@
-/*
-    This is a sample application for the Jetson kit (XEC-NX-3P-X2G3-ORIN-16GB-KIT) . It demostrates basic image processing on GPU, circumventing xiAPI processing.
-    As xiAPI only runs on CPU, and as of 2025 does not have SIMD acceleration on ARM platfroms, this provides a significant speedup.
-    This also serves as a basic template for further development of your computer vision application on Nvidia Jetson.
+// Sample name: Jetson-demosaic-sample
+// Category: Color / Bayer / color correction
+// OS platform: Linux
+// Hardware platform: Nvidia Jetson
+// API type: xiAPI
+// Short description: Jetson sample for image depacking, demosaicing and
+// display.
+//
+// Copyright (c) 2026 XIMEA s.r.o.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
 
-    Sample name:
-        jetson_sample
-
-    Description:
-        Open camera, set arbitrary camera parameters, in a loop capture image into CUDA unified memory, execute image depacking
-        with custom CUDA kernel, do debayering with vision library of your choosing (OpenCV with CUDA or Nvidia performance primitives),
-        do image normalization and save to disk with OpenCV and render onto OpenCV window with OpenGL support.
-        Print statistics of image processing operations.
-
-    Workflow:
-        1. Open camera
-        2. Set camera parameters
-        3. Allocate CUDA unified memory buffers
-        4. Set variables for demosaicing
-        5. Create rendering window with OpenGL backend
-        6. Start acquisition
-        7. Receive image from the camera
-        8. Depack image with CUDA kernel
-        9. Demosaic image with selected vision library
-        10.Normalize image
-        11.Save image to .tif
-        12.Render image
-        13.Print statistics
-        14.Cleanup and close program
-
-*/
 #include <chrono>
 #include <cstdio>
 #include <cstring>

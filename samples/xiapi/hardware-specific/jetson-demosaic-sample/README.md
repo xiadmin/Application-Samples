@@ -2,6 +2,11 @@
 
 GPU demosaicing sample for Nvidia Jetson that bypasses xiAPI CPU processing for color cameras, renders frames, saves TIFF output, and prints processing timing statistics.
 
+| Item | Value |
+|------|-------|
+| Category | Color / Bayer / color correction |
+| API type | xiAPI |
+
 ---
 
 ## Prerequisites

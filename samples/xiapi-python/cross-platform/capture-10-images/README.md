@@ -2,6 +2,11 @@
 
 Captures 10 frames from the first available XIMEA camera and prints per-frame metadata.
 
+| Item | Value |
+|------|-------|
+| Category | Basic acquisition / image capture |
+| API type | xiAPI Python |
+
 ---
 
 ## Prerequisites
