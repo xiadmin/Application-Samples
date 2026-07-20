@@ -22,11 +22,11 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 
 ## Build
 
-### Using scripts/build.py (builds all samples)
+### Using scripts/build.py
 
 ```powershell
 cd <repo-root>
-python scripts/build.py
+python scripts/build.py --all
 ```
 
 Binary and supporting files land in:

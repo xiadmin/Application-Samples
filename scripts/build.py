@@ -380,11 +380,10 @@ def exit_code_for(results: list[BuildResult]) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Build/check Application-Samples entries.")
-    parser.add_argument("--all", action="store_true", help="Build/check all discovered samples. This is the default when no selector is provided.")
+    parser.add_argument("--all", action="store_true", help="Build/check all discovered samples without opening the interactive selector.")
     parser.add_argument("--sample", action="append", default=[], help="Sample name or path to build/check. Can be passed multiple times.")
     parser.add_argument("--type", choices=[item.value for item in SampleType], action="append", default=[], help="Sample type to build/check. Can be passed multiple times.")
     parser.add_argument("--skip-platform-specific", action="store_true", help="Skip samples that are not under a cross-platform/ folder.")
-    parser.add_argument("--tui", action="store_true", help="Open an interactive terminal selector.")
     parser.add_argument("--clean", action="store_true", help="Delete build and temporary directories before running.")
     parser.add_argument("--keep-temp", action="store_true", help="Do not delete root .cmake-tmp/.dotnet-tmp directories after building.")
     parser.add_argument("--configuration", default="Release", help="Build configuration for CMake and dotnet samples. Default: Release.")
@@ -419,7 +418,7 @@ def main() -> int:
         print_available_samples(samples, samples_root)
         return 1
 
-    if args.tui:
+    if not (args.all or args.sample):
         selected_samples = choose_samples_tui(selected_samples, samples_root)
         if not selected_samples:
             print("No samples selected.")
