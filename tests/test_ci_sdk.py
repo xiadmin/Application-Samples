@@ -86,8 +86,13 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             root = Path(tmp_text)
             for relative in (
                 "include/xiApi.h",
+                "include/wintypedefs.h",
+                "include/m3Identify.h",
+                "include/m3api/wintypedefs.h",
+                "include/m3api/m3Identify.h",
                 "include/xiApiPlus.h",
                 "include/xiAPIplus_core.cpp",
+                "os_common_header.h",
                 "lib/libm3api.so.2",
             ):
                 self.touch(root, relative)
@@ -111,6 +116,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
 
         self.assertIn("CMAKE_CXX_COMPILER_LOADED", text)
         self.assertIn("add_library(XIMEA_xiAPIplus STATIC", text)
+        self.assertIn("target_compile_definitions(XIMEA_xiAPIplus PRIVATE UNIX)", text)
 
     def test_macos_verification_rejects_wrong_framework_architecture(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
@@ -120,8 +126,11 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             for path in (
                 framework_root / "m3api.framework" / "Headers" / "xiApi.h",
                 framework_root / "m3api.framework" / "m3api",
+                sdk_root / "include" / "wintypedefs.h",
+                sdk_root / "include" / "m3api" / "wintypedefs.h",
                 sdk_root / "include" / "xiApiPlus.h",
                 sdk_root / "include" / "xiAPIplus_core.cpp",
+                sdk_root / "os_common_header.h",
             ):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("fixture", encoding="utf-8")
@@ -147,8 +156,11 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             for path in (
                 framework_root / "m3api.framework" / "Headers" / "xiApi.h",
                 framework_root / "m3api.framework" / "m3api",
+                sdk_root / "include" / "wintypedefs.h",
+                sdk_root / "include" / "m3api" / "wintypedefs.h",
                 sdk_root / "include" / "xiApiPlus.h",
                 sdk_root / "include" / "xiAPIplus_core.cpp",
+                sdk_root / "os_common_header.h",
             ):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("fixture", encoding="utf-8")
@@ -165,6 +177,8 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         ):
             text = (REPO_ROOT / relative).read_text(encoding="utf-8")
             self.assertIn("4.32.00", text)
+            if relative.endswith(("linux.sh", "macos.sh")):
+                self.assertIn('include"/*.h', text)
             self.assertNotIn("latest", text.lower())
             self.assertNotIn("beta", text.lower())
 

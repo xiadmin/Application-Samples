@@ -70,8 +70,13 @@ def verify_cmake_probe(repo_root: Path, sdk_root: Path, cmake: str) -> None:
 
 def verify_linux(sdk_root: Path, repo_root: Path, python: str, cmake: str) -> None:
     require_file(sdk_root / "include" / "xiApi.h", "xiAPI header")
+    require_file(sdk_root / "include" / "wintypedefs.h", "xiAPI typedef compatibility header")
+    require_file(sdk_root / "include" / "m3Identify.h", "xiAPI identification header")
+    require_file(sdk_root / "include" / "m3api" / "wintypedefs.h", "m3api typedef compatibility header")
+    require_file(sdk_root / "include" / "m3api" / "m3Identify.h", "m3api identification header")
     require_file(sdk_root / "include" / "xiApiPlus.h", "xiAPIplus header")
     require_file(sdk_root / "include" / "xiAPIplus_core.cpp", "xiAPIplus portable source")
+    require_file(sdk_root / "os_common_header.h", "xiAPIplus OS compatibility header")
     require_file(sdk_root / "lib" / "libm3api.so.2", "xiAPI shared library")
     require_file(Path("/usr/lib/libm3api.so.2"), "system xiAPI shared library")
     verify_cmake_probe(repo_root, sdk_root, cmake)
@@ -94,8 +99,11 @@ def verify_macos(sdk_root: Path, framework_root: Path, repo_root: Path, python: 
     binary = framework / "m3api"
     require_file(framework / "Headers" / "xiApi.h", "framework xiAPI header")
     require_file(binary, "m3api framework binary")
+    require_file(sdk_root / "include" / "wintypedefs.h", "xiAPI typedef compatibility header")
+    require_file(sdk_root / "include" / "m3api" / "wintypedefs.h", "m3api typedef compatibility header")
     require_file(sdk_root / "include" / "xiApiPlus.h", "normalized xiAPIplus header")
     require_file(sdk_root / "include" / "xiAPIplus_core.cpp", "normalized xiAPIplus source")
+    require_file(sdk_root / "os_common_header.h", "xiAPIplus OS compatibility header")
     run_checked(["codesign", "--verify", "--deep", "--strict", str(framework)])
     lipo = run_checked(["lipo", "-archs", str(binary)])
     arches = set(lipo.stdout.split())

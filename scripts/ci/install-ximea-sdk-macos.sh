@@ -52,6 +52,8 @@ tar -xzf "$support_archive" -C "$support_dir"
 portable_root="$support_dir/package"
 test "$(tr -d '\r\n' < "$portable_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_32_00"
 
+cp "$portable_root/include"/*.h "$sdk_root/include/"
+cp "$portable_root/include"/*.h "$sdk_root/include/m3api/"
 cp /Library/Frameworks/m3api.framework/Headers/xiApi.h "$sdk_root/include/xiApi.h"
 cp /Library/Frameworks/m3api.framework/Headers/xiApi.h "$sdk_root/include/m3api/xiApi.h"
 cp -R "$portable_root/samples/_libs/xiAPIplus" "$sdk_root/xiAPIplus"

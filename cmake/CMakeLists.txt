@@ -144,6 +144,9 @@ function(ximea_find_sdk)
                     "${_ximea_libs_dir}"
                     "${_ximea_libs_dir}/libtiff"
                 )
+                if(NOT WIN32)
+                    target_compile_definitions(XIMEA_xiAPIplus PRIVATE UNIX)
+                endif()
                 target_link_libraries(XIMEA_xiAPIplus PUBLIC XIMEA::xiAPI)
 
                 if(TIFF_FOUND)

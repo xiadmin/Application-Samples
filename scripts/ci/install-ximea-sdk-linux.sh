@@ -45,8 +45,8 @@ test -n "$libtiff6"
 sudo ln -sfn "$libtiff6" /usr/lib/libtiff.so.5
 sudo ldconfig
 
-cp "$package_root/include/xiApi.h" "$sdk_root/include/xiApi.h"
-cp "$package_root/include/xiApi.h" "$sdk_root/include/m3api/xiApi.h"
+cp "$package_root/include"/*.h "$sdk_root/include/"
+cp "$package_root/include"/*.h "$sdk_root/include/m3api/"
 cp -R "$package_root/samples/_libs/xiAPIplus" "$sdk_root/xiAPIplus"
 cp "$package_root/samples/_libs/xiAPIplus/xiapiplus.h" "$sdk_root/include/xiApiPlus.h"
 cp "$package_root/samples/_libs/xiAPIplus/xiAPIplus_core.cpp" "$sdk_root/include/xiAPIplus_core.cpp"
