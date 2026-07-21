@@ -1,6 +1,6 @@
 This directory contains repository maintenance helpers for the application samples.
 
-- User-facing command-line scripts are documented below. 
+- User-facing command-line scripts are documented below.
 - `common.py` is a shared helper module.
 - Files under `scripts/templates/` are templates consumed by these scripts.
 
@@ -87,7 +87,7 @@ Path and name values must use lowercase kebab-case for new folder segments. Exis
 Run the interactive prompt from the repository root:
 
 ```bash
-python3 scripts/new-sample.py
+python scripts/new-sample.py
 ```
 
 Supported language templates are:
@@ -120,7 +120,7 @@ Scaffold source files and README content are generated from files under `scripts
 Dry-run all discovered sample directories:
 
 ```bash
-python3 scripts/generate-readmes.py
+python scripts/generate-readmes.py
 ```
 
 ## `generate-intro-comments.py`
@@ -143,7 +143,7 @@ python3 scripts/generate-readmes.py
 Dry-run all supported sample source files:
 
 ```bash
-python3 scripts/generate-intro-comments.py
+python scripts/generate-intro-comments.py
 ```
 
 Supported source entry files are:

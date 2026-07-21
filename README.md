@@ -47,13 +47,13 @@ Each sample folder contains everything needed to build and run it, along with a 
 Use the canonical build helper:
 
 ```bash
-python3 scripts/build.py
+python scripts/build.py
 ```
 
 This opens the interactive selector by default. For a non-interactive full-repository build/check, run:
 
 ```bash
-python3 scripts/build.py --all
+python scripts/build.py --all
 ```
 
 Alternatively, build each sample separately by following the instructions in its own README.md file.
