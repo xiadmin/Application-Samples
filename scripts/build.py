@@ -37,12 +37,38 @@ class Sample:
     is_platform_specific: bool
 
 
+class RuntimeStatus(str, Enum):
+    PASSED = "passed"
+    NO_CAMERA_OR_FAILED = "no_camera_or_failed"
+    TIMED_OUT = "timed_out"
+    COULD_NOT_START = "could_not_start"
+
+
+@dataclass(frozen=True)
+class RuntimeCommand:
+    sample: Sample
+    label: str
+    argv: list[str]
+    cwd: Path
+
+
 @dataclass
 class BuildResult:
     sample: Sample
     status: SampleStatus
     message: str = ""
     copied_files: int = 0
+    runtime_commands: list[RuntimeCommand] | None = None
+
+
+@dataclass
+class RuntimeResult:
+    command: RuntimeCommand
+    status: RuntimeStatus
+    exit_code: int | None = None
+    stdout: str = ""
+    stderr: str = ""
+    message: str = ""
 
 
 def remove_tree(path: Path) -> None:
@@ -62,6 +88,86 @@ def run(cmd: list[str]) -> bool:
     except FileNotFoundError as error:
         print(f"ERROR: command not found: {error.filename}", file=sys.stderr)
         return False
+
+
+def find_runnable_files(directory: Path) -> list[Path]:
+    if not directory.is_dir():
+        return []
+    runnable: list[Path] = []
+    for item in sorted(directory.iterdir()):
+        if not item.is_file():
+            continue
+        if item.suffix.lower() == ".exe" or os.access(item, os.X_OK):
+            runnable.append(item)
+    return runnable
+
+
+def find_dotnet_command(sample: Sample, target_build_dir: Path) -> RuntimeCommand | None:
+    exe_files = sorted(target_build_dir.glob("*.exe"))
+    if exe_files:
+        return RuntimeCommand(sample, exe_files[0].name, [str(exe_files[0])], target_build_dir)
+
+    dll_files = sorted(
+        path for path in target_build_dir.glob("*.dll")
+        if not path.name.endswith(".resources.dll") and path.name != "xiApi.NETX64.dll"
+    )
+    if dll_files:
+        return RuntimeCommand(sample, dll_files[0].name, ["dotnet", str(dll_files[0])], target_build_dir)
+    return None
+
+
+def runtime_commands_for_build_result(result: BuildResult) -> list[RuntimeCommand]:
+    return result.runtime_commands or []
+
+
+def timeout_output_to_text(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode(errors="replace")
+    return value
+
+
+def execute_runtime_command(command: RuntimeCommand, timeout_seconds: int) -> RuntimeResult:
+    print("+ " + " ".join(str(item) for item in command.argv), flush=True)
+    try:
+        completed = subprocess.run(
+            command.argv,
+            cwd=command.cwd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout_seconds,
+        )
+    except FileNotFoundError as error:
+        return RuntimeResult(
+            command,
+            RuntimeStatus.COULD_NOT_START,
+            message=f"command not found: {error.filename}",
+        )
+    except OSError as error:
+        return RuntimeResult(command, RuntimeStatus.COULD_NOT_START, message=str(error))
+    except subprocess.TimeoutExpired as error:
+        return RuntimeResult(
+            command,
+            RuntimeStatus.TIMED_OUT,
+            stdout=timeout_output_to_text(error.stdout),
+            stderr=timeout_output_to_text(error.stderr),
+            message=f"timed out after {timeout_seconds} seconds",
+        )
+
+    status = RuntimeStatus.PASSED if completed.returncode == 0 else RuntimeStatus.NO_CAMERA_OR_FAILED
+    return RuntimeResult(
+        command,
+        status,
+        exit_code=completed.returncode,
+        stdout=completed.stdout,
+        stderr=completed.stderr,
+    )
+
+
+def run_runtime_commands(commands: list[RuntimeCommand], timeout_seconds: int) -> list[RuntimeResult]:
+    return [execute_runtime_command(command, timeout_seconds) for command in commands]
 
 
 def copy_files(src: Path, dst: Path) -> int:
@@ -283,7 +389,11 @@ def build_cmake_sample(sample: Sample, cmake_tmp_root: Path, final_build_root: P
     if copied == 0:
         return BuildResult(sample, SampleStatus.FAILED, "CMake build succeeded but no binary output was found")
 
-    return BuildResult(sample, SampleStatus.OK, copied_files=copied)
+    runtime_commands = [
+        RuntimeCommand(sample, path.name, [str(path)], target_build_dir)
+        for path in find_runnable_files(target_build_dir)
+    ]
+    return BuildResult(sample, SampleStatus.OK, copied_files=copied, runtime_commands=runtime_commands)
 
 
 def build_dotnet_sample(sample: Sample, dotnet_tmp_root: Path, final_build_root: Path, configuration: str) -> BuildResult:
@@ -304,7 +414,9 @@ def build_dotnet_sample(sample: Sample, dotnet_tmp_root: Path, final_build_root:
     if copied == 0:
         return BuildResult(sample, SampleStatus.FAILED, "dotnet build succeeded but no output files were copied")
 
-    return BuildResult(sample, SampleStatus.OK, copied_files=copied)
+    command = find_dotnet_command(sample, target_build_dir)
+    runtime_commands = [command] if command else []
+    return BuildResult(sample, SampleStatus.OK, copied_files=copied, runtime_commands=runtime_commands)
 
 
 def check_python_sample(sample: Sample, samples_root: Path, final_build_root: Path) -> BuildResult:
@@ -319,7 +431,18 @@ def check_python_sample(sample: Sample, samples_root: Path, final_build_root: Pa
         print(compile_result.stdout, file=sys.stderr)
         return BuildResult(sample, SampleStatus.FAILED, "Python syntax check failed")
 
-    return BuildResult(sample, SampleStatus.OK, "Python syntax check passed")
+    runtime_command = RuntimeCommand(
+        sample,
+        sample.entry.name,
+        [sys.executable, str(sample.entry)],
+        sample.path,
+    )
+    return BuildResult(
+        sample,
+        SampleStatus.OK,
+        "Python syntax check passed",
+        runtime_commands=[runtime_command],
+    )
 
 
 def build_sample(
@@ -373,6 +496,43 @@ def print_summary(results: list[BuildResult]) -> None:
     print()
 
 
+def print_runtime_summary(results: list[RuntimeResult]) -> None:
+    counts = {status: 0 for status in RuntimeStatus}
+    for result in results:
+        counts[result.status] += 1
+
+    print()
+    print("==========================================")
+    print("  Runtime attempt summary")
+    print("==========================================")
+    print(f"  Programs attempted      : {len(results)}")
+    print(f"  Passed                  : {counts[RuntimeStatus.PASSED]}")
+    print(f"  No camera/failed        : {counts[RuntimeStatus.NO_CAMERA_OR_FAILED]}")
+    print(f"  Timed out               : {counts[RuntimeStatus.TIMED_OUT]}")
+    print(f"  Could not start         : {counts[RuntimeStatus.COULD_NOT_START]}")
+
+    notable = [result for result in results if result.status is not RuntimeStatus.PASSED]
+    if notable:
+        print()
+        print("  Non-passing runtime attempts:")
+        for result in notable:
+            detail = result.message or f"exit code {result.exit_code}"
+            print(f"    - {result.command.sample.name}: {result.status.value}: {detail}")
+            print(f"::warning::{result.command.sample.name} runtime {result.status.value}: {detail}")
+    print("==========================================")
+    print()
+
+
+def positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("--run-timeout-seconds must be positive") from error
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("--run-timeout-seconds must be positive")
+    return parsed
+
+
 def exit_code_for(results: list[BuildResult]) -> int:
     failing_statuses = {SampleStatus.FAILED, SampleStatus.MISSING_DEPENDENCY}
     return 1 if any(result.status in failing_statuses for result in results) else 0
@@ -384,6 +544,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sample", action="append", default=[], help="Sample name or path to build/check. Can be passed multiple times.")
     parser.add_argument("--type", choices=[item.value for item in SampleType], action="append", default=[], help="Sample type to build/check. Can be passed multiple times.")
     parser.add_argument("--skip-platform-specific", action="store_true", help="Skip samples that are not under a cross-platform/ folder.")
+    parser.add_argument("--run", action="store_true", help="Attempt runnable outputs after successful builds/checks.")
+    parser.add_argument("--run-timeout-seconds", type=positive_int, default=90, help="Timeout for each runtime attempt. Default: 90.")
     parser.add_argument("--clean", action="store_true", help="Delete build and temporary directories before running.")
     parser.add_argument("--keep-temp", action="store_true", help="Do not delete root .cmake-tmp/.dotnet-tmp directories after building.")
     parser.add_argument("--configuration", default="Release", help="Build configuration for CMake and dotnet samples. Default: Release.")
@@ -397,7 +559,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     parser = build_parser()
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit as error:
+        return int(error.code) if isinstance(error.code, int) else 1
 
     root = repo_root()
     samples_root = args.samples_root.resolve() if args.samples_root else find_samples_root(root)
@@ -473,7 +638,17 @@ def main() -> int:
             remove_tree(dotnet_tmp_root)
 
     print_summary(results)
-    return exit_code_for(results)
+    build_exit_code = exit_code_for(results)
+    if args.run and build_exit_code == 0:
+        runtime_commands = [
+            command
+            for result in results
+            for command in runtime_commands_for_build_result(result)
+        ]
+        if runtime_commands:
+            runtime_results = run_runtime_commands(runtime_commands, args.run_timeout_seconds)
+            print_runtime_summary(runtime_results)
+    return build_exit_code
 
 
 if __name__ == "__main__":
