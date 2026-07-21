@@ -51,7 +51,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 self.touch(root, relative)
 
             with self.assertRaises(FileNotFoundError) as context:
-                self.verify.verify_windows(root, sys.executable)
+                self.verify.verify_windows(root, sys.executable, "4.33.22")
 
         self.assertIn("xiAPI.NET x64 assembly", str(context.exception))
 
@@ -67,9 +67,9 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 "API/Python/v3/ximea/xiapi.py",
             ):
                 self.touch(root, relative)
-            with mock.patch.object(self.verify, "run_checked", return_value=self.completed("4.33.21\nxiapi.py\n")) as run_checked:
+            with mock.patch.object(self.verify, "run_checked", return_value=self.completed("4.33.22\nxiapi.py\n")) as run_checked:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    self.verify.verify_windows(root, sys.executable)
+                    self.verify.verify_windows(root, sys.executable, "4.33.22")
 
         run_checked.assert_called_once()
 
@@ -77,7 +77,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         with mock.patch.object(self.verify, "run_checked", return_value=self.completed("4.31.00\nxiapi.py\n")):
             with self.assertRaises(RuntimeError) as context:
                 with contextlib.redirect_stdout(io.StringIO()):
-                    self.verify.verify_python_import(sys.executable)
+                    self.verify.verify_python_import(sys.executable, "4.33.21")
 
         self.assertIn("Unexpected ximea Python version", str(context.exception))
 
@@ -106,7 +106,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             with mock.patch.object(self.verify, "require_file", side_effect=require_file), \
                  mock.patch.object(self.verify, "verify_cmake_probe") as cmake_probe, \
                  mock.patch.object(self.verify, "verify_python_import") as python_import:
-                self.verify.verify_linux(root, REPO_ROOT, sys.executable, "cmake")
+                self.verify.verify_linux(root, REPO_ROOT, sys.executable, "cmake", "4.33.21")
 
         cmake_probe.assert_called_once()
         python_import.assert_called_once()
@@ -144,7 +144,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                  mock.patch.object(self.verify, "verify_cmake_probe"), \
                  mock.patch.object(self.verify, "verify_python_import"):
                 with self.assertRaises(RuntimeError) as context:
-                    self.verify.verify_macos(sdk_root, framework_root, REPO_ROOT, sys.executable, "cmake", "arm64")
+                    self.verify.verify_macos(sdk_root, framework_root, REPO_ROOT, sys.executable, "cmake", "arm64", "4.33.21")
 
         self.assertIn("does not contain arm64", str(context.exception))
 
@@ -167,7 +167,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             failure = subprocess.CalledProcessError(1, ["codesign"])
             with mock.patch.object(self.verify, "run_checked", side_effect=failure):
                 with self.assertRaises(subprocess.CalledProcessError):
-                    self.verify.verify_macos(sdk_root, framework_root, REPO_ROOT, sys.executable, "cmake", "x86_64")
+                    self.verify.verify_macos(sdk_root, framework_root, REPO_ROOT, sys.executable, "cmake", "x86_64", "4.33.21")
 
     def test_install_scripts_pin_reviewed_beta_urls(self) -> None:
         for relative in (
@@ -176,13 +176,14 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             "scripts/ci/install-ximea-sdk-windows.ps1",
         ):
             text = (REPO_ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn("4.33.21", text)
             self.assertIn("getattachment", text)
             self.assertIn("XIMEA_SP_PATH", text)
             if relative.endswith(("linux.sh", "macos.sh")):
+                self.assertIn("4.33.21", text)
                 self.assertIn('include"/*.h', text)
             if relative.endswith("windows.ps1"):
                 self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
+                self.assertIn("4.33.22", text)
                 self.assertIn("Start-Process", text)
                 self.assertIn("XIMEA_SP_PATH", text)
             self.assertNotIn("latest", text.lower())
