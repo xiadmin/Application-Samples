@@ -106,6 +106,12 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         cmake_probe.assert_called_once()
         python_import.assert_called_once()
 
+    def test_cmake_helper_does_not_create_xiapiplus_static_library_without_cxx(self) -> None:
+        text = (REPO_ROOT / "cmake" / "CMakeLists.txt").read_text(encoding="utf-8")
+
+        self.assertIn("CMAKE_CXX_COMPILER_LOADED", text)
+        self.assertIn("add_library(XIMEA_xiAPIplus STATIC", text)
+
     def test_macos_verification_rejects_wrong_framework_architecture(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             base = Path(tmp_text)

@@ -127,7 +127,7 @@ function(ximea_find_sdk)
     endif()
 
     if(XIMEA_FOUND AND NOT TARGET XIMEA::xiAPIplus)
-        if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
+        if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp" AND CMAKE_CXX_COMPILER_LOADED)
             find_package(TIFF QUIET)
 
             set(_ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
