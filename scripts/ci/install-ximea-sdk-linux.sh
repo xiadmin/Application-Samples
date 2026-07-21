@@ -3,13 +3,13 @@ set -euo pipefail
 
 case "$(uname -m)" in
     x86_64)
-        sdk_url="https://www.ximea.com/getattachment/281fd5c5-3335-4279-a494-f49c004f00c6/XIMEA_Linux_SP.tgz"
-        sdk_sha256="b3d3da3d5e3f0417a54788726110103a03738dbddbb70703026bc029d6044ffa"
+        sdk_url="https://www.ximea.com/getattachment/ab5baacf-e806-4b9d-b3d4-7eedf0f092b8/XIMEA_Linux_SP.tgz"
+        sdk_sha256="c99e95ee49f978e8e96446241493edb0738e4cd9bb6f05f0de6788bd200c20ff"
         sdk_arch="X64"
         ;;
     aarch64|arm64)
-        sdk_url="https://www.ximea.com/getattachment/f262682f-751c-4665-9db8-e29fb4e9a7e7/XIMEA_Linux_ARM_SP.tgz"
-        sdk_sha256="71367642bfcd5511bd99ee856f7f876ac272e3a3e4387e174a6cf3ad7e82036a"
+        sdk_url="https://www.ximea.com/getattachment/21790810-a3ed-4183-948f-e999cfcf8233/XIMEA_Linux_ARM_SP.tgz"
+        sdk_sha256="a631f994808328e3a945e2db0d6cae37c3c0a14620a9d0f63e602071d7458976"
         sdk_arch="Xarm64"
         ;;
     *)
@@ -24,7 +24,7 @@ esac
 download_dir="$RUNNER_TEMP/ximea-download"
 extract_dir="$RUNNER_TEMP/ximea-package"
 sdk_root="$RUNNER_TEMP/ximea-sdk"
-archive="$download_dir/XIMEA_Linux_SP_V4.32.00_$(uname -m).tgz"
+archive="$download_dir/XIMEA_Linux_SP_V4.33.21_$(uname -m).tgz"
 
 mkdir -p "$download_dir" "$extract_dir" "$sdk_root/include/m3api" "$sdk_root/lib"
 curl --fail --location --retry 3 --silent --show-error "$sdk_url" --output "$archive"
@@ -32,7 +32,7 @@ printf '%s  %s\n' "$sdk_sha256" "$archive" | sha256sum --check --strict -
 tar -xzf "$archive" -C "$extract_dir"
 
 package_root="$extract_dir/package"
-test "$(tr -d '\r\n' < "$package_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_32_00"
+test "$(tr -d '\r\n' < "$package_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_33_21"
 
 sudo apt-get update
 sudo apt-get install --yes libraw1394-11 libtiff6 libusb-1.0-0
@@ -58,13 +58,15 @@ cp "$package_root/api/$sdk_arch/libm3api.so.2" "$sdk_root/lib/libm3api.so.2"
 ln -sfn libm3api.so.2 "$sdk_root/lib/libm3api.so"
 
 export XIMEA_ROOT="$sdk_root"
+export XIMEA_SP_PATH="$sdk_root"
 export PYTHONPATH="$package_root/api/Python/v3${PYTHONPATH:+:$PYTHONPATH}"
 export LD_LIBRARY_PATH="$sdk_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 {
     printf 'XIMEA_ROOT=%s\n' "$XIMEA_ROOT"
+    printf 'XIMEA_SP_PATH=%s\n' "$XIMEA_SP_PATH"
     printf 'PYTHONPATH=%s\n' "$PYTHONPATH"
     printf 'LD_LIBRARY_PATH=%s\n' "$LD_LIBRARY_PATH"
 } >> "$GITHUB_ENV"
 
-printf 'Installed XIMEA SDK LTS V4.32.00 for Linux %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"
+printf 'Installed XIMEA SDK beta V4.33.21 for Linux %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"

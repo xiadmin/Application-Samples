@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 PLATFORMS = {"linux-x64", "linux-arm64", "windows-x64", "macos-x64", "macos-arm64"}
-EXPECTED_VERSION_PREFIX = "4.32.00"
+EXPECTED_VERSION_PREFIX = "4.33.21"
 
 
 def require_file(path: Path, description: str) -> None:

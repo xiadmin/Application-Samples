@@ -3,13 +3,13 @@ set -euo pipefail
 
 case "$(uname -m)" in
     x86_64)
-        sdk_url="https://www.ximea.com/getattachment/e2ee7c15-fa5e-4e1b-b85f-5af6845bada3/XIMEA_macOX_SP.dmg"
-        sdk_sha256="82d9971baf55592ad6c88a98788723b10ee301a678fdaeb4aae48a1006bd5543"
+        sdk_url="https://www.ximea.com/getattachment/1cbfaa8e-a175-4dab-badd-ab2961387799/XIMEA_macOX_SP.dmg"
+        sdk_sha256="3650b19a65ceafd80ef11a9ab996e1793472fd9ef6e27013ebccc049676010cc"
         expected_arch="x86_64"
         ;;
     arm64)
-        sdk_url="https://www.ximea.com/getattachment/6ea47896-cfc1-4c33-a2cc-5dc7ee38de39/XIMEA_macOS_ARM_SP.dmg"
-        sdk_sha256="b82cb968a0febc8e929f2e69be4c15a0d2835fb11182e42f1748a7c455779b31"
+        sdk_url="https://www.ximea.com/getattachment/8e005503-9914-4208-a80b-509dbbb3a901/XIMEA_macOS_ARM_SP.dmg"
+        sdk_sha256="41ecba4131ba997ba517c24625f2e519ac698186a5913c31a04cf56d4109c7b9"
         expected_arch="arm64"
         ;;
     *)
@@ -21,15 +21,15 @@ esac
 : "${RUNNER_TEMP:?RUNNER_TEMP must be set by GitHub Actions}"
 : "${GITHUB_ENV:?GITHUB_ENV must be set by GitHub Actions}"
 
-linux_support_url="https://www.ximea.com/getattachment/281fd5c5-3335-4279-a494-f49c004f00c6/XIMEA_Linux_SP.tgz"
-linux_support_sha256="b3d3da3d5e3f0417a54788726110103a03738dbddbb70703026bc029d6044ffa"
+linux_support_url="https://www.ximea.com/getattachment/ab5baacf-e806-4b9d-b3d4-7eedf0f092b8/XIMEA_Linux_SP.tgz"
+linux_support_sha256="c99e95ee49f978e8e96446241493edb0738e4cd9bb6f05f0de6788bd200c20ff"
 download_dir="$RUNNER_TEMP/ximea-download"
 support_dir="$RUNNER_TEMP/ximea-portable-sources"
 python_root="$RUNNER_TEMP/ximea-python"
 sdk_root="$RUNNER_TEMP/ximea-sdk"
 mount_dir="$RUNNER_TEMP/ximea-volume"
-dmg="$download_dir/XIMEA_macOS_SP_V4.32.00_$(uname -m).dmg"
-support_archive="$download_dir/XIMEA_Linux_SP_V4.32.00.tgz"
+dmg="$download_dir/XIMEA_macOS_SP_V4.33.21_$(uname -m).dmg"
+support_archive="$download_dir/XIMEA_Linux_SP_V4.33.21.tgz"
 
 mkdir -p "$download_dir" "$support_dir" "$python_root" "$sdk_root/include/m3api" "$mount_dir"
 curl --fail --location --retry 3 --silent --show-error "$sdk_url" --output "$dmg"
@@ -50,7 +50,7 @@ ditto "$mount_dir/Examples/xiPython/v3/ximea" "$python_root/ximea"
 
 tar -xzf "$support_archive" -C "$support_dir"
 portable_root="$support_dir/package"
-test "$(tr -d '\r\n' < "$portable_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_32_00"
+test "$(tr -d '\r\n' < "$portable_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_33_21"
 
 cp "$portable_root/include"/*.h "$sdk_root/include/"
 cp "$portable_root/include"/*.h "$sdk_root/include/m3api/"
@@ -71,15 +71,17 @@ case " $framework_arches " in
 esac
 
 export XIMEA_ROOT="$sdk_root"
+export XIMEA_SP_PATH="$sdk_root"
 export PYTHONPATH="$python_root${PYTHONPATH:+:$PYTHONPATH}"
 export DYLD_FRAMEWORK_PATH="/Library/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRAMEWORK_PATH}"
 
 {
     printf 'XIMEA_ROOT=%s\n' "$XIMEA_ROOT"
+    printf 'XIMEA_SP_PATH=%s\n' "$XIMEA_SP_PATH"
     printf 'PYTHONPATH=%s\n' "$PYTHONPATH"
     printf 'DYLD_FRAMEWORK_PATH=%s\n' "$DYLD_FRAMEWORK_PATH"
 } >> "$GITHUB_ENV"
 
 hdiutil detach "$mount_dir"
 trap - EXIT
-printf 'Installed XIMEA SDK LTS V4.32.00 for macOS %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"
+printf 'Installed XIMEA SDK beta V4.33.21 for macOS %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"

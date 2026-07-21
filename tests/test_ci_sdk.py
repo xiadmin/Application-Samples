@@ -67,7 +67,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 "API/Python/v3/ximea/xiapi.py",
             ):
                 self.touch(root, relative)
-            with mock.patch.object(self.verify, "run_checked", return_value=self.completed("4.32.00\nxiapi.py\n")) as run_checked:
+            with mock.patch.object(self.verify, "run_checked", return_value=self.completed("4.33.21\nxiapi.py\n")) as run_checked:
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.verify.verify_windows(root, sys.executable)
 
@@ -169,18 +169,23 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 with self.assertRaises(subprocess.CalledProcessError):
                     self.verify.verify_macos(sdk_root, framework_root, REPO_ROOT, sys.executable, "cmake", "x86_64")
 
-    def test_install_scripts_pin_reviewed_urls_and_do_not_use_mutable_aliases(self) -> None:
+    def test_install_scripts_pin_reviewed_beta_urls(self) -> None:
         for relative in (
             "scripts/ci/install-ximea-sdk-linux.sh",
             "scripts/ci/install-ximea-sdk-macos.sh",
             "scripts/ci/install-ximea-sdk-windows.ps1",
         ):
             text = (REPO_ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn("4.32.00", text)
+            self.assertIn("4.33.21", text)
+            self.assertIn("getattachment", text)
+            self.assertIn("XIMEA_SP_PATH", text)
             if relative.endswith(("linux.sh", "macos.sh")):
                 self.assertIn('include"/*.h', text)
+            if relative.endswith("windows.ps1"):
+                self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
+                self.assertIn("Start-Process", text)
+                self.assertIn("XIMEA_SP_PATH", text)
             self.assertNotIn("latest", text.lower())
-            self.assertNotIn("beta", text.lower())
 
 
 if __name__ == "__main__":

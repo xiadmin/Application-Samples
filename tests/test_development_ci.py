@@ -76,6 +76,12 @@ class DevelopmentCiWorkflowTests(unittest.TestCase):
         for line in uses_lines:
             self.assertRegex(line, r"@[0-9a-f]{40}(?:\s+#\s+v[0-9])?")
 
+    def test_actions_use_node_24_versions(self) -> None:
+        self.assertIn("actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1", self.text)
+        self.assertIn("actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0", self.text)
+        self.assertNotIn("actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683", self.text)
+        self.assertNotIn("actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065", self.text)
+
     def test_permissions_and_concurrency_are_restrictive(self) -> None:
         self.assertIn("permissions:\n  contents: read", self.text)
         self.assertIn("cancel-in-progress: true", self.text)
