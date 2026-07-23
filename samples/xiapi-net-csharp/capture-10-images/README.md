@@ -32,13 +32,13 @@ python scripts/build.py --all
 Binary and supporting files land in:
 
 ```
-build\xiapi.net-c#-capture-10-images\
+build\xiapi-net-csharp-capture-10-images\
 ```
 
 ### Directly with dotnet
 
 ```powershell
-cd samples\xiapi.net-c#\capture-10-images
+cd samples\xiapi-net-csharp\capture-10-images
 dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
 ```
 
@@ -51,19 +51,19 @@ Binary lands in `.dotnet-tmp\` inside the sample folder.
 ### After scripts/build.py
 
 ```powershell
-.\build\xiapi.net-c#-capture-10-images\capture-10-images-csharp.exe
+.\build\xiapi-net-csharp-capture-10-images\capture-10-images-csharp.exe
 ```
 
 ### After a direct dotnet build
 
 ```powershell
-.\samples\xiapi.net-c#\capture-10-images\.dotnet-tmp\capture-10-images-csharp.exe
+.\samples\xiapi-net-csharp\capture-10-images\.dotnet-tmp\capture-10-images-csharp.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):
 
 ```powershell
-cd samples\xiapi.net-c#\capture-10-images
+cd samples\xiapi-net-csharp\capture-10-images
 dotnet run --project CaptureImages.csproj
 ```
 

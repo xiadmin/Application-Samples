@@ -75,7 +75,7 @@ Skipped samples do not make the command fail.
 |-----------|-------|-------------|
 | `-h`, `--help` | - | Show command help and exit. |
 | `--path` | relative path | New sample path relative to `samples/`, for example `xiapi/cross-platform/capture-50-images`. This is the preferred non-interactive path selector. |
-| `--api` | API folder | API folder used by the legacy split form, for example `xiapi`, `xiapiplus`, `xiapi.net-c#`, or `xiapi-python`. |
+| `--api` | API folder | API folder used by the legacy split form, for example `xiapi`, `xiapiplus`, `xiapi-net-csharp`, or `xiapi-python`. |
 | `--group` | `cross-platform` or `hardware-specific` | Sample group used by the legacy split form for grouped APIs. Required with `--yes` when the selected API requires a group and `--path` is not used. |
 | `--sample` | folder name | Sample leaf folder used by the legacy split form. |
 | `--lang` | `c`, `cpp`, `csharp`, or `python` | Language/template to scaffold. Required with `--yes` when the path does not imply a known language. |

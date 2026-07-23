@@ -168,7 +168,7 @@ def api_type_for_path(path: Path, samples_root: Path, fallback: str) -> str:
     api_types = {
         "xiapi": "xiAPI",
         "xiapiplus": "xiAPIplus",
-        "xiapi.net-c#": "xiAPI.NET",
+        "xiapi-net-csharp": "xiAPI.NET",
         "xiapi-python": "xiAPI Python",
     }
     return api_types.get(api_folder, fallback)

@@ -131,7 +131,7 @@ def infer_language_from_path(parts: list[str]) -> str | None:
         return "c"
     if api == "xiapiplus":
         return "cpp"
-    if api == "xiapi.net-c#":
+    if api == "xiapi-net-csharp":
         return "csharp"
     if api == "xiapi-python":
         return "python"
@@ -226,7 +226,7 @@ def display_api_type(api_folder: str) -> str:
     api_types = {
         "xiapi": "xiAPI",
         "xiapiplus": "xiAPIplus",
-        "xiapi.net-c#": "xiAPI.NET",
+        "xiapi-net-csharp": "xiAPI.NET",
         "xiapi-python": "xiAPI Python",
     }
     return api_types.get(api_folder, api_folder)
@@ -306,7 +306,7 @@ def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path, *, 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create a new Application-Samples scaffold.")
     parser.add_argument("--path", help="Sample path relative to samples/, e.g. xiapi/cross-platform/capture-50-images")
-    parser.add_argument("--api", help="API folder, e.g. xiapi, xiapiplus, xiapi.net-c#, xiapi-python")
+    parser.add_argument("--api", help="API folder, e.g. xiapi, xiapiplus, xiapi-net-csharp, xiapi-python")
     parser.add_argument("--group", choices=["cross-platform", "hardware-specific"], help="sample group for APIs that use grouped samples")
     parser.add_argument("--sample", help="Sample name/folder")
     parser.add_argument("--lang", choices=["c", "cpp", "csharp", "python"], help="Language/template")
