@@ -14,10 +14,21 @@ from tests.support import REPO_ROOT
 
 
 VERIFY_SCRIPT = REPO_ROOT / "scripts" / "ci" / "verify-ximea-sdk.py"
+INSTALL_SCRIPT = REPO_ROOT / "scripts" / "ci" / "install-ximea-sdk.py"
 
 
 def load_verify_module():
     spec = importlib.util.spec_from_file_location("verify_ximea_sdk", VERIFY_SCRIPT)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_install_module():
+    spec = importlib.util.spec_from_file_location("install_ximea_sdk", INSTALL_SCRIPT)
     assert spec is not None
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
@@ -170,23 +181,45 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                     self.verify.verify_macos(sdk_root, framework_root, REPO_ROOT, sys.executable, "cmake", "x86_64")
 
     def test_install_scripts_use_latest_beta_without_checksum_pins(self) -> None:
-        for relative in (
-            "scripts/ci/install-ximea-sdk-linux.sh",
-            "scripts/ci/install-ximea-sdk-macos.sh",
-            "scripts/ci/install-ximea-sdk-windows.ps1",
-        ):
-            text = (REPO_ROOT / relative).read_text(encoding="utf-8")
-            self.assertIn("getattachment", text)
-            self.assertIn("XIMEA_SP_PATH", text)
-            self.assertIn("latest", text.lower())
-            self.assertNotIn("4.33", text)
-            self.assertNotRegex(text.lower(), r"sha256|checksum")
-            if relative.endswith(("linux.sh", "macos.sh")):
-                self.assertIn('include"/*.h', text)
-            if relative.endswith("windows.ps1"):
-                self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
-                self.assertIn("Start-Process", text)
-                self.assertIn("XIMEA_SP_PATH", text)
+        text = INSTALL_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("getattachment", text)
+        self.assertIn("XIMEA_SP_PATH", text)
+        self.assertIn("latest", text.lower())
+        self.assertNotIn("4.33", text)
+        self.assertNotRegex(text.lower(), r"sha256|checksum")
+        self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
+        self.assertIn("Get-AuthenticodeSignature", text)
+        self.assertIn("copy_headers", text)
+
+    def test_single_python_installer_replaces_shell_and_powershell_wrappers(self) -> None:
+        workflow = (REPO_ROOT / ".github" / "workflows" / "development-ci.yml").read_text(encoding="utf-8")
+        self.assertIn("python3 scripts/ci/install-ximea-sdk.py --platform linux", workflow)
+        self.assertIn("python scripts/ci/install-ximea-sdk.py --platform windows", workflow)
+        self.assertIn("python3 scripts/ci/install-ximea-sdk.py --platform macos", workflow)
+        self.assertNotIn("install-ximea-sdk-linux.sh", workflow)
+        self.assertNotIn("install-ximea-sdk-macos.sh", workflow)
+        self.assertNotIn("install-ximea-sdk-windows.ps1", workflow)
+        self.assertFalse((REPO_ROOT / "scripts" / "ci" / "install-ximea-sdk-linux.sh").exists())
+        self.assertFalse((REPO_ROOT / "scripts" / "ci" / "install-ximea-sdk-macos.sh").exists())
+        self.assertFalse((REPO_ROOT / "scripts" / "ci" / "install-ximea-sdk-windows.ps1").exists())
+
+    def test_installer_detects_architecture_specific_linux_and_macos_urls(self) -> None:
+        installer = load_install_module()
+        with mock.patch.object(installer.platform, "machine", return_value="x86_64"):
+            linux_url, linux_sdk_arch = installer.linux_config()
+            macos_url, macos_expected_arch = installer.macos_config()
+        self.assertIn("XIMEA_Linux_SP.tgz", linux_url)
+        self.assertEqual(linux_sdk_arch, "X64")
+        self.assertIn("XIMEA_macOX_SP.dmg", macos_url)
+        self.assertEqual(macos_expected_arch, "x86_64")
+
+        with mock.patch.object(installer.platform, "machine", return_value="arm64"):
+            linux_url, linux_sdk_arch = installer.linux_config()
+            macos_url, macos_expected_arch = installer.macos_config()
+        self.assertIn("XIMEA_Linux_ARM_SP.tgz", linux_url)
+        self.assertEqual(linux_sdk_arch, "Xarm64")
+        self.assertIn("XIMEA_macOS_ARM_SP.dmg", macos_url)
+        self.assertEqual(macos_expected_arch, "arm64")
 
 
 if __name__ == "__main__":

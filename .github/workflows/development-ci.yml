@@ -39,7 +39,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes cmake g++ gcc
       - name: Install XIMEA SDK
-        run: bash scripts/ci/install-ximea-sdk-linux.sh
+        run: python3 scripts/ci/install-ximea-sdk.py --platform linux
       - name: Verify XIMEA SDK
         run: python3 scripts/ci/verify-ximea-sdk.py --platform ${{ matrix.verify-platform }}
       - name: Build and attempt C/C++ cross-platform samples
@@ -66,8 +66,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install XIMEA SDK
-        shell: pwsh
-        run: ./scripts/ci/install-ximea-sdk-windows.ps1
+        run: python scripts/ci/install-ximea-sdk.py --platform windows
       - name: Verify XIMEA SDK
         shell: pwsh
         run: python scripts/ci/verify-ximea-sdk.py --platform windows-x64
@@ -113,7 +112,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install XIMEA SDK
-        run: bash scripts/ci/install-ximea-sdk-macos.sh
+        run: python3 scripts/ci/install-ximea-sdk.py --platform macos
       - name: Verify XIMEA SDK
         run: python3 scripts/ci/verify-ximea-sdk.py --platform ${{ matrix.verify-platform }}
       - name: Build and attempt C/C++ cross-platform samples
