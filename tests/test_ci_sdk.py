@@ -220,8 +220,8 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
         self.assertIn("Get-AuthenticodeSignature", text)
         self.assertIn("Import-Module Microsoft.PowerShell.Security", text)
-        for package in ("cmake", "g++", "gcc", "libraw1394-11", "libtiff6", "libusb-1.0-0"):
-            self.assertIn(f'"{package}"', text)
+        self.assertNotIn("apt-get", text)
+        self.assertNotIn("libtiff", text)
         self.assertIn("./install", text)
         self.assertNotIn("-silent", text)
         self.assertNotIn("-nonet", text)
@@ -266,6 +266,33 @@ class VerifyXimeaSdkTests(unittest.TestCase):
 
             self.assertEqual(installer.find_macos_install_script(mount_dir), install_script)
 
+    def test_installer_uses_macos_app_resource_script_instead_of_gui_binary(self) -> None:
+        installer = load_install_module()
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            mount_dir = Path(tmp_text)
+            app_dir = mount_dir / "install.app" / "Contents"
+            gui_binary = app_dir / "MacOS" / "install"
+            resource_script = app_dir / "Resources" / "script"
+            gui_binary.parent.mkdir(parents=True)
+            resource_script.parent.mkdir(parents=True)
+            gui_binary.write_text("gui launcher", encoding="utf-8")
+            resource_script.write_text("#!/bin/sh\n", encoding="utf-8")
+
+            self.assertEqual(installer.find_macos_install_script(mount_dir), resource_script)
+
+    def test_installer_rejects_macos_gui_binary_without_resource_script(self) -> None:
+        installer = load_install_module()
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            mount_dir = Path(tmp_text)
+            gui_binary = mount_dir / "install.app" / "Contents" / "MacOS" / "install"
+            gui_binary.parent.mkdir(parents=True)
+            gui_binary.write_text("gui launcher", encoding="utf-8")
+
+            with self.assertRaises(FileNotFoundError) as context:
+                installer.find_macos_install_script(mount_dir)
+
+        self.assertIn("non-GUI XIMEA macOS install script", str(context.exception))
+
     def test_installer_prefers_pwsh_for_windows_signature_checks(self) -> None:
         installer = load_install_module()
         with mock.patch.object(installer.shutil, "which", side_effect=lambda name: "C:/Program Files/PowerShell/7/pwsh.exe" if name == "pwsh" else "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"):
@@ -280,7 +307,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertEqual(installer.power_shell_literal("C:/Program Files/XIMEA"), "'C:/Program Files/XIMEA'")
         self.assertEqual(installer.power_shell_literal("C:/Vendor's/XIMEA"), "'C:/Vendor''s/XIMEA'")
 
-    def test_windows_installer_does_not_reexport_installer_managed_ximea_sp_path(self) -> None:
+    def test_windows_installer_exports_cmake_root_without_reexporting_ximea_sp_path(self) -> None:
         installer = load_install_module()
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             sdk_root = Path(tmp_text) / "XIMEA"
@@ -294,7 +321,11 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     installer.install_windows()
 
-        append_env.assert_called_once_with({"PYTHONPATH": str(sdk_root / "API" / "Python" / "v3")})
+        append_env.assert_called_once_with({
+            "XIMEA_ROOT": str(sdk_root),
+            "PYTHONPATH": str(sdk_root / "API" / "Python" / "v3"),
+        })
+        self.assertNotIn("XIMEA_SP_PATH", append_env.call_args.args[0])
 
 
 if __name__ == "__main__":

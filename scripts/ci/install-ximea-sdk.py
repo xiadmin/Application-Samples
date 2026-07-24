@@ -107,21 +107,6 @@ def install_linux() -> None:
     if version_file.is_file():
         print(f"Downloaded XIMEA Linux SDK {version_file.read_text(encoding='utf-8').strip()}")
 
-    run_checked(["sudo", "apt-get", "update"])
-    run_checked([
-        "sudo",
-        "apt-get",
-        "install",
-        "--yes",
-        "build-essential",
-        "cmake",
-        "g++",
-        "gcc",
-        "libraw1394-11",
-        "libtiff5",
-        "libusb-1.0-0",
-    ])
-
     run_checked(["./install"], cwd=package_root)
 
     values = {
@@ -144,16 +129,30 @@ def macos_config() -> tuple[str, str]:
     raise RuntimeError(f"Unsupported macOS architecture: {platform.machine()}")
 
 
+def is_macos_app_binary(path: Path) -> bool:
+    parts = path.parts
+    return any(part.endswith(".app") for part in parts) and "MacOS" in parts
+
+
+def macos_app_resource_scripts(mount_dir: Path) -> list[Path]:
+    scripts: list[Path] = []
+    for app_dir in mount_dir.rglob("*.app"):
+        resources = app_dir / "Contents" / "Resources"
+        scripts.extend(path for path in resources.rglob("script") if path.is_file())
+    return scripts
+
+
 def find_macos_install_script(mount_dir: Path) -> Path:
     candidates = [mount_dir / "install"]
-    candidates.extend(path for path in mount_dir.rglob("install") if path.is_file())
+    candidates.extend(macos_app_resource_scripts(mount_dir))
+    candidates.extend(path for path in mount_dir.rglob("install") if path.is_file() and not is_macos_app_binary(path))
     for candidate in candidates:
         if candidate.is_file():
             return candidate
 
     mounted_entries = ", ".join(sorted(path.relative_to(mount_dir).as_posix() for path in mount_dir.iterdir()))
     raise FileNotFoundError(
-        "Missing XIMEA macOS install script on mounted XIMEA volume"
+        "Missing non-GUI XIMEA macOS install script on mounted XIMEA volume"
         f" {mount_dir}; top-level entries: {mounted_entries or '<empty>'}"
     )
 
@@ -244,6 +243,7 @@ def install_windows() -> None:
 
     sdk_root = Path(ximea_sp_path)
     values = {
+        "XIMEA_ROOT": str(sdk_root),
         "PYTHONPATH": str(sdk_root / "API" / "Python" / "v3"),
     }
     os.environ.update(values)

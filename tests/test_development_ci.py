@@ -42,7 +42,7 @@ class DevelopmentCiWorkflowTests(unittest.TestCase):
             self.assertLess(install, verify)
             self.assertLess(verify, build)
 
-    def test_linux_build_prerequisites_are_installed_by_python_installer(self) -> None:
+    def test_linux_installer_uses_ximea_install_script_only(self) -> None:
         self.assertNotIn("Install non-XIMEA build prerequisites", self.text)
         self.assertNotIn("sudo apt-get install --yes cmake g++ gcc", self.text)
         self.assertIn("python3 scripts/ci/install-ximea-sdk.py --platform linux", self.text)
