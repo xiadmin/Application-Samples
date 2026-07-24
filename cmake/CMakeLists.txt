@@ -50,7 +50,7 @@ function(ximea_find_sdk)
     endif()
 
     set(_ximea_sp_path "$ENV{XIMEA_SP_PATH}")
-    set(_ximea_root_hints "${XIMEA_ROOT}" "$ENV{XIMEA_ROOT}")
+    set(_ximea_root_hints "${_ximea_sp_path}" "${XIMEA_ROOT}" "$ENV{XIMEA_ROOT}")
     set(_ximea_root_inc_hints)
     set(_ximea_root_lib_hints)
     set(_ximea_root_win_inc_hints)
@@ -77,7 +77,7 @@ function(ximea_find_sdk)
         endif()
     elseif(APPLE)
         set(_ximea_inc_hints ${_ximea_root_inc_hints} "/Library/Frameworks/m3api.framework/Headers")
-        set(_ximea_inc_plus_hints ${_ximea_root_inc_hints} "/Library/Frameworks/m3api.framework/Headers")
+        set(_ximea_inc_plus_hints "${_ximea_sp_path}/Examples/Sources/_libs/xiAPIplus" ${_ximea_root_inc_hints} "/Library/Frameworks/m3api.framework/Headers")
         set(_ximea_lib_hints ${_ximea_root_lib_hints} "/Library/Frameworks/m3api.framework")
         set(_ximea_lib_names m3api)
     else()
@@ -103,8 +103,12 @@ function(ximea_find_sdk)
     )
 
     include(FindPackageHandleStandardArgs)
+    set(_ximea_required_vars XIMEA_LIBRARY XIMEA_INCLUDE_DIR)
+    if(CMAKE_CXX_COMPILER_LOADED)
+        list(APPEND _ximea_required_vars XIMEA_INCLUDE_PLUS_DIR)
+    endif()
     find_package_handle_standard_args(XIMEA
-        REQUIRED_VARS XIMEA_LIBRARY XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR
+        REQUIRED_VARS ${_ximea_required_vars}
     )
 
     if(NOT XIMEA_FOUND)
@@ -126,7 +130,7 @@ function(ximea_find_sdk)
         target_include_directories(XIMEA::xiAPI INTERFACE "${XIMEA_INCLUDE_DIR}")
     endif()
 
-    if(XIMEA_FOUND AND NOT TARGET XIMEA::xiAPIplus)
+    if(XIMEA_FOUND AND CMAKE_CXX_COMPILER_LOADED AND NOT TARGET XIMEA::xiAPIplus)
         if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp" AND CMAKE_CXX_COMPILER_LOADED)
             find_package(TIFF QUIET)
 

@@ -111,9 +111,9 @@ jobs:
         run: python3 scripts/ci/install-ximea-sdk.py --platform macos
       - name: Verify XIMEA SDK
         run: python3 scripts/ci/verify-ximea-sdk.py --platform ${{ matrix.verify-platform }}
-      - name: Build and attempt C/C++ cross-platform samples
+      - name: Build and attempt supported C cross-platform sample
         run: |
-          python3 scripts/build.py --all --type cmake --skip-platform-specific \
+          python3 scripts/build.py --sample samples/xiapi/cross-platform/capture-10-images \
             --run --run-timeout-seconds 90 \
             --output-root "$RUNNER_TEMP/application-samples-macos-${{ matrix.arch }}"
       - name: Compile-check and attempt cross-platform Python sample

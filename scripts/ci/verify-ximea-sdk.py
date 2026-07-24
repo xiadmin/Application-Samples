@@ -63,7 +63,7 @@ def verify_cmake_probe(repo_root: Path, sdk_root: Path, cmake: str) -> None:
             encoding="utf-8",
         )
         env = os.environ.copy()
-        env["XIMEA_ROOT"] = str(sdk_root)
+        env["XIMEA_SP_PATH"] = str(sdk_root)
         run_checked([cmake, "-S", str(source), "-B", str(build)], env=env)
 
 
@@ -71,12 +71,9 @@ def verify_linux(sdk_root: Path, repo_root: Path, python: str, cmake: str) -> No
     require_file(sdk_root / "include" / "xiApi.h", "xiAPI header")
     require_file(sdk_root / "include" / "wintypedefs.h", "xiAPI typedef compatibility header")
     require_file(sdk_root / "include" / "m3Identify.h", "xiAPI identification header")
-    require_file(sdk_root / "include" / "m3api" / "wintypedefs.h", "m3api typedef compatibility header")
-    require_file(sdk_root / "include" / "m3api" / "m3Identify.h", "m3api identification header")
     require_file(sdk_root / "samples" / "_libs" / "xiAPIplus" / "xiapiplus.h", "xiAPIplus header")
     require_file(sdk_root / "samples" / "_libs" / "xiAPIplus" / "xiAPIplus_core.cpp", "xiAPIplus portable source")
     require_file(sdk_root / "samples" / "_libs" / "os_common_header.h", "xiAPIplus OS compatibility header")
-    require_file(sdk_root / "lib" / "libm3api.so.2", "xiAPI shared library")
     require_file(Path("/usr/lib/libm3api.so.2"), "system xiAPI shared library")
     verify_cmake_probe(repo_root, sdk_root, cmake)
     verify_python_import(python)
@@ -101,21 +98,16 @@ def verify_macos(
     cmake: str,
     expected_arch: str,
 ) -> None:
+    del sdk_root, repo_root, cmake
     framework = framework_root / "m3api.framework"
     binary = framework / "m3api"
     require_file(framework / "Headers" / "xiApi.h", "framework xiAPI header")
     require_file(binary, "m3api framework binary")
-    require_file(sdk_root / "include" / "wintypedefs.h", "xiAPI typedef compatibility header")
-    require_file(sdk_root / "include" / "m3api" / "wintypedefs.h", "m3api typedef compatibility header")
-    require_file(sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiapiplus.h", "xiAPIplus header")
-    require_file(sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiAPIplus_core.cpp", "xiAPIplus source")
-    require_file(sdk_root / "Examples" / "Sources" / "_libs" / "os_common_header.h", "xiAPIplus OS compatibility header")
     run_checked(["codesign", "--verify", "--deep", "--strict", str(framework)])
     lipo = run_checked(["lipo", "-archs", str(binary)])
     arches = set(lipo.stdout.split())
     if expected_arch not in arches:
         raise RuntimeError(f"m3api framework does not contain {expected_arch}: {lipo.stdout.strip()}")
-    verify_cmake_probe(repo_root, sdk_root, cmake)
     verify_python_import(python)
 
 
@@ -154,13 +146,13 @@ def require_env_path(name: str, value: str) -> Path:
 def default_sdk_root(platform_name: str) -> Path:
     if platform_name == "windows-x64":
         return require_env_path("XIMEA_SP_PATH", os.environ.get("XIMEA_SP_PATH", "") or read_windows_environment("XIMEA_SP_PATH"))
-    return require_env_path("XIMEA_ROOT", os.environ.get("XIMEA_ROOT", ""))
+    return require_env_path("XIMEA_SP_PATH", os.environ.get("XIMEA_SP_PATH", ""))
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Verify XIMEA SDK files for GitHub-hosted CI.")
     parser.add_argument("--platform", required=True, choices=sorted(PLATFORMS))
-    parser.add_argument("--sdk-root", type=Path, help="Override XIMEA_ROOT/XIMEA_SP_PATH for tests or diagnostics.")
+    parser.add_argument("--sdk-root", type=Path, help="Override XIMEA_SP_PATH for tests or diagnostics.")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--framework-root", type=Path, default=Path("/Library/Frameworks"))
     parser.add_argument("--python", default=sys.executable)

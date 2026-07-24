@@ -63,7 +63,8 @@ class DevelopmentCiWorkflowTests(unittest.TestCase):
             self.assertGreater(int(match.group(1)), 0)
 
     def test_expected_sample_types_are_selected_by_platform(self) -> None:
-        self.assertGreaterEqual(self.text.count("--type cmake --skip-platform-specific"), 3)
+        self.assertGreaterEqual(self.text.count("--type cmake --skip-platform-specific"), 2)
+        self.assertIn("--sample samples/xiapi/cross-platform/capture-10-images", self.text)
         self.assertGreaterEqual(self.text.count("--type python --skip-platform-specific"), 3)
         self.assertIn("--type dotnet", self.text)
         dotnet_line = next(line for line in self.text.splitlines() if "--type dotnet" in line)

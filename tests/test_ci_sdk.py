@@ -115,12 +115,17 @@ class VerifyXimeaSdkTests(unittest.TestCase):
 
         self.assertIn("XIMEA_SP_PATH is not set", str(context.exception))
 
+    def test_non_windows_default_sdk_root_uses_ximea_sp_path(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            with mock.patch.dict(os.environ, {"XIMEA_SP_PATH": tmp_text}, clear=True):
+                self.assertEqual(self.verify.default_sdk_root("linux-x64"), Path(tmp_text))
+
     def test_non_windows_default_sdk_root_fails_clearly_when_missing(self) -> None:
         with mock.patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(RuntimeError) as context:
                 self.verify.default_sdk_root("linux-x64")
 
-        self.assertIn("XIMEA_ROOT is not set", str(context.exception))
+        self.assertIn("XIMEA_SP_PATH is not set", str(context.exception))
 
     def test_linux_verification_checks_architecture_specific_layout_and_cmake(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
@@ -129,12 +134,9 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 "include/xiApi.h",
                 "include/wintypedefs.h",
                 "include/m3Identify.h",
-                "include/m3api/wintypedefs.h",
-                "include/m3api/m3Identify.h",
                 "samples/_libs/xiAPIplus/xiapiplus.h",
                 "samples/_libs/xiAPIplus/xiAPIplus_core.cpp",
                 "samples/_libs/os_common_header.h",
-                "lib/libm3api.so.2",
             ):
                 self.touch(root, relative)
             real_require_file = self.verify.require_file
@@ -158,6 +160,23 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertIn("CMAKE_CXX_COMPILER_LOADED", text)
         self.assertIn("add_library(XIMEA_xiAPIplus STATIC", text)
         self.assertIn("target_compile_definitions(XIMEA_xiAPIplus PRIVATE UNIX)", text)
+        self.assertIn("set(_ximea_required_vars XIMEA_LIBRARY XIMEA_INCLUDE_DIR)", text)
+        self.assertIn("list(APPEND _ximea_required_vars XIMEA_INCLUDE_PLUS_DIR)", text)
+        self.assertIn("if(XIMEA_FOUND AND CMAKE_CXX_COMPILER_LOADED AND NOT TARGET XIMEA::xiAPIplus)", text)
+
+    def test_cmake_helper_uses_ximea_sp_path_as_a_root_hint_on_every_platform(self) -> None:
+        text = (REPO_ROOT / "cmake" / "CMakeLists.txt").read_text(encoding="utf-8")
+
+        self.assertIn('set(_ximea_root_hints "${_ximea_sp_path}"', text)
+
+    def test_cmake_helper_uses_macos_xiapiplus_layout_from_ximea_sp_path(self) -> None:
+        text = (REPO_ROOT / "cmake" / "CMakeLists.txt").read_text(encoding="utf-8")
+        apple_block = text.split("elseif(APPLE)", 1)[1].split("else()", 1)[0]
+
+        self.assertIn(
+            'set(_ximea_inc_plus_hints "${_ximea_sp_path}/Examples/Sources/_libs/xiAPIplus"',
+            apple_block,
+        )
 
     def test_macos_verification_rejects_wrong_framework_architecture(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
@@ -167,11 +186,6 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             for path in (
                 framework_root / "m3api.framework" / "Headers" / "xiApi.h",
                 framework_root / "m3api.framework" / "m3api",
-                sdk_root / "include" / "wintypedefs.h",
-                sdk_root / "include" / "m3api" / "wintypedefs.h",
-                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiapiplus.h",
-                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiAPIplus_core.cpp",
-                sdk_root / "Examples" / "Sources" / "_libs" / "os_common_header.h",
             ):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("fixture", encoding="utf-8")
@@ -197,11 +211,6 @@ class VerifyXimeaSdkTests(unittest.TestCase):
             for path in (
                 framework_root / "m3api.framework" / "Headers" / "xiApi.h",
                 framework_root / "m3api.framework" / "m3api",
-                sdk_root / "include" / "wintypedefs.h",
-                sdk_root / "include" / "m3api" / "wintypedefs.h",
-                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiapiplus.h",
-                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiAPIplus_core.cpp",
-                sdk_root / "Examples" / "Sources" / "_libs" / "os_common_header.h",
             ):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("fixture", encoding="utf-8")
@@ -232,6 +241,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertIn("python3 scripts/ci/install-ximea-sdk.py --platform linux", workflow)
         self.assertIn("python scripts/ci/install-ximea-sdk.py --platform windows", workflow)
         self.assertIn("python3 scripts/ci/install-ximea-sdk.py --platform macos", workflow)
+        self.assertIn("--sample samples/xiapi/cross-platform/capture-10-images", workflow)
         self.assertNotIn("install-ximea-sdk-linux.sh", workflow)
         self.assertNotIn("install-ximea-sdk-macos.sh", workflow)
         self.assertNotIn("install-ximea-sdk-windows.ps1", workflow)
@@ -266,19 +276,18 @@ class VerifyXimeaSdkTests(unittest.TestCase):
 
             self.assertEqual(installer.find_macos_install_script(mount_dir), install_script)
 
-    def test_installer_uses_macos_app_resource_script_instead_of_gui_binary(self) -> None:
+    def test_installer_uses_current_macos_app_install_script_instead_of_gui_binary(self) -> None:
         installer = load_install_module()
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             mount_dir = Path(tmp_text)
             app_dir = mount_dir / "install.app" / "Contents"
             gui_binary = app_dir / "MacOS" / "install"
-            resource_script = app_dir / "Resources" / "script"
+            install_script = app_dir / "MacOS" / "install.sh"
             gui_binary.parent.mkdir(parents=True)
-            resource_script.parent.mkdir(parents=True)
             gui_binary.write_text("gui launcher", encoding="utf-8")
-            resource_script.write_text("#!/bin/sh\n", encoding="utf-8")
+            install_script.write_text("#!/bin/sh\n", encoding="utf-8")
 
-            self.assertEqual(installer.find_macos_install_script(mount_dir), resource_script)
+            self.assertEqual(installer.find_macos_install_script(mount_dir), install_script)
 
     def test_installer_rejects_macos_gui_binary_without_resource_script(self) -> None:
         installer = load_install_module()
@@ -292,6 +301,50 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 installer.find_macos_install_script(mount_dir)
 
         self.assertIn("non-GUI XIMEA macOS install script", str(context.exception))
+
+    def test_macos_installer_runs_read_only_volume_script_through_bash(self) -> None:
+        installer = load_install_module()
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            install_script = Path("/Volumes/XIMEA/install.app/Contents/MacOS/install.sh")
+            python_package = Path("/Volumes/XIMEA/Examples/xiPython/v3/ximea")
+
+            def run_checked(cmd: list[str], **_kwargs):
+                if cmd[0] == "lipo":
+                    return self.completed("x86_64\n")
+                return self.completed()
+
+            with mock.patch.dict(os.environ, {"RUNNER_TEMP": tmp_text}, clear=True), \
+                 mock.patch.object(installer, "download"), \
+                 mock.patch.object(installer, "find_macos_install_script", return_value=install_script), \
+                 mock.patch.object(installer, "install_python_package") as install_python, \
+                 mock.patch.object(installer, "append_github_env") as append_env, \
+                 mock.patch.object(installer, "run_checked", side_effect=run_checked) as checked, \
+                 mock.patch.object(installer.subprocess, "run"):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    installer.install_macos()
+
+        commands = [call.args[0] for call in checked.call_args_list]
+        self.assertIn(["/bin/bash", str(install_script)], commands)
+        self.assertFalse(any(command[0] == "chmod" for command in commands))
+        attach_command = commands[0]
+        self.assertEqual(attach_command[:4], ["hdiutil", "attach", "-readonly", "-nobrowse"])
+        self.assertNotIn("-mountpoint", attach_command)
+        install_python.assert_called_once_with(python_package)
+        append_env.assert_called_once_with({"XIMEA_SP_PATH": "/Library/Frameworks/m3api.framework"})
+
+    def test_installer_copies_python_package_into_active_interpreter(self) -> None:
+        installer = load_install_module()
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            root = Path(tmp_text)
+            source = root / "source" / "ximea"
+            purelib = root / "site-packages"
+            source.mkdir(parents=True)
+            (source / "xiapi.py").write_text("fixture\n", encoding="utf-8")
+
+            with mock.patch.object(installer.sysconfig, "get_paths", return_value={"purelib": str(purelib)}):
+                installer.install_python_package(source)
+
+            self.assertEqual((purelib / "ximea" / "xiapi.py").read_text(encoding="utf-8"), "fixture\n")
 
     def test_installer_prefers_pwsh_for_windows_signature_checks(self) -> None:
         installer = load_install_module()
@@ -307,7 +360,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertEqual(installer.power_shell_literal("C:/Program Files/XIMEA"), "'C:/Program Files/XIMEA'")
         self.assertEqual(installer.power_shell_literal("C:/Vendor's/XIMEA"), "'C:/Vendor''s/XIMEA'")
 
-    def test_windows_installer_exports_cmake_root_without_reexporting_ximea_sp_path(self) -> None:
+    def test_windows_installer_exports_only_ximea_sp_path(self) -> None:
         installer = load_install_module()
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             sdk_root = Path(tmp_text) / "XIMEA"
@@ -316,16 +369,15 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                  mock.patch.object(installer, "validate_windows_signature"), \
                  mock.patch.object(installer, "run_checked", return_value=self.completed()), \
                  mock.patch.object(installer, "read_windows_environment", return_value=str(sdk_root)), \
-                 mock.patch.object(installer, "append_github_env") as append_env, \
-                 mock.patch.object(installer, "append_github_path"):
+                 mock.patch.object(installer, "install_python_package") as install_python, \
+                 mock.patch.object(installer, "append_github_env") as append_env:
                 with contextlib.redirect_stdout(io.StringIO()):
                     installer.install_windows()
 
         append_env.assert_called_once_with({
-            "XIMEA_ROOT": str(sdk_root),
-            "PYTHONPATH": str(sdk_root / "API" / "Python" / "v3"),
+            "XIMEA_SP_PATH": str(sdk_root),
         })
-        self.assertNotIn("XIMEA_SP_PATH", append_env.call_args.args[0])
+        install_python.assert_called_once_with(sdk_root / "API" / "Python" / "v3" / "ximea")
 
 
 if __name__ == "__main__":

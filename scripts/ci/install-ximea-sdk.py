@@ -9,6 +9,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tarfile
 import urllib.error
 import urllib.request
@@ -68,15 +69,13 @@ def append_github_env(values: dict[str, str]) -> None:
             handle.write(f"{name}={value}\n")
 
 
-def append_github_path(path: Path) -> None:
-    path_file = Path(require_env("GITHUB_PATH"))
-    with path_file.open("a", encoding="utf-8") as handle:
-        handle.write(f"{path}\n")
-
-
-def prepend_env(name: str, path: Path) -> str:
-    current = os.environ.get(name)
-    return f"{path}{os.pathsep + current if current else ''}"
+def install_python_package(source: Path) -> None:
+    if not source.is_dir():
+        raise FileNotFoundError(f"Missing XIMEA Python package: {source}")
+    purelib = Path(sysconfig.get_paths()["purelib"])
+    destination = purelib / "ximea"
+    shutil.copytree(source, destination, dirs_exist_ok=True)
+    print(f"Installed XIMEA Python package for {sys.executable} at {destination}")
 
 
 def linux_config() -> str:
@@ -108,12 +107,10 @@ def install_linux() -> None:
         print(f"Downloaded XIMEA Linux SDK {version_file.read_text(encoding='utf-8').strip()}")
 
     run_checked(["./install"], cwd=package_root)
+    install_python_package(package_root / "api" / "Python" / "v3" / "ximea")
 
     values = {
-        "XIMEA_ROOT": str(LINUX_INSTALL_ROOT),
         "XIMEA_SP_PATH": str(LINUX_INSTALL_ROOT),
-        "PYTHONPATH": prepend_env("PYTHONPATH", package_root / "api" / "Python" / "v3"),
-        "LD_LIBRARY_PATH": prepend_env("LD_LIBRARY_PATH", LINUX_INSTALL_ROOT / "lib"),
     }
     os.environ.update(values)
     append_github_env(values)
@@ -144,6 +141,7 @@ def macos_app_resource_scripts(mount_dir: Path) -> list[Path]:
 
 def find_macos_install_script(mount_dir: Path) -> Path:
     candidates = [mount_dir / "install"]
+    candidates.extend(mount_dir.rglob("*.app/Contents/MacOS/install.sh"))
     candidates.extend(macos_app_resource_scripts(mount_dir))
     candidates.extend(path for path in mount_dir.rglob("install") if path.is_file() and not is_macos_app_binary(path))
     for candidate in candidates:
@@ -157,39 +155,23 @@ def find_macos_install_script(mount_dir: Path) -> Path:
     )
 
 
-def find_macos_sdk_root() -> Path:
-    candidates = (
-        Path("/Applications/XIMEA"),
-        Path("/Library/XIMEA"),
-        Path("/Library/Application Support/XIMEA"),
-        Path("/opt/XIMEA"),
-    )
-    for candidate in candidates:
-        if (candidate / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiapiplus.h").is_file():
-            return candidate
-
-    roots = ", ".join(str(path) for path in candidates)
-    raise FileNotFoundError(f"Could not locate XIMEA macOS SDK examples after installer completed; checked {roots}")
-
-
 def install_macos() -> None:
     sdk_url, expected_arch = macos_config()
     runner_temp = Path(require_env("RUNNER_TEMP"))
     download_dir = runner_temp / "ximea-download"
-    mount_dir = runner_temp / "ximea-volume"
+    mount_dir = Path("/Volumes/XIMEA")
     machine = platform.machine()
     dmg = download_dir / f"XIMEA_macOS_SP_beta_{machine}.dmg"
 
-    mount_dir.mkdir(parents=True, exist_ok=True)
     download(sdk_url, dmg)
 
     attached = False
     try:
-        run_checked(["hdiutil", "attach", "-readonly", "-nobrowse", "-mountpoint", str(mount_dir), str(dmg)])
+        run_checked(["hdiutil", "attach", "-readonly", "-nobrowse", str(dmg)])
         attached = True
         installer = find_macos_install_script(mount_dir)
-        run_checked(["chmod", "+x", str(installer)])
-        run_checked([str(installer)])
+        run_checked(["/bin/bash", str(installer)], cwd=installer.parent)
+        install_python_package(mount_dir / "Examples" / "xiPython" / "v3" / "ximea")
     finally:
         if attached:
             subprocess.run(
@@ -199,11 +181,8 @@ def install_macos() -> None:
                 stderr=subprocess.DEVNULL,
             )
 
-    sdk_root = find_macos_sdk_root()
     values = {
-        "XIMEA_ROOT": str(sdk_root),
-        "XIMEA_SP_PATH": str(sdk_root),
-        "DYLD_FRAMEWORK_PATH": prepend_env("DYLD_FRAMEWORK_PATH", Path("/Library/Frameworks")),
+        "XIMEA_SP_PATH": "/Library/Frameworks/m3api.framework",
     }
     os.environ.update(values)
     append_github_env(values)
@@ -242,14 +221,12 @@ def install_windows() -> None:
         raise RuntimeError("XIMEA SDK installer completed but did not set XIMEA_SP_PATH")
 
     sdk_root = Path(ximea_sp_path)
+    install_python_package(sdk_root / "API" / "Python" / "v3" / "ximea")
     values = {
-        "XIMEA_ROOT": str(sdk_root),
-        "PYTHONPATH": str(sdk_root / "API" / "Python" / "v3"),
+        "XIMEA_SP_PATH": str(sdk_root),
     }
     os.environ.update(values)
-    os.environ["PATH"] = f"{sdk_root / 'API' / 'xiAPI'}{os.pathsep}{os.environ.get('PATH', '')}"
     append_github_env(values)
-    append_github_path(sdk_root / "API" / "xiAPI")
     print(f"Installed latest XIMEA SDK beta for Windows x64 with XIMEA's installer")
 
 
