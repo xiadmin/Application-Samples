@@ -42,6 +42,11 @@ class DevelopmentCiWorkflowTests(unittest.TestCase):
             self.assertLess(install, verify)
             self.assertLess(verify, build)
 
+    def test_linux_build_prerequisites_are_installed_by_python_installer(self) -> None:
+        self.assertNotIn("Install non-XIMEA build prerequisites", self.text)
+        self.assertNotIn("sudo apt-get install --yes cmake g++ gcc", self.text)
+        self.assertIn("python3 scripts/ci/install-ximea-sdk.py --platform linux", self.text)
+
     def test_build_steps_use_run_with_positive_timeout(self) -> None:
         lines = self.text.splitlines()
         build_commands = [

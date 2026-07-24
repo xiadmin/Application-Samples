@@ -190,6 +190,8 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
         self.assertIn("Get-AuthenticodeSignature", text)
         self.assertIn("Import-Module Microsoft.PowerShell.Security", text)
+        for package in ("cmake", "g++", "gcc", "libraw1394-11", "libtiff6", "libusb-1.0-0"):
+            self.assertIn(f'"{package}"', text)
         self.assertIn("copy_headers", text)
 
     def test_single_python_installer_replaces_shell_and_powershell_wrappers(self) -> None:
