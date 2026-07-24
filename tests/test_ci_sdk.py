@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import contextlib
 import io
+import os
 import subprocess
 import sys
 import tempfile
@@ -211,7 +212,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         with mock.patch.object(installer.platform, "machine", return_value="x86_64"):
             linux_url, linux_sdk_arch = installer.linux_config()
             macos_url, macos_expected_arch = installer.macos_config()
-        self.assertIn("XIMEA_Linux_SP.tgz", linux_url)
+        self.assertIn("ximea_linux_sp_beta.tgz", linux_url)
         self.assertEqual(linux_sdk_arch, "X64")
         self.assertIn("XIMEA_macOX_SP.dmg", macos_url)
         self.assertEqual(macos_expected_arch, "x86_64")
@@ -219,10 +220,20 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         with mock.patch.object(installer.platform, "machine", return_value="arm64"):
             linux_url, linux_sdk_arch = installer.linux_config()
             macos_url, macos_expected_arch = installer.macos_config()
-        self.assertIn("XIMEA_Linux_ARM_SP.tgz", linux_url)
+        self.assertIn("ximea_linux_arm_sp_beta.tgz", linux_url)
         self.assertEqual(linux_sdk_arch, "Xarm64")
         self.assertIn("XIMEA_macOS_ARM_SP.dmg", macos_url)
         self.assertEqual(macos_expected_arch, "arm64")
+
+    def test_installer_finds_macos_sdk_payload_when_dmg_wraps_it_in_subdirectory(self) -> None:
+        installer = load_install_module()
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            mount_dir = Path(tmp_text)
+            package_root = mount_dir / "XIMEA_macOS_SP"
+            (package_root / "m3api.framework").mkdir(parents=True)
+            (package_root / "Examples" / "xiPython" / "v3" / "ximea").mkdir(parents=True)
+
+            self.assertEqual(installer.find_macos_package_root(mount_dir), package_root)
 
     def test_installer_prefers_pwsh_for_windows_signature_checks(self) -> None:
         installer = load_install_module()
@@ -237,6 +248,22 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         installer = load_install_module()
         self.assertEqual(installer.power_shell_literal("C:/Program Files/XIMEA"), "'C:/Program Files/XIMEA'")
         self.assertEqual(installer.power_shell_literal("C:/Vendor's/XIMEA"), "'C:/Vendor''s/XIMEA'")
+
+    def test_windows_installer_does_not_reexport_installer_managed_ximea_sp_path(self) -> None:
+        installer = load_install_module()
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            sdk_root = Path(tmp_text) / "XIMEA"
+            with mock.patch.dict(os.environ, {"RUNNER_TEMP": tmp_text}, clear=True), \
+                 mock.patch.object(installer, "download"), \
+                 mock.patch.object(installer, "validate_windows_signature"), \
+                 mock.patch.object(installer, "run_checked", return_value=self.completed()), \
+                 mock.patch.object(installer, "read_windows_environment", return_value=str(sdk_root)), \
+                 mock.patch.object(installer, "append_github_env") as append_env, \
+                 mock.patch.object(installer, "append_github_path"):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    installer.install_windows()
+
+        append_env.assert_called_once_with({"PYTHONPATH": str(sdk_root / "API" / "Python" / "v3")})
 
 
 if __name__ == "__main__":

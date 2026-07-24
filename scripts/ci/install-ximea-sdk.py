@@ -60,6 +60,28 @@ def extract_tgz(archive: Path, destination: Path) -> None:
         tar.extractall(destination, filter="data")
 
 
+def copy_headers(source_dir: Path, target_dir: Path) -> None:
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for header in source_dir.glob("*.h"):
+        shutil.copy2(header, target_dir / header.name)
+
+
+def copy_xiapiplus_support(package_root: Path, sdk_root: Path) -> None:
+    source = package_root / "samples" / "_libs" / "xiAPIplus"
+    shutil.copytree(source, sdk_root / "xiAPIplus", dirs_exist_ok=True)
+    include = sdk_root / "include"
+    files = {
+        source / "xiapiplus.h": include / "xiApiPlus.h",
+        source / "xiAPIplus_core.cpp": include / "xiAPIplus_core.cpp",
+        source / "xiAPIplus_parameters.cpp": include / "xiAPIplus_parameters.cpp",
+        source / "xiAPIplus_tiff.cpp": include / "xiAPIplus_tiff.cpp",
+        source / "xiAPIplus_tiff.h": include / "xiAPIplus_tiff.h",
+        package_root / "samples" / "_libs" / "os_common_header.h": sdk_root / "os_common_header.h",
+    }
+    for src, dst in files.items():
+        shutil.copy2(src, dst)
+
+
 def append_github_env(values: dict[str, str]) -> None:
     env_file = Path(require_env("GITHUB_ENV"))
     with env_file.open("a", encoding="utf-8") as handle:
@@ -67,28 +89,57 @@ def append_github_env(values: dict[str, str]) -> None:
             handle.write(f"{name}={value}\n")
 
 
+def append_github_path(path: Path) -> None:
+    path_file = Path(require_env("GITHUB_PATH"))
+    with path_file.open("a", encoding="utf-8") as handle:
+        handle.write(f"{path}\n")
+
+
 def linux_config() -> tuple[str, str]:
     machine = platform.machine().lower()
     if machine == "x86_64":
-        return LINUX_X64_URL, "x86_64"
+        return LINUX_X64_URL, "X64"
     if machine in {"aarch64", "arm64"}:
-        return LINUX_ARM64_URL, "arm64"
+        return LINUX_ARM64_URL, "Xarm64"
     raise RuntimeError(f"Unsupported Linux architecture: {platform.machine()}")
 
 
 def install_linux(pcie: bool = False) -> None:
-    sdk_url, _arch = linux_config()
+    sdk_url, sdk_arch = linux_config()
     runner_temp = Path(require_env("RUNNER_TEMP"))
     download_dir = runner_temp / "ximea-download"
     extract_dir = runner_temp / "ximea-package"
+    sdk_root = runner_temp / "ximea-sdk"
     machine = platform.machine()
     archive = download_dir / f"XIMEA_Linux_SP_beta_{machine}.tgz"
 
-    # Prerequisites for XIMEA's own install script (per XIMEA's Ubuntu
-    # troubleshooting instructions).
+    if pcie:
+        print("Ignoring --pcie: CI stages SDK files without running XIMEA's driver installer")
+
+    (sdk_root / "include" / "m3api").mkdir(parents=True, exist_ok=True)
+    (sdk_root / "lib").mkdir(parents=True, exist_ok=True)
+    download(sdk_url, archive)
+    extract_tgz(archive, extract_dir)
+
+    package_root = extract_dir / "package"
+    version_file = package_root / "version_LINUX_SP.txt"
+    if version_file.is_file():
+        print(f"Downloaded XIMEA Linux SDK {version_file.read_text(encoding='utf-8').strip()}")
+
     run_checked(["sudo", "apt-get", "update"])
     run_checked(
-        ["sudo", "apt-get", "install", "--yes", "build-essential", f"linux-headers-{platform.uname().release}"]
+        [
+            "sudo",
+            "apt-get",
+            "install",
+            "--yes",
+            "build-essential",
+            "cmake",
+            "g++",
+            "gcc",
+            "libraw1394-11",
+            "libusb-1.0-0",
+        ]
     )
     try:
         run_checked(["sudo", "apt-get", "install", "--yes", "libtiff5"])
@@ -110,30 +161,36 @@ def install_linux(pcie: bool = False) -> None:
         run_checked(["sudo", "ln", "-sfn", libtiff6, "/usr/lib/libtiff.so.5"])
         run_checked(["sudo", "ldconfig"])
 
-    download(sdk_url, archive)
-    extract_tgz(archive, extract_dir)
+    run_checked(
+        ["sudo", "install", "-m", "0644", str(package_root / "api" / sdk_arch / "libm3api.so.2"), "/usr/lib/libm3api.so.2"]
+    )
+    run_checked(["sudo", "ln", "-sfn", "libm3api.so.2", "/usr/lib/libm3api.so"])
+    run_checked(["sudo", "ldconfig"])
 
-    package_root = extract_dir / "package"
-    version_file = package_root / "version_LINUX_SP.txt"
-    if version_file.is_file():
-        print(f"Downloaded XIMEA Linux SDK {version_file.read_text(encoding='utf-8').strip()}")
-
-    # Let XIMEA's own installer handle drivers, libraries and udev rules.
-    install_cmd = ["sudo", "./install"]
-    if pcie:
-        install_cmd.append("-pcie")
-    run_checked(install_cmd, cwd=package_root)
+    copy_headers(package_root / "include", sdk_root / "include")
+    copy_headers(package_root / "include", sdk_root / "include" / "m3api")
+    copy_xiapiplus_support(package_root, sdk_root)
+    shutil.copy2(package_root / "api" / sdk_arch / "libm3api.so.2", sdk_root / "lib" / "libm3api.so.2")
+    sdk_library_link = sdk_root / "lib" / "libm3api.so"
+    if sdk_library_link.exists() or sdk_library_link.is_symlink():
+        sdk_library_link.unlink()
+    sdk_library_link.symlink_to("libm3api.so.2")
 
     values = {
-        "XIMEA_ROOT": "/opt/XIMEA",
+        "XIMEA_ROOT": str(sdk_root),
+        "XIMEA_SP_PATH": str(sdk_root),
         "PYTHONPATH": (
             f"{package_root / 'api' / 'Python' / 'v3'}"
             f"{os.pathsep + os.environ['PYTHONPATH'] if os.environ.get('PYTHONPATH') else ''}"
         ),
+        "LD_LIBRARY_PATH": (
+            f"{sdk_root / 'lib'}"
+            f"{os.pathsep + os.environ['LD_LIBRARY_PATH'] if os.environ.get('LD_LIBRARY_PATH') else ''}"
+        ),
     }
     os.environ.update(values)
     append_github_env(values)
-    print(f"Installed latest XIMEA SDK beta for Linux {machine} via ./install")
+    print(f"Installed latest XIMEA SDK beta for Linux {machine} at {sdk_root}")
 
 
 def macos_config() -> tuple[str, str]:
@@ -145,36 +202,50 @@ def macos_config() -> tuple[str, str]:
     raise RuntimeError(f"Unsupported macOS architecture: {platform.machine()}")
 
 
+def find_macos_package_root(mount_dir: Path) -> Path:
+    candidates = [mount_dir]
+    candidates.extend(path.parent for path in mount_dir.rglob("m3api.framework") if path.is_dir())
+    for candidate in candidates:
+        framework = candidate / "m3api.framework"
+        python_package = candidate / "Examples" / "xiPython" / "v3" / "ximea"
+        if framework.is_dir() and python_package.is_dir():
+            return candidate
+
+    mounted_entries = ", ".join(sorted(path.relative_to(mount_dir).as_posix() for path in mount_dir.iterdir()))
+    raise FileNotFoundError(
+        "Missing m3api.framework and ximea Python package on mounted XIMEA volume"
+        f" {mount_dir}; top-level entries: {mounted_entries or '<empty>'}"
+    )
+
+
 def install_macos() -> None:
-    sdk_url, _expected_arch = macos_config()
+    sdk_url, expected_arch = macos_config()
     runner_temp = Path(require_env("RUNNER_TEMP"))
     download_dir = runner_temp / "ximea-download"
+    support_dir = runner_temp / "ximea-portable-sources"
+    python_root = runner_temp / "ximea-python"
+    sdk_root = runner_temp / "ximea-sdk"
     mount_dir = runner_temp / "ximea-volume"
     machine = platform.machine()
     dmg = download_dir / f"XIMEA_macOS_SP_beta_{machine}.dmg"
+    support_archive = download_dir / "XIMEA_Linux_SP_beta.tgz"
 
-    mount_dir.mkdir(parents=True, exist_ok=True)
+    for path in (download_dir, support_dir, python_root, sdk_root / "include" / "m3api", mount_dir):
+        path.mkdir(parents=True, exist_ok=True)
     download(sdk_url, dmg)
+    download(LINUX_X64_URL, support_archive)
 
     attached = False
     try:
-        run_checked(["hdiutil", "attach", "-nobrowse", "-mountpoint", str(mount_dir), str(dmg)])
+        run_checked(["hdiutil", "attach", "-readonly", "-nobrowse", "-mountpoint", str(mount_dir), str(dmg)])
         attached = True
+        package_root = find_macos_package_root(mount_dir)
 
-        install_script = mount_dir / "install"
-        if not install_script.is_file():
-            raise FileNotFoundError(f"Missing install script on volume: {install_script}")
-
-        # Let XIMEA's own installer handle the framework, CamTool and
-        # system-extension registration.
-        run_checked(["sudo", "./install"], cwd=mount_dir)
-
-        # Python bindings live only in the package's example sources, so
-        # copy them out before the volume is detached.
-        python_src = mount_dir / "Examples" / "xiPython" / "v3" / "ximea"
-        python_root = runner_temp / "ximea-python"
-        if python_src.is_dir():
-            shutil.copytree(python_src, python_root / "ximea", dirs_exist_ok=True)
+        run_checked(["sudo", "rm", "-rf", "/Library/Frameworks/m3api.framework"])
+        run_checked(["sudo", "ditto", str(package_root / "m3api.framework"), "/Library/Frameworks/m3api.framework"])
+        run_checked(["sudo", "xattr", "-dr", "com.apple.quarantine", "/Library/Frameworks/m3api.framework"])
+        run_checked(["codesign", "--verify", "--deep", "--strict", "/Library/Frameworks/m3api.framework"])
+        shutil.copytree(package_root / "Examples" / "xiPython" / "v3" / "ximea", python_root / "ximea", dirs_exist_ok=True)
     finally:
         if attached:
             subprocess.run(
@@ -184,22 +255,40 @@ def install_macos() -> None:
                 stderr=subprocess.DEVNULL,
             )
 
+    extract_tgz(support_archive, support_dir)
+    portable_root = support_dir / "package"
+    version_file = portable_root / "version_LINUX_SP.txt"
+    if version_file.is_file():
+        print(f"Downloaded XIMEA Linux portable sources {version_file.read_text(encoding='utf-8').strip()}")
+
+    copy_headers(portable_root / "include", sdk_root / "include")
+    copy_headers(portable_root / "include", sdk_root / "include" / "m3api")
+    framework_header = Path("/Library/Frameworks/m3api.framework/Headers/xiApi.h")
+    shutil.copy2(framework_header, sdk_root / "include" / "xiApi.h")
+    shutil.copy2(framework_header, sdk_root / "include" / "m3api" / "xiApi.h")
+    copy_xiapiplus_support(portable_root, sdk_root)
+
+    lipo = run_checked(["lipo", "-archs", "/Library/Frameworks/m3api.framework/m3api"], stdout=subprocess.PIPE)
+    arches = set(lipo.stdout.split())
+    if expected_arch not in arches:
+        raise RuntimeError(f"m3api framework does not contain {expected_arch}: {lipo.stdout.strip()}")
+
     values = {
-        "XIMEA_ROOT": "/Library/Frameworks/m3api.framework",
+        "XIMEA_ROOT": str(sdk_root),
+        "XIMEA_SP_PATH": str(sdk_root),
+        "PYTHONPATH": (
+            f"{python_root}"
+            f"{os.pathsep + os.environ['PYTHONPATH'] if os.environ.get('PYTHONPATH') else ''}"
+        ),
         "DYLD_FRAMEWORK_PATH": (
             f"/Library/Frameworks"
             f"{os.pathsep + os.environ['DYLD_FRAMEWORK_PATH'] if os.environ.get('DYLD_FRAMEWORK_PATH') else ''}"
         ),
     }
-    python_root = runner_temp / "ximea-python"
-    if python_root.is_dir():
-        values["PYTHONPATH"] = (
-            f"{python_root}{os.pathsep + os.environ['PYTHONPATH'] if os.environ.get('PYTHONPATH') else ''}"
-        )
 
     os.environ.update(values)
     append_github_env(values)
-    print(f"Installed latest XIMEA SDK beta for macOS {machine} via ./install")
+    print(f"Installed latest XIMEA SDK beta for macOS {machine} at {sdk_root}")
 
 
 def validate_windows_signature(installer: Path) -> None:
@@ -232,12 +321,12 @@ def install_windows() -> None:
 
     sdk_root = Path(ximea_sp_path)
     values = {
-        "XIMEA_SP_PATH": str(sdk_root),
         "PYTHONPATH": str(sdk_root / "API" / "Python" / "v3"),
     }
     os.environ.update(values)
     os.environ["PATH"] = f"{sdk_root / 'API' / 'xiAPI'}{os.pathsep}{os.environ.get('PATH', '')}"
     append_github_env(values)
+    append_github_path(sdk_root / "API" / "xiAPI")
     print(f"Installed latest XIMEA SDK beta for Windows x64 at {sdk_root}")
 
 
@@ -276,7 +365,7 @@ def detect_platform() -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Install the latest XIMEA SDK beta for GitHub-hosted CI.")
     parser.add_argument("--platform", choices=sorted(PLATFORMS), help="Override platform auto-detection.")
-    parser.add_argument("--pcie", action="store_true", help="Pass -pcie to the Linux ./install script.")
+    parser.add_argument("--pcie", action="store_true", help="Accepted for compatibility; ignored by CI staging install.")
     return parser
 
 
