@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <xiApiPlus.h>
+#include <xiapiplus.h>
 
 int main()
 {

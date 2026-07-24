@@ -131,9 +131,9 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 "include/m3Identify.h",
                 "include/m3api/wintypedefs.h",
                 "include/m3api/m3Identify.h",
-                "include/xiApiPlus.h",
-                "include/xiAPIplus_core.cpp",
-                "os_common_header.h",
+                "samples/_libs/xiAPIplus/xiapiplus.h",
+                "samples/_libs/xiAPIplus/xiAPIplus_core.cpp",
+                "samples/_libs/os_common_header.h",
                 "lib/libm3api.so.2",
             ):
                 self.touch(root, relative)
@@ -169,9 +169,9 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 framework_root / "m3api.framework" / "m3api",
                 sdk_root / "include" / "wintypedefs.h",
                 sdk_root / "include" / "m3api" / "wintypedefs.h",
-                sdk_root / "include" / "xiApiPlus.h",
-                sdk_root / "include" / "xiAPIplus_core.cpp",
-                sdk_root / "os_common_header.h",
+                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiapiplus.h",
+                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiAPIplus_core.cpp",
+                sdk_root / "Examples" / "Sources" / "_libs" / "os_common_header.h",
             ):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("fixture", encoding="utf-8")
@@ -199,9 +199,9 @@ class VerifyXimeaSdkTests(unittest.TestCase):
                 framework_root / "m3api.framework" / "m3api",
                 sdk_root / "include" / "wintypedefs.h",
                 sdk_root / "include" / "m3api" / "wintypedefs.h",
-                sdk_root / "include" / "xiApiPlus.h",
-                sdk_root / "include" / "xiAPIplus_core.cpp",
-                sdk_root / "os_common_header.h",
+                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiapiplus.h",
+                sdk_root / "Examples" / "Sources" / "_libs" / "xiAPIplus" / "xiAPIplus_core.cpp",
+                sdk_root / "Examples" / "Sources" / "_libs" / "os_common_header.h",
             ):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("fixture", encoding="utf-8")
@@ -222,7 +222,10 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertIn("Import-Module Microsoft.PowerShell.Security", text)
         for package in ("cmake", "g++", "gcc", "libraw1394-11", "libtiff6", "libusb-1.0-0"):
             self.assertIn(f'"{package}"', text)
-        self.assertIn("copy_headers", text)
+        self.assertIn("./install", text)
+        self.assertNotIn("-silent", text)
+        self.assertNotIn("-nonet", text)
+        self.assertNotIn("copy_headers", text)
 
     def test_single_python_installer_replaces_shell_and_powershell_wrappers(self) -> None:
         workflow = (REPO_ROOT / ".github" / "workflows" / "development-ci.yml").read_text(encoding="utf-8")
@@ -239,30 +242,29 @@ class VerifyXimeaSdkTests(unittest.TestCase):
     def test_installer_detects_architecture_specific_linux_and_macos_urls(self) -> None:
         installer = load_install_module()
         with mock.patch.object(installer.platform, "machine", return_value="x86_64"):
-            linux_url, linux_sdk_arch = installer.linux_config()
+            linux_url = installer.linux_config()
             macos_url, macos_expected_arch = installer.macos_config()
         self.assertIn("ximea_linux_sp_beta.tgz", linux_url)
-        self.assertEqual(linux_sdk_arch, "X64")
         self.assertIn("XIMEA_macOX_SP.dmg", macos_url)
         self.assertEqual(macos_expected_arch, "x86_64")
 
         with mock.patch.object(installer.platform, "machine", return_value="arm64"):
-            linux_url, linux_sdk_arch = installer.linux_config()
+            linux_url = installer.linux_config()
             macos_url, macos_expected_arch = installer.macos_config()
         self.assertIn("ximea_linux_arm_sp_beta.tgz", linux_url)
-        self.assertEqual(linux_sdk_arch, "Xarm64")
         self.assertIn("XIMEA_macOS_ARM_SP.dmg", macos_url)
         self.assertEqual(macos_expected_arch, "arm64")
 
-    def test_installer_finds_macos_sdk_payload_when_dmg_wraps_it_in_subdirectory(self) -> None:
+    def test_installer_finds_macos_install_script_when_dmg_wraps_it_in_subdirectory(self) -> None:
         installer = load_install_module()
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             mount_dir = Path(tmp_text)
             package_root = mount_dir / "XIMEA_macOS_SP"
-            (package_root / "m3api.framework").mkdir(parents=True)
-            (package_root / "Examples" / "xiPython" / "v3" / "ximea").mkdir(parents=True)
+            package_root.mkdir(parents=True)
+            install_script = package_root / "install"
+            install_script.write_text("#!/bin/sh\n", encoding="utf-8")
 
-            self.assertEqual(installer.find_macos_package_root(mount_dir), package_root)
+            self.assertEqual(installer.find_macos_install_script(mount_dir), install_script)
 
     def test_installer_prefers_pwsh_for_windows_signature_checks(self) -> None:
         installer = load_install_module()

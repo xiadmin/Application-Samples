@@ -82,7 +82,7 @@ function(ximea_find_sdk)
         set(_ximea_lib_names m3api)
     else()
         set(_ximea_inc_hints ${_ximea_root_inc_hints} "/opt/XIMEA/include")
-        set(_ximea_inc_plus_hints ${_ximea_root_inc_hints} "/opt/XIMEA/include")
+        set(_ximea_inc_plus_hints ${_ximea_root_inc_hints} "/opt/XIMEA/samples/_libs/xiAPIplus" "/opt/XIMEA/include")
         set(_ximea_lib_hints ${_ximea_root_lib_hints} "/opt/XIMEA/lib" "/opt/XIMEA/lib64")
         set(_ximea_lib_names m3api)
     endif()
@@ -93,7 +93,7 @@ function(ximea_find_sdk)
     )
 
     find_path(XIMEA_INCLUDE_PLUS_DIR
-        NAMES xiApiPlus.h
+        NAMES xiapiplus.h xiApiPlus.h
         HINTS ${_ximea_inc_plus_hints}
     )
 
@@ -111,8 +111,8 @@ function(ximea_find_sdk)
         message(WARNING
             "XIMEA SDK not found. Install the XIMEA Software Package and set "
             "XIMEA_ROOT (cmake -DXIMEA_ROOT=<path>) or the XIMEA_SP_PATH environment variable. "
-            "xiApiPlus.h is expected at <XIMEA_SP_PATH>/Examples/Sources/_libs/xiAPIplus "
-            "on Windows, /opt/XIMEA/include on Linux, or set XIMEA_INCLUDE_PLUS_DIR manually.")
+            "xiapiplus.h is expected at <XIMEA_SP_PATH>/Examples/Sources/_libs/xiAPIplus "
+            "on Windows, /opt/XIMEA/samples/_libs/xiAPIplus on Linux, or set XIMEA_INCLUDE_PLUS_DIR manually.")
         if(ARG_REQUIRED)
             message(FATAL_ERROR "Required XIMEA SDK was not found")
         endif()

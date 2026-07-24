@@ -21,7 +21,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <xiApiPlus.h>
+#include <xiapiplus.h>
 
 static constexpr int frameCount = 10;
 static constexpr float exposureUs = 100000.0f;
