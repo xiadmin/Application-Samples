@@ -4,12 +4,10 @@ set -euo pipefail
 case "$(uname -m)" in
     x86_64)
         sdk_url="https://www.ximea.com/getattachment/1cbfaa8e-a175-4dab-badd-ab2961387799/XIMEA_macOX_SP.dmg"
-        sdk_sha256="3650b19a65ceafd80ef11a9ab996e1793472fd9ef6e27013ebccc049676010cc"
         expected_arch="x86_64"
         ;;
     arm64)
         sdk_url="https://www.ximea.com/getattachment/8e005503-9914-4208-a80b-509dbbb3a901/XIMEA_macOS_ARM_SP.dmg"
-        sdk_sha256="41ecba4131ba997ba517c24625f2e519ac698186a5913c31a04cf56d4109c7b9"
         expected_arch="arm64"
         ;;
     *)
@@ -22,20 +20,17 @@ esac
 : "${GITHUB_ENV:?GITHUB_ENV must be set by GitHub Actions}"
 
 linux_support_url="https://www.ximea.com/getattachment/ab5baacf-e806-4b9d-b3d4-7eedf0f092b8/XIMEA_Linux_SP.tgz"
-linux_support_sha256="c99e95ee49f978e8e96446241493edb0738e4cd9bb6f05f0de6788bd200c20ff"
 download_dir="$RUNNER_TEMP/ximea-download"
 support_dir="$RUNNER_TEMP/ximea-portable-sources"
 python_root="$RUNNER_TEMP/ximea-python"
 sdk_root="$RUNNER_TEMP/ximea-sdk"
 mount_dir="$RUNNER_TEMP/ximea-volume"
-dmg="$download_dir/XIMEA_macOS_SP_V4.33.21_$(uname -m).dmg"
-support_archive="$download_dir/XIMEA_Linux_SP_V4.33.21.tgz"
+dmg="$download_dir/XIMEA_macOS_SP_latest_$(uname -m).dmg"
+support_archive="$download_dir/XIMEA_Linux_SP_latest.tgz"
 
 mkdir -p "$download_dir" "$support_dir" "$python_root" "$sdk_root/include/m3api" "$mount_dir"
 curl --fail --location --retry 3 --silent --show-error "$sdk_url" --output "$dmg"
-printf '%s  %s\n' "$sdk_sha256" "$dmg" | shasum --algorithm 256 --check
 curl --fail --location --retry 3 --silent --show-error "$linux_support_url" --output "$support_archive"
-printf '%s  %s\n' "$linux_support_sha256" "$support_archive" | shasum --algorithm 256 --check
 
 hdiutil attach -readonly -nobrowse -mountpoint "$mount_dir" "$dmg"
 trap 'hdiutil detach "$mount_dir" >/dev/null 2>&1 || true' EXIT
@@ -50,7 +45,9 @@ ditto "$mount_dir/Examples/xiPython/v3/ximea" "$python_root/ximea"
 
 tar -xzf "$support_archive" -C "$support_dir"
 portable_root="$support_dir/package"
-test "$(tr -d '\r\n' < "$portable_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_33_21"
+if [ -f "$portable_root/version_LINUX_SP.txt" ]; then
+    printf 'Downloaded XIMEA Linux portable sources %s\n' "$(tr -d '\r\n' < "$portable_root/version_LINUX_SP.txt")"
+fi
 
 cp "$portable_root/include"/*.h "$sdk_root/include/"
 cp "$portable_root/include"/*.h "$sdk_root/include/m3api/"
@@ -84,4 +81,4 @@ export DYLD_FRAMEWORK_PATH="/Library/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRA
 
 hdiutil detach "$mount_dir"
 trap - EXIT
-printf 'Installed XIMEA SDK beta V4.33.21 for macOS %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"
+printf 'Installed latest XIMEA SDK beta for macOS %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"

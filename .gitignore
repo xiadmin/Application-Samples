@@ -4,6 +4,7 @@
 *.md
 
 !README.md
+!CONVENTIONS.md
 
 build/
 !build/.gitkeep

@@ -4,12 +4,10 @@ set -euo pipefail
 case "$(uname -m)" in
     x86_64)
         sdk_url="https://www.ximea.com/getattachment/ab5baacf-e806-4b9d-b3d4-7eedf0f092b8/XIMEA_Linux_SP.tgz"
-        sdk_sha256="c99e95ee49f978e8e96446241493edb0738e4cd9bb6f05f0de6788bd200c20ff"
         sdk_arch="X64"
         ;;
     aarch64|arm64)
         sdk_url="https://www.ximea.com/getattachment/21790810-a3ed-4183-948f-e999cfcf8233/XIMEA_Linux_ARM_SP.tgz"
-        sdk_sha256="a631f994808328e3a945e2db0d6cae37c3c0a14620a9d0f63e602071d7458976"
         sdk_arch="Xarm64"
         ;;
     *)
@@ -24,15 +22,16 @@ esac
 download_dir="$RUNNER_TEMP/ximea-download"
 extract_dir="$RUNNER_TEMP/ximea-package"
 sdk_root="$RUNNER_TEMP/ximea-sdk"
-archive="$download_dir/XIMEA_Linux_SP_V4.33.21_$(uname -m).tgz"
+archive="$download_dir/XIMEA_Linux_SP_latest_$(uname -m).tgz"
 
 mkdir -p "$download_dir" "$extract_dir" "$sdk_root/include/m3api" "$sdk_root/lib"
 curl --fail --location --retry 3 --silent --show-error "$sdk_url" --output "$archive"
-printf '%s  %s\n' "$sdk_sha256" "$archive" | sha256sum --check --strict -
 tar -xzf "$archive" -C "$extract_dir"
 
 package_root="$extract_dir/package"
-test "$(tr -d '\r\n' < "$package_root/version_LINUX_SP.txt")" = "LINUX_SP_V4_33_21"
+if [ -f "$package_root/version_LINUX_SP.txt" ]; then
+    printf 'Downloaded XIMEA Linux SDK %s\n' "$(tr -d '\r\n' < "$package_root/version_LINUX_SP.txt")"
+fi
 
 sudo apt-get update
 sudo apt-get install --yes libraw1394-11 libtiff6 libusb-1.0-0
@@ -69,4 +68,4 @@ export LD_LIBRARY_PATH="$sdk_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     printf 'LD_LIBRARY_PATH=%s\n' "$LD_LIBRARY_PATH"
 } >> "$GITHUB_ENV"
 
-printf 'Installed XIMEA SDK beta V4.33.21 for Linux %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"
+printf 'Installed latest XIMEA SDK beta for Linux %s at %s\n' "$(uname -m)" "$XIMEA_ROOT"

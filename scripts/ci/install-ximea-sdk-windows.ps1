@@ -1,9 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $sdkUrl = "https://www.ximea.com/getattachment/23c0b9e6-5c24-4d27-9a6e-b377d9390c3d/XIMEA_Windows_SP_Beta.exe"
-$sdkSha256 = "d184a7469efb84a7855739545cfd9d98b1602f3c268749d7c4bacea5a0d161dd"
 $downloadDir = Join-Path $env:RUNNER_TEMP "ximea-download"
-$installer = Join-Path $downloadDir "XIMEA_Windows_SP_V4.33.22.exe"
+$installer = Join-Path $downloadDir "XIMEA_Windows_SP_Beta_latest.exe"
 
 if ([string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) {
     throw "RUNNER_TEMP must be set by GitHub Actions"
@@ -14,11 +13,6 @@ if ([string]::IsNullOrWhiteSpace($env:GITHUB_ENV)) {
 
 New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
 Invoke-WebRequest -Uri $sdkUrl -OutFile $installer
-
-$actualSha256 = (Get-FileHash -Algorithm SHA256 -Path $installer).Hash.ToLowerInvariant()
-if ($actualSha256 -ne $sdkSha256) {
-    throw "XIMEA SDK checksum mismatch: expected $sdkSha256, got $actualSha256"
-}
 
 $signature = Get-AuthenticodeSignature -FilePath $installer
 if ($signature.Status -ne "Valid" -or $signature.SignerCertificate.Subject -notmatch "XIMEA") {
@@ -46,4 +40,4 @@ $env:PATH = "$ximeaSpPath\API\xiAPI;$env:PATH"
 "PYTHONPATH=$env:PYTHONPATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 "$ximeaSpPath\API\xiAPI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-Write-Host "Installed XIMEA SDK beta V4.33.22 for Windows x64 at $env:XIMEA_SP_PATH"
+Write-Host "Installed latest XIMEA SDK beta for Windows x64 at $env:XIMEA_SP_PATH"
