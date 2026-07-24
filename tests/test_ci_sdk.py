@@ -306,7 +306,6 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         installer = load_install_module()
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             install_script = Path("/Volumes/XIMEA/install.app/Contents/MacOS/install.sh")
-            python_package = Path("/Volumes/XIMEA/Examples/xiPython/v3/ximea")
 
             def run_checked(cmd: list[str], **_kwargs):
                 if cmd[0] == "lipo":
@@ -329,7 +328,8 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         attach_command = commands[0]
         self.assertEqual(attach_command[:4], ["hdiutil", "attach", "-readonly", "-nobrowse"])
         self.assertNotIn("-mountpoint", attach_command)
-        install_python.assert_called_once_with(python_package)
+        self.assertIn([sys.executable, "-c", "import ximea"], commands)
+        install_python.assert_not_called()
         append_env.assert_called_once_with({"XIMEA_SP_PATH": "/Library/Frameworks/m3api.framework"})
 
     def test_installer_copies_python_package_into_active_interpreter(self) -> None:

@@ -171,7 +171,7 @@ def install_macos() -> None:
         attached = True
         installer = find_macos_install_script(mount_dir)
         run_checked(["/bin/bash", str(installer)], cwd=installer.parent)
-        install_python_package(mount_dir / "Examples" / "xiPython" / "v3" / "ximea")
+        run_checked([sys.executable, "-c", "import ximea"])
     finally:
         if attached:
             subprocess.run(
