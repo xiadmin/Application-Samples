@@ -225,11 +225,16 @@ class VerifyXimeaSdkTests(unittest.TestCase):
     def test_installer_prefers_pwsh_for_windows_signature_checks(self) -> None:
         installer = load_install_module()
         with mock.patch.object(installer.shutil, "which", side_effect=lambda name: "C:/Program Files/PowerShell/7/pwsh.exe" if name == "pwsh" else "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"):
-            command = installer.power_shell_command("fixture", "arg")
+            command = installer.power_shell_command("fixture")
         self.assertEqual(command[0], "C:/Program Files/PowerShell/7/pwsh.exe")
         self.assertIn("-NoProfile", command)
         self.assertIn("-NonInteractive", command)
-        self.assertEqual(command[-1], "arg")
+        self.assertEqual(command[-1], "fixture")
+
+    def test_installer_embeds_powershell_values_as_quoted_literals(self) -> None:
+        installer = load_install_module()
+        self.assertEqual(installer.power_shell_literal("C:/Program Files/XIMEA"), "'C:/Program Files/XIMEA'")
+        self.assertEqual(installer.power_shell_literal("C:/Vendor's/XIMEA"), "'C:/Vendor''s/XIMEA'")
 
 
 if __name__ == "__main__":

@@ -228,15 +228,16 @@ def install_macos() -> None:
 
 
 def validate_windows_signature(installer: Path) -> None:
+    installer_literal = power_shell_literal(str(installer))
     script = (
-        "param([string]$Installer); "
+        f"$Installer = {installer_literal}; "
         "Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; "
         "$signature = Get-AuthenticodeSignature -FilePath $Installer; "
         "if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'XIMEA') { "
         "  throw 'XIMEA SDK Authenticode signature is not valid' "
         "}"
     )
-    run_checked(power_shell_command(script, str(installer)))
+    run_checked(power_shell_command(script))
 
 
 def install_windows() -> None:
@@ -267,19 +268,24 @@ def install_windows() -> None:
 
 
 def read_windows_environment(name: str) -> str:
+    name_literal = power_shell_literal(name)
     script = (
-        "param([string]$Name); "
+        f"$Name = {name_literal}; "
         "$value = [Environment]::GetEnvironmentVariable($Name, 'Machine'); "
         "if ([string]::IsNullOrWhiteSpace($value)) { $value = [Environment]::GetEnvironmentVariable($Name, 'User') }; "
         "if ($value) { Write-Output $value }"
     )
-    result = run_checked(power_shell_command(script, name), stdout=subprocess.PIPE)
+    result = run_checked(power_shell_command(script), stdout=subprocess.PIPE)
     return result.stdout.strip()
 
 
-def power_shell_command(script: str, *args: str) -> list[str]:
+def power_shell_command(script: str) -> list[str]:
     executable = shutil.which("pwsh") or shutil.which("powershell") or "powershell"
-    return [executable, "-NoProfile", "-NonInteractive", "-Command", script, *args]
+    return [executable, "-NoProfile", "-NonInteractive", "-Command", script]
+
+
+def power_shell_literal(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
 
 
 def detect_platform() -> str:
