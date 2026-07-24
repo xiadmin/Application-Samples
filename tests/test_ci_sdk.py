@@ -189,6 +189,7 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertNotRegex(text.lower(), r"sha256|checksum")
         self.assertIn("XIMEA_Windows_SP_Beta.exe", text)
         self.assertIn("Get-AuthenticodeSignature", text)
+        self.assertIn("Import-Module Microsoft.PowerShell.Security", text)
         self.assertIn("copy_headers", text)
 
     def test_single_python_installer_replaces_shell_and_powershell_wrappers(self) -> None:
@@ -220,6 +221,15 @@ class VerifyXimeaSdkTests(unittest.TestCase):
         self.assertEqual(linux_sdk_arch, "Xarm64")
         self.assertIn("XIMEA_macOS_ARM_SP.dmg", macos_url)
         self.assertEqual(macos_expected_arch, "arm64")
+
+    def test_installer_prefers_pwsh_for_windows_signature_checks(self) -> None:
+        installer = load_install_module()
+        with mock.patch.object(installer.shutil, "which", side_effect=lambda name: "C:/Program Files/PowerShell/7/pwsh.exe" if name == "pwsh" else "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"):
+            command = installer.power_shell_command("fixture", "arg")
+        self.assertEqual(command[0], "C:/Program Files/PowerShell/7/pwsh.exe")
+        self.assertIn("-NoProfile", command)
+        self.assertIn("-NonInteractive", command)
+        self.assertEqual(command[-1], "arg")
 
 
 if __name__ == "__main__":
