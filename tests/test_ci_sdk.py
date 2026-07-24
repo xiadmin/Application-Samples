@@ -93,6 +93,35 @@ class VerifyXimeaSdkTests(unittest.TestCase):
 
         self.assertIn("did not report a version", str(context.exception))
 
+    def test_windows_default_sdk_root_prefers_process_environment(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            with mock.patch.dict(os.environ, {"XIMEA_SP_PATH": tmp_text}, clear=True), \
+                 mock.patch.object(self.verify, "read_windows_environment") as read_environment:
+                self.assertEqual(self.verify.default_sdk_root("windows-x64"), Path(tmp_text))
+
+        read_environment.assert_not_called()
+
+    def test_windows_default_sdk_root_reads_installer_environment(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
+            with mock.patch.dict(os.environ, {}, clear=True), \
+                 mock.patch.object(self.verify, "read_windows_environment", return_value=tmp_text):
+                self.assertEqual(self.verify.default_sdk_root("windows-x64"), Path(tmp_text))
+
+    def test_windows_default_sdk_root_fails_clearly_when_missing(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True), \
+             mock.patch.object(self.verify, "read_windows_environment", return_value=""):
+            with self.assertRaises(RuntimeError) as context:
+                self.verify.default_sdk_root("windows-x64")
+
+        self.assertIn("XIMEA_SP_PATH is not set", str(context.exception))
+
+    def test_non_windows_default_sdk_root_fails_clearly_when_missing(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(RuntimeError) as context:
+                self.verify.default_sdk_root("linux-x64")
+
+        self.assertIn("XIMEA_ROOT is not set", str(context.exception))
+
     def test_linux_verification_checks_architecture_specific_layout_and_cmake(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ximea-sdk-test-") as tmp_text:
             root = Path(tmp_text)

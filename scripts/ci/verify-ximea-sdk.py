@@ -119,10 +119,42 @@ def verify_macos(
     verify_python_import(python)
 
 
+def read_windows_environment(name: str) -> str:
+    command = power_shell_command(
+        f"$Name = {power_shell_literal(name)}; "
+        "$value = [Environment]::GetEnvironmentVariable($Name, 'Machine'); "
+        "if ([string]::IsNullOrWhiteSpace($value)) { $value = [Environment]::GetEnvironmentVariable($Name, 'User') }; "
+        "if ($value) { Write-Output $value }"
+    )
+    if command is None:
+        return ""
+    result = run_checked(command)
+    return result.stdout.strip()
+
+
+def power_shell_command(script: str) -> list[str] | None:
+    executable = shutil.which("pwsh") or shutil.which("powershell")
+    if executable is None and host_platform.system().lower() == "windows":
+        executable = "powershell"
+    if executable is None:
+        return None
+    return [executable, "-NoProfile", "-NonInteractive", "-Command", script]
+
+
+def power_shell_literal(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def require_env_path(name: str, value: str) -> Path:
+    if not value:
+        raise RuntimeError(f"{name} is not set by the XIMEA SDK installer")
+    return Path(value)
+
+
 def default_sdk_root(platform_name: str) -> Path:
     if platform_name == "windows-x64":
-        return Path(os.environ.get("XIMEA_SP_PATH", ""))
-    return Path(os.environ.get("XIMEA_ROOT", ""))
+        return require_env_path("XIMEA_SP_PATH", os.environ.get("XIMEA_SP_PATH", "") or read_windows_environment("XIMEA_SP_PATH"))
+    return require_env_path("XIMEA_ROOT", os.environ.get("XIMEA_ROOT", ""))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -139,8 +171,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
-    sdk_root = (args.sdk_root or default_sdk_root(args.platform)).resolve()
     try:
+        sdk_root = (args.sdk_root if args.sdk_root is not None else default_sdk_root(args.platform)).resolve()
         print(f"Verifying XIMEA SDK for {args.platform}")
         print(f"SDK root: {sdk_root}")
         if args.platform == "linux-x64" or args.platform == "linux-arm64":
