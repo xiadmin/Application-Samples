@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import ntpath
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +35,15 @@ def is_executable(path: Path) -> bool:
     return os.name != "nt" and path.suffix == "" and os.access(path, os.X_OK)
 
 
+def runtime_environment(platform_name: str, base_environment: Mapping[str, str]) -> dict[str, str]:
+    environment = dict(base_environment)
+    ximea_sp_path = environment.get("XIMEA_SP_PATH")
+    if platform_name == "nt" and ximea_sp_path:
+        xiapi_dll_dir = ntpath.join(ximea_sp_path, "API", "xiAPI")
+        environment["PATH"] = f"{xiapi_dll_dir};{environment.get('PATH', '')}"
+    return environment
+
+
 def discover_commands(build_root: Path, python_roots: list[Path]) -> list[SampleCommand]:
     commands = [
         SampleCommand(path.parent.name, [str(path.resolve())], path.parent.resolve())
@@ -57,6 +68,7 @@ def run_sample(command: SampleCommand, timeout_seconds: int) -> str | None:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=timeout_seconds,
+            env=runtime_environment(os.name, os.environ),
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         return str(error)
