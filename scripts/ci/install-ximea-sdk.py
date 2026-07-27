@@ -78,6 +78,14 @@ def install_python_package(source: Path) -> None:
     print(f"Installed XIMEA Python package for {sys.executable} at {destination}")
 
 
+def verify_python_import() -> None:
+    run_checked([
+        sys.executable,
+        "-c",
+        "import ximea; from ximea import xiapi; print(ximea.__version__); print(xiapi.__file__)",
+    ])
+
+
 def linux_config() -> str:
     machine = platform.machine().lower()
     if machine == "x86_64":
@@ -108,6 +116,7 @@ def install_linux() -> None:
 
     run_checked(["./install"], cwd=package_root)
     install_python_package(package_root / "api" / "Python" / "v3" / "ximea")
+    verify_python_import()
 
     values = {
         "XIMEA_SP_PATH": str(LINUX_INSTALL_ROOT),
@@ -171,7 +180,7 @@ def install_macos() -> None:
         attached = True
         installer = find_macos_install_script(mount_dir)
         run_checked(["/bin/bash", str(installer)], cwd=installer.parent)
-        run_checked([sys.executable, "-c", "import ximea"])
+        verify_python_import()
     finally:
         if attached:
             subprocess.run(
@@ -222,6 +231,7 @@ def install_windows() -> None:
 
     sdk_root = Path(ximea_sp_path)
     install_python_package(sdk_root / "API" / "Python" / "v3" / "ximea")
+    verify_python_import()
     values = {
         "XIMEA_SP_PATH": str(sdk_root),
     }

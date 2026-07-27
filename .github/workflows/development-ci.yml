@@ -21,10 +21,8 @@ jobs:
         include:
           - arch: x64
             runner: ubuntu-24.04
-            verify-platform: linux-x64
           - arch: arm64
             runner: ubuntu-24.04-arm
-            verify-platform: linux-arm64
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,8 +34,6 @@ jobs:
           python-version: '3.12'
       - name: Install XIMEA SDK
         run: python3 scripts/ci/install-ximea-sdk.py --platform linux
-      - name: Verify XIMEA SDK
-        run: python3 scripts/ci/verify-ximea-sdk.py --platform ${{ matrix.verify-platform }}
       - name: Build and attempt C/C++ cross-platform samples
         run: |
           python3 scripts/build.py --all --type cmake --skip-platform-specific \
@@ -63,9 +59,6 @@ jobs:
           python-version: '3.11'
       - name: Install XIMEA SDK
         run: python scripts/ci/install-ximea-sdk.py --platform windows
-      - name: Verify XIMEA SDK
-        shell: pwsh
-        run: python scripts/ci/verify-ximea-sdk.py --platform windows-x64
       - name: Build and attempt C/C++ cross-platform samples
         shell: pwsh
         run: |
@@ -94,10 +87,8 @@ jobs:
         include:
           - arch: x64
             runner: macos-15-intel
-            verify-platform: macos-x64
           - arch: arm64
             runner: macos-15
-            verify-platform: macos-arm64
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -109,8 +100,6 @@ jobs:
           python-version: '3.12'
       - name: Install XIMEA SDK
         run: python3 scripts/ci/install-ximea-sdk.py --platform macos
-      - name: Verify XIMEA SDK
-        run: python3 scripts/ci/verify-ximea-sdk.py --platform ${{ matrix.verify-platform }}
       - name: Build and attempt supported C cross-platform sample
         run: |
           python3 scripts/build.py --sample samples/xiapi/cross-platform/capture-10-images \

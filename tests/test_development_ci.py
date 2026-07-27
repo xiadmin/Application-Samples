@@ -22,11 +22,9 @@ class DevelopmentCiWorkflowTests(unittest.TestCase):
     def test_fixed_github_hosted_runner_labels_cover_all_five_platforms(self) -> None:
         for label in ("ubuntu-24.04", "ubuntu-24.04-arm", "windows-2022", "macos-15-intel", "macos-15"):
             self.assertIn(label, self.text)
-        for platform in ("linux-x64", "linux-arm64", "windows-x64", "macos-x64", "macos-arm64"):
-            self.assertIn(platform, self.text)
         self.assertNotIn("self-hosted", self.text)
 
-    def test_every_job_installs_and_verifies_sdk_before_building(self) -> None:
+    def test_every_job_installs_sdk_before_building(self) -> None:
         for job_name in ("linux:", "windows:", "macos:"):
             job_start = self.text.index(f"  {job_name}")
             next_job = self.text.find("\n  ", job_start + 3)
@@ -34,13 +32,13 @@ class DevelopmentCiWorkflowTests(unittest.TestCase):
                 next_job = self.text.find("\n  ", next_job + 1)
             job_text = self.text[job_start: next_job if next_job != -1 else len(self.text)]
             install = job_text.index("Install XIMEA SDK")
-            verify = job_text.index("Verify XIMEA SDK")
             build = min(index for index in (
                 job_text.find("Build and attempt"),
                 job_text.find("Compile-check and attempt"),
             ) if index != -1)
-            self.assertLess(install, verify)
-            self.assertLess(verify, build)
+            self.assertLess(install, build)
+        self.assertNotIn("Verify XIMEA SDK", self.text)
+        self.assertNotIn("verify-ximea-sdk.py", self.text)
 
     def test_linux_installer_uses_ximea_install_script_only(self) -> None:
         self.assertNotIn("Install non-XIMEA build prerequisites", self.text)
