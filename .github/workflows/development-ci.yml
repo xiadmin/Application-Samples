@@ -34,16 +34,20 @@ jobs:
           python-version: '3.12'
       - name: Install XIMEA SDK
         run: python3 scripts/ci/install-ximea-sdk.py --platform linux
-      - name: Build and attempt C/C++ cross-platform samples
+      - name: Build C/C++ cross-platform samples
         run: |
           python3 scripts/build.py --all --type cmake --skip-platform-specific \
-            --run --run-timeout-seconds 90 \
             --output-root "$RUNNER_TEMP/application-samples-linux-${{ matrix.arch }}"
-      - name: Compile-check and attempt cross-platform Python sample
+      - name: Compile-check cross-platform Python sample
         run: |
           python3 scripts/build.py --all --type python --skip-platform-specific \
-            --run --run-timeout-seconds 90 \
-            --output-root "$RUNNER_TEMP/application-samples-linux-${{ matrix.arch }}-python"
+            --output-root "$RUNNER_TEMP/application-samples-linux-${{ matrix.arch }}"
+      - name: Test samples without a camera
+        run: |
+          python3 tests/test_samples_without_camera.py \
+            --build-root "$RUNNER_TEMP/application-samples-linux-${{ matrix.arch }}/build" \
+            --python-root samples/xiapi-python/cross-platform \
+            --timeout-seconds 90
 
   windows:
     name: Windows x64
@@ -59,24 +63,28 @@ jobs:
           python-version: '3.11'
       - name: Install XIMEA SDK
         run: python scripts/ci/install-ximea-sdk.py --platform windows
-      - name: Build and attempt C/C++ cross-platform samples
+      - name: Build C/C++ cross-platform samples
         shell: pwsh
         run: |
           python scripts/build.py --all --type cmake --skip-platform-specific `
-            --run --run-timeout-seconds 90 `
             --output-root "$env:RUNNER_TEMP/application-samples-windows-x64"
-      - name: Build and attempt C# sample
+      - name: Build C# sample
         shell: pwsh
         run: |
           python scripts/build.py --all --type dotnet `
-            --run --run-timeout-seconds 90 `
-            --output-root "$env:RUNNER_TEMP/application-samples-windows-x64-dotnet"
-      - name: Compile-check and attempt cross-platform Python sample
+            --output-root "$env:RUNNER_TEMP/application-samples-windows-x64"
+      - name: Compile-check cross-platform Python sample
         shell: pwsh
         run: |
           python scripts/build.py --all --type python --skip-platform-specific `
-            --run --run-timeout-seconds 90 `
-            --output-root "$env:RUNNER_TEMP/application-samples-windows-x64-python"
+            --output-root "$env:RUNNER_TEMP/application-samples-windows-x64"
+      - name: Test samples without a camera
+        shell: pwsh
+        run: |
+          python tests/test_samples_without_camera.py `
+            --build-root "$env:RUNNER_TEMP/application-samples-windows-x64/build" `
+            --python-root samples/xiapi-python/cross-platform `
+            --timeout-seconds 90
 
   macos:
     name: macOS ${{ matrix.arch }}
@@ -100,13 +108,17 @@ jobs:
           python-version: '3.12'
       - name: Install XIMEA SDK
         run: python3 scripts/ci/install-ximea-sdk.py --platform macos
-      - name: Build and attempt supported C cross-platform sample
+      - name: Build supported C cross-platform sample
         run: |
           python3 scripts/build.py --sample samples/xiapi/cross-platform/capture-10-images \
-            --run --run-timeout-seconds 90 \
             --output-root "$RUNNER_TEMP/application-samples-macos-${{ matrix.arch }}"
-      - name: Compile-check and attempt cross-platform Python sample
+      - name: Compile-check cross-platform Python sample
         run: |
           python3 scripts/build.py --all --type python --skip-platform-specific \
-            --run --run-timeout-seconds 90 \
-            --output-root "$RUNNER_TEMP/application-samples-macos-${{ matrix.arch }}-python"
+            --output-root "$RUNNER_TEMP/application-samples-macos-${{ matrix.arch }}"
+      - name: Test samples without a camera
+        run: |
+          python3 tests/test_samples_without_camera.py \
+            --build-root "$RUNNER_TEMP/application-samples-macos-${{ matrix.arch }}/build" \
+            --python-root samples/xiapi-python/cross-platform \
+            --timeout-seconds 90
