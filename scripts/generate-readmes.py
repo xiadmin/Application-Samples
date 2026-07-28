@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from common import (
-    CSV_NAME,
     clean,
     find_samples_root,
     folder_name_for,
@@ -23,6 +22,7 @@ from common import (
 
 DEFAULT_TEMPLATE = "scripts/templates/sample-readme.md"
 README_NAME_RE = re.compile(r"^readme\.md$", re.IGNORECASE)
+TODO_TEXT = "TODO"
 
 SUPPORTED_SOURCE_FILES = {
     "main.c": "C",
@@ -48,24 +48,16 @@ LINKS_BY_LANGUAGE = {
 @dataclass(frozen=True)
 class SampleInfo:
     name: str
-    author: str
     category: str
     description: str
-    duplicate_group_id: str
     os_platform: str
     hardware_platform: str
     api_type: str
     language: str
     libraries: str
-    year: str
-    location: str
-    path: str
-    copyright: str
-    note: str
-    done: str
 
 
-def display(value: str, default: str = "-") -> str:
+def display(value: str, default: str = TODO_TEXT) -> str:
     value = clean(value)
     return value if value else default
 
@@ -78,21 +70,13 @@ def read_samples(csv_path: Path) -> list[SampleInfo]:
     return [
         SampleInfo(
             name=data.get("Sample name", ""),
-            author=data.get("Author", ""),
             category=data.get("Tomas_category", ""),
             description=data.get("Description", ""),
-            duplicate_group_id=data.get("Duplicate_group_ID", ""),
             os_platform=data.get("OS platform", ""),
             hardware_platform=data.get("Hardware platform", ""),
             api_type=data.get("API type", ""),
             language=data.get("Programming language", ""),
             libraries=data.get("Libraries", ""),
-            year=data.get("Year of last update", ""),
-            location=data.get("Location", ""),
-            path=data.get("Path", ""),
-            copyright=data.get("Copyright", ""),
-            note=data.get("Note", ""),
-            done=data.get("Done?", ""),
         )
         for data in read_sample_rows(csv_path)
     ]
@@ -113,21 +97,13 @@ def api_type_for_path(sample_dir: Path, samples_root: Path, fallback: str) -> st
 def default_sample_info(sample_dir: Path, samples_root: Path, language: str) -> SampleInfo:
     return SampleInfo(
         name=sample_dir.name,
-        author="",
         category="",
         description="",
-        duplicate_group_id="",
         os_platform="",
         hardware_platform="",
         api_type=api_type_for_path(sample_dir, samples_root, ""),
         language=language,
         libraries="",
-        year="",
-        location="",
-        path="",
-        copyright="",
-        note="",
-        done="",
     )
 
 
@@ -158,51 +134,23 @@ def readme_path(sample_dir: Path) -> Path:
 
 def path_score(row: SampleInfo, sample_dir: Path, samples_root: Path, language: str) -> int:
     rel = sample_dir.relative_to(samples_root)
-    rel_norm = normalize(str(rel))
-    folder_tokens = {normalize(part) for part in rel.parts if normalize(part)}
+    tokens = {normalize(part) for part in rel.parts if normalize(part)}
     sample_name = normalize(row.name)
-
-    if not sample_name:
+    if sample_name not in tokens:
         return -1
 
-    score = -1
-    # Exact sample-name matches should beat fuzzy matches even when the CSV row's
-    # language is less specific than the repository folder (for example the CSV
-    # has a C++ row for Capture-10-images, while this repo also has C/Python
-    # variants of that same sample).
-    if sample_name in folder_tokens:
-        score = 160
-    elif sample_name and sample_name in rel_norm:
-        score = 150
-    else:
-        words = [normalize(part) for part in re.split(r"[^A-Za-z0-9]+", row.name) if normalize(part)]
-        matched_words = sum(1 for word in words if word and word in rel_norm)
-        if words and matched_words == len(words):
-            score = 90
-        elif words and matched_words >= max(1, len(words) - 1):
-            score = 60
-
-    if score < 0:
-        return -1
-
-    row_lang = normalize_language(row.language)
-    dir_lang = normalize_language(language)
-    if row_lang == dir_lang:
-        score += 50
-    elif row_lang and dir_lang and row_lang != dir_lang:
-        score -= 30
-
-    api = normalize(row.api_type)
-    if api and api in folder_tokens:
+    score = 100
+    if normalize_language(row.language) == normalize_language(language):
         score += 30
-    hardware = normalize(row.hardware_platform)
-    if hardware and hardware in rel_norm:
+
+    rel_text = normalize(str(rel))
+    api = normalize(row.api_type)
+    if api and api in rel_text:
+        score += 10
+    if row.hardware_platform and normalize(row.hardware_platform) in rel_text:
         score += 5
-    os_platform = normalize(row.os_platform)
-    if os_platform and os_platform in rel_norm:
+    if row.os_platform and normalize(row.os_platform) in rel_text:
         score += 3
-    if clean(row.done).lower() in {"x", "yes", "true", "done"}:
-        score += 2
     return score
 
 
@@ -300,7 +248,7 @@ def build_section(samples_root: Path, sample_dir: Path, language: str) -> str:
     if norm_lang == "python":
         return "No build step is required for this Python sample."
 
-    return "TODO: describe how to build this sample."
+    return TODO_TEXT
 
 
 def run_section(samples_root: Path, sample_dir: Path, language: str) -> str:
@@ -353,17 +301,15 @@ def run_section(samples_root: Path, sample_dir: Path, language: str) -> str:
             "```"
         )
 
-    return "TODO: describe how to run this sample."
+    return TODO_TEXT
 
 
 def notes_section(info: SampleInfo) -> str:
     notes = []
-    if clean(info.note):
-        notes.append(clean(info.note))
     if normalize_language(info.language) == "csharp":
         notes.append("Windows-only: the XIMEA .NET wrapper is not available for Linux or macOS.")
     if not notes:
-        return "-"
+        return TODO_TEXT
     return "\n".join(f"- {note}" for note in notes)
 
 
@@ -382,26 +328,18 @@ class MissingKeyDict(dict[str, str]):
 
 
 def render_readme(template: str, samples_root: Path, sample_dir: Path, info: SampleInfo, language: str) -> str:
-    libraries = ", ".join(split_list(info.libraries)) or "-"
+    libraries = ", ".join(split_list(info.libraries)) or TODO_TEXT
     values = MissingKeyDict(
         sample_title=title_for(info),
         sample_name=display(info.name),
-        description=display(info.description, "TODO: add a short sample description."),
+        description=display(info.description),
         category=markdown_escape(info.category),
-        duplicate_group_id=markdown_escape(info.duplicate_group_id),
         os_platform=markdown_escape(info.os_platform),
         hardware_platform=markdown_escape(info.hardware_platform),
         api_type=markdown_escape(info.api_type),
         language=display(language),
         csv_language=markdown_escape(info.language),
         libraries=markdown_escape(libraries),
-        author=markdown_escape(info.author),
-        year=markdown_escape(info.year),
-        location=markdown_escape(info.location),
-        source_path=markdown_escape(info.path),
-        copyright=markdown_escape(info.copyright),
-        note=markdown_escape(info.note),
-        done=markdown_escape(info.done),
         sdk_requirement=markdown_escape(sdk_requirement(info)),
         extra_prerequisites=extra_prerequisites(info, language),
         build_section=build_section(samples_root, sample_dir, language),
@@ -414,16 +352,17 @@ def render_readme(template: str, samples_root: Path, sample_dir: Path, info: Sam
 
 
 def parse_args() -> argparse.Namespace:
-    root = repo_root()
     parser = argparse.ArgumentParser(description="Generate sample README.md files from a template.")
-    parser.add_argument("--use-csv", action="store_true", help="Populate template metadata from the samples CSV.")
-    parser.add_argument("--csv", type=Path, default=root / CSV_NAME, help="Path to samples CSV file used with --use-csv.")
-    parser.add_argument("--samples", type=Path, default=None, help="Path to samples/ directory.")
-    parser.add_argument("--template", type=Path, default=root / DEFAULT_TEMPLATE, help="Markdown template path.")
-    parser.add_argument("--write", action="store_true", help="Write README.md files. Default is dry-run.")
-    parser.add_argument("--check", action="store_true", help="Fail if any README.md would change.")
-    parser.add_argument("--sample-dir", action="append", type=Path, help="Only process this sample directory; can be repeated.")
-    parser.add_argument("sample_dirs", nargs="*", type=Path, help="Sample directories to process. Defaults to all sample directories.")
+    parser.add_argument(
+        "--directory-path",
+        type=Path,
+        help="Only process this sample directory. Defaults to all discovered sample directories.",
+    )
+    parser.add_argument(
+        "--csv-path",
+        type=Path,
+        help="Populate the generated README metadata from this CSV.",
+    )
     return parser.parse_args()
 
 
@@ -439,17 +378,16 @@ def resolve_sample_dir(path: Path, root: Path, samples_root: Path) -> Path:
 def main() -> int:
     args = parse_args()
     root = repo_root()
-    csv_path = args.csv.resolve()
-    samples_root = args.samples.resolve() if args.samples else find_samples_root(root).resolve()
-    template_path = args.template.resolve()
+    samples_root = find_samples_root(root).resolve()
+    csv_path = args.csv_path.resolve() if args.csv_path else None
+    template_path = (root / DEFAULT_TEMPLATE).resolve()
 
-    samples = read_samples(csv_path) if args.use_csv else []
+    samples = read_samples(csv_path) if csv_path else []
     template = template_path.read_text(encoding="utf-8")
 
-    requested_sample_dirs = [*(args.sample_dir or []), *args.sample_dirs]
     sample_dirs = (
-        [resolve_sample_dir(path, root, samples_root) for path in requested_sample_dirs]
-        if requested_sample_dirs
+        [resolve_sample_dir(args.directory_path, root, samples_root)]
+        if args.directory_path
         else iter_sample_dirs(samples_root)
     )
     changed = 0
@@ -468,7 +406,7 @@ def main() -> int:
         try:
             info = (
                 find_sample_info(sample_dir, samples_root, samples, language)
-                if args.use_csv
+                if csv_path
                 else default_sample_info(sample_dir, samples_root, language)
             )
         except ValueError as exc:
@@ -486,19 +424,15 @@ def main() -> int:
         did_change = old != new
         changed += int(did_change)
 
-        if args.write and did_change:
+        if did_change:
             target.write_text(new, encoding="utf-8", newline="\n")
             status = "UPDATED"
-        elif args.write:
-            status = "OK"
         else:
-            status = "WOULD UPDATE" if did_change else "OK"
+            status = "OK"
 
         print(f"{status}: {target} <- {info.name} ({info.language or language})")
 
     print(f"Summary: {len(sample_dirs)} directories processed, {changed} change(s), {skipped} skipped")
-    if args.check and changed:
-        return 1
     return 0
 
 

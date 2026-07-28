@@ -1,5 +1,3 @@
-{{intro_comment}}
-
 import ximea.xiapi as xiapi
 
 

@@ -9,25 +9,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from common import CSV_NAME, clean, find_samples_root, repo_root, write_text as write
+from common import find_samples_root, repo_root, write_text as write
 
 INVALID_NAME = re.compile(r'[\\/:*?"<>|]')
 INVALID_PATH_CHARS = re.compile(r'[:*?"<>|]')
 KEBAB_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 TEMPLATE_DIR = repo_root() / "scripts" / "templates"
 LANGUAGES = ["c", "cpp", "csharp", "python"]
-COPYRIGHT_TEXT = """Copyright (c) 2026 XIMEA s.r.o.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-IN THE SOFTWARE."""
 
 
 def valid_folder_name(name: str) -> bool:
@@ -162,93 +150,23 @@ def render_template(name: str, **values: str) -> str:
     return text
 
 
-def wrap_text(value: str, *, width: int = 78, indent: str = "") -> list[str]:
-    value = clean(value)
-    if not value:
-        return []
-
-    available = width - len(indent)
-    words = value.split()
-    lines: list[str] = []
-    current = ""
-
-    for word in words:
-        if not current:
-            current = word
-        elif len(current) + 1 + len(word) <= available:
-            current += " " + word
-        else:
-            lines.append(indent + current)
-            current = word
-    if current:
-        lines.append(indent + current)
-    return lines
-
-
-def format_intro_field(label: str, value: str, *, prefix: str) -> str:
-    return "\n".join(wrap_text(f"{label}: {clean(value) or 'TODO'}", indent=prefix))
-
-
-def format_intro_block(value: str, *, prefix: str) -> str:
-    lines: list[str] = []
-    for raw_line in value.splitlines():
-        if raw_line:
-            lines.append(prefix + raw_line)
-        else:
-            lines.append(prefix.rstrip())
-    return "\n".join(lines)
-
-
-def render_intro_comment(lang: str, sample_name: str, api_type: str) -> str:
-    if lang == "c":
-        template = "intro-c-comment.txt"
-        prefix = " * "
-    elif lang == "python":
-        template = "intro-python-docstring.txt"
-        prefix = ""
-    else:
-        template = "intro-slash-comment.txt"
-        prefix = "// "
-
-    return render_template(
-        template,
-        sample_name=format_intro_field("Sample name", sample_name, prefix=prefix),
-        category=format_intro_field("Category", "TODO", prefix=prefix),
-        os_platform=format_intro_field("OS platform", "TODO", prefix=prefix),
-        hardware_platform=format_intro_field("Hardware platform", "TODO", prefix=prefix),
-        api_type=format_intro_field("API type", api_type, prefix=prefix),
-        short_description=format_intro_field("Short description", "TODO", prefix=prefix),
-        copyright=format_intro_block(COPYRIGHT_TEXT, prefix=prefix),
-    ).rstrip()
-
-
-def display_api_type(api_folder: str) -> str:
-    api_types = {
-        "xiapi": "xiAPI",
-        "xiapiplus": "xiAPIplus",
-        "xiapi-net-csharp": "xiAPI.NET",
-        "xiapi-python": "xiAPI Python",
-    }
-    return api_types.get(api_folder, api_folder)
-
-
-def make_csharp(sample_dir: Path, binary_name: str, cs_project_name: str, intro_comment: str) -> Path:
+def make_csharp(sample_dir: Path, binary_name: str, cs_project_name: str) -> Path:
     write(
         sample_dir / f"{cs_project_name}.csproj",
         render_template("scaffold-csharp-csproj.xml", binary_name=binary_name),
     )
     source_file = sample_dir / "Program.cs"
-    write(source_file, render_template("scaffold-csharp-program.cs", binary_name=binary_name, intro_comment=intro_comment))
+    write(source_file, render_template("scaffold-csharp-program.cs", binary_name=binary_name))
     return source_file
 
 
-def make_python(sample_dir: Path, binary_name: str, intro_comment: str) -> Path:
+def make_python(sample_dir: Path, binary_name: str) -> Path:
     source_file = sample_dir / "main.py"
-    write(source_file, render_template("scaffold-python-main.py", binary_name=binary_name, intro_comment=intro_comment))
+    write(source_file, render_template("scaffold-python-main.py", binary_name=binary_name))
     return source_file
 
 
-def make_cmake(sample_dir: Path, lang: str, binary_name: str, cmake_include_path: str, intro_comment: str) -> Path:
+def make_cmake(sample_dir: Path, lang: str, binary_name: str, cmake_include_path: str) -> Path:
     source_file = "main.c" if lang == "c" else "main.cpp"
     template_file = "scaffold-c-main.c" if lang == "c" else "scaffold-cpp-main.cpp"
     lang_std = "c_std_11" if lang == "c" else "cxx_std_17"
@@ -270,7 +188,7 @@ def make_cmake(sample_dir: Path, lang: str, binary_name: str, cmake_include_path
         ),
     )
     source_path = sample_dir / source_file
-    write(source_path, render_template(template_file, binary_name=binary_name, intro_comment=intro_comment))
+    write(source_path, render_template(template_file, binary_name=binary_name))
     return source_path
 
 
@@ -280,25 +198,30 @@ def run_generator(root: Path, args: list[str]) -> bool:
     return result.returncode == 0
 
 
-def run_metadata_generators(root: Path, samples_dir: Path, sample_dir: Path, *, use_csv: bool) -> bool:
+def run_metadata_generators(root: Path, sample_dir: Path, source_file: Path, *, csv_path: Path | None) -> bool:
     ok = True
+    csv_args = ["--csv-path", str(csv_path)] if csv_path else []
+
     print()
-    print("Generating README...")
-    command = [
-        str(root / "scripts" / "generate-readmes.py"),
-        "--samples", str(samples_dir),
-        "--write",
-        "--sample-dir", str(sample_dir),
-    ]
-    if use_csv:
-        csv_path = root / CSV_NAME
-        if not csv_path.is_file():
-            print(f"WARNING: {CSV_NAME} not found; generated README without CSV metadata.", file=sys.stderr)
-        else:
-            command.extend(["--use-csv", "--csv", str(csv_path)])
+    print("Generating intro comment...")
     ok &= run_generator(
         root,
-        command,
+        [
+            str(root / "scripts" / "generate-intro-comments.py"),
+            "--file-path", str(source_file),
+            *csv_args,
+        ],
+    )
+
+    print()
+    print("Generating README...")
+    ok &= run_generator(
+        root,
+        [
+            str(root / "scripts" / "generate-readmes.py"),
+            "--directory-path", str(sample_dir),
+            *csv_args,
+        ],
     )
     return ok
 
@@ -310,7 +233,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--group", choices=["cross-platform", "hardware-specific"], help="sample group for APIs that use grouped samples")
     parser.add_argument("--sample", help="Sample name/folder")
     parser.add_argument("--lang", choices=["c", "cpp", "csharp", "python"], help="Language/template")
-    parser.add_argument("--use-csv", action="store_true", help="Populate generated README metadata from the samples CSV when available.")
+    parser.add_argument("--csv-path", type=Path, help="Populate generated intro and README metadata from this CSV.")
     parser.add_argument("--yes", action="store_true", help="Create without confirmation when all required values are supplied.")
     return parser.parse_args()
 
@@ -319,6 +242,11 @@ def main() -> int:
     args = parse_args()
     root = repo_root()
     samples_dir = find_samples_root(root, create=True)
+
+    csv_path = args.csv_path.resolve() if args.csv_path else None
+    if csv_path is not None and not csv_path.is_file():
+        print(f"Error: CSV file not found: {csv_path}", file=sys.stderr)
+        return 1
 
     if args.path:
         rel_path = normalize_relative_sample_path(args.path)
@@ -370,9 +298,6 @@ def main() -> int:
     cmake_include_path = "/".join([".."] * cmake_depth) + "/cmake"
     binary_name = folder_name if lang in {"c", "cpp"} else f"{topic}-{lang}"
     cs_project_name = pascal_case(binary_name)
-    api_type = display_api_type(parts[0])
-    intro_comment = render_intro_comment(lang, topic, api_type)
-
     print()
     print("-----------------------------------------")
     print(f" Sample   : {topic}")
@@ -393,13 +318,13 @@ def main() -> int:
 
     sample_dir.mkdir(parents=True)
     if lang == "csharp":
-        make_csharp(sample_dir, binary_name, cs_project_name, intro_comment)
+        source_file = make_csharp(sample_dir, binary_name, cs_project_name)
     elif lang == "python":
-        make_python(sample_dir, binary_name, intro_comment)
+        source_file = make_python(sample_dir, binary_name)
     else:
-        make_cmake(sample_dir, lang, binary_name, cmake_include_path, intro_comment)
+        source_file = make_cmake(sample_dir, lang, binary_name, cmake_include_path)
 
-    if not run_metadata_generators(root, samples_dir, sample_dir, use_csv=args.use_csv):
+    if not run_metadata_generators(root, sample_dir, source_file, csv_path=csv_path):
         return 1
 
     print()

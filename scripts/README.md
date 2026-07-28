@@ -23,6 +23,8 @@ python scripts/build.py
 | `--sample` | sample name or path | Build/check one sample selected by generated sample name, repository-relative path, `samples/...` path, or absolute path. Can be passed multiple times. |
 | `--type` | `cmake`, `dotnet`, or `python` | Restrict the run to one sample type. Can be passed multiple times. |
 | `--skip-platform-specific` | - | Skip samples that are not under a `cross-platform/` folder. |
+| `--run` | - | Attempt to run executable outputs after all selected samples build/check successfully. |
+| `--run-timeout-seconds` | positive integer | Timeout for each runtime attempt. Default: `90`. |
 | `--clean` | - | Delete root `build/`, `.cmake-tmp/`, and `.dotnet-tmp/` before running. |
 | `--keep-temp` | - | Keep root `.cmake-tmp/` and `.dotnet-tmp/` directories after the run. |
 | `--configuration` | configuration name | Build configuration for CMake and .NET samples. Default: `Release`. |
@@ -65,6 +67,15 @@ Exit code:
 
 Skipped samples do not make the command fail.
 
+When `--run` is passed and no selected sample failed or had a missing dependency, the script attempts discovered runnable CMake outputs, one runnable .NET output per sample, and each checked Python `main.py`. Skipped samples do not prevent runtime attempts for successful samples. Every runtime attempt is limited by `--run-timeout-seconds` and reported as one of:
+
+- `passed`: the program exited with code `0`
+- `no_camera_or_failed`: the program exited with a nonzero code
+- `timed_out`: the program did not exit before the configured timeout
+- `could_not_start`: the program could not be launched
+
+Runtime results are reported separately and do not change the command's exit code. Runtime attempts are not made if any selected sample failed to build/check or had a missing dependency.
+
 ## `new-sample.py`
 
 `new-sample.py` creates a new sample scaffold under the lowercase `samples/` tree.
@@ -76,13 +87,13 @@ Skipped samples do not make the command fail.
 | `-h`, `--help` | - | Show command help and exit. |
 | `--path` | relative path | New sample path relative to `samples/`, for example `xiapi/cross-platform/capture-50-images`. This is the preferred non-interactive path selector. |
 | `--api` | API folder | API folder used by the legacy split form, for example `xiapi`, `xiapiplus`, `xiapi-net-csharp`, or `xiapi-python`. |
-| `--group` | `cross-platform` or `hardware-specific` | Sample group used by the legacy split form for grouped APIs. Required with `--yes` when the selected API requires a group and `--path` is not used. |
+| `--group` | `cross-platform` or `hardware-specific` | Sample group used by the legacy split form for grouped APIs. Supply it for a fully non-interactive `--yes` run when the selected API requires a group and `--path` is not used. |
 | `--sample` | folder name | Sample leaf folder used by the legacy split form. |
 | `--lang` | `c`, `cpp`, `csharp`, or `python` | Language/template to scaffold. Required with `--yes` when the path does not imply a known language. |
-| `--use-csv` | - | Populate generated README metadata from the samples CSV when `ximea-samples.csv` exists and a matching row is found. Without this flag, README metadata comes from template placeholders. |
-| `--yes` | - | Create without the final confirmation prompt when all required values are supplied. |
+| `--csv-path` | CSV path | Populate generated intro-comment and README metadata from this CSV. The path is forwarded to both generators. |
+| `--yes` | - | Skip the final confirmation prompt. Missing path components may still be requested interactively; a language that cannot be inferred must be supplied with `--lang`. |
 
-Path and name values must use lowercase kebab-case for new folder segments. Existing path segments may be reused when they are directories. The script rejects empty path segments, `.` / `..`, and Windows-invalid path characters.
+Path and name values must use lowercase kebab-case for new folder segments. Existing path segments may be reused when they are directories. Leading and trailing separators are normalized; the script rejects empty internal path segments, `.` / `..`, and Windows-invalid path characters.
 
 Run the interactive prompt from the repository root:
 
@@ -97,61 +108,62 @@ Supported language templates are:
 - `csharp`
 - `python`
 
-Scaffold source files and README content are generated from files under `scripts/templates/`. By default, the generated README uses template placeholder metadata.
+The script creates the language scaffold, then invokes both `generate-intro-comments.py` and `generate-readmes.py`. If CSV metadata is selected, the same CSV path is passed to both generators. By default, path-derived values are used where available and unavailable metadata is rendered as `TODO`. If `--csv-path` is supplied but no CSV row matches the new sample, both generators skip it and the scaffold remains created without a generated intro or `README.md`.
 
 ## `generate-readmes.py`
 
-`generate-readmes.py` regenerates sample `README.md` files from `scripts/templates/sample-readme.md`. By default it writes template placeholder metadata and does not read the samples CSV. Pass `--use-csv` to populate metadata from the CSV.
+`generate-readmes.py` generates sample `README.md` files from `scripts/templates/sample-readme.md`. With no parameters, it finds every discovered sample directory and creates or rewrites its README using path-derived metadata and `TODO` for unavailable values. Pass `--csv-path` to populate metadata from a CSV; blank displayed metadata fields are rendered as `TODO` unless the script derives the value independently. An existing README is replaced completely.
 
 ### Parameters
 
 | Parameter | Value | Description |
 |-----------|-------|-------------|
 | `-h`, `--help` | - | Show command help and exit. |
-| `sample_dirs` | one or more sample directories | Optional positional list of sample directories to process. Defaults to all discovered sample directories. |
-| `--use-csv` | - | Populate README template metadata from the samples CSV. Without this flag, CSV is not read. |
-| `--csv` | CSV path | Path to the samples CSV used only with `--use-csv`. Default: `ximea-samples.csv` at the repository root. |
-| `--samples` | directory path | Samples root directory. Defaults to the repository `samples/` directory. |
-| `--template` | Markdown template path | README template path. Default: `scripts/templates/sample-readme.md`. |
-| `--write` | - | Write changed `README.md` files. Without this flag, the script is a dry run. |
-| `--check` | - | Return exit code `1` if any README would change. Intended for CI/check mode. |
-| `--sample-dir` | sample directory | Legacy repeated flag for selecting sample directories. Can be passed multiple times and can be combined with positional `sample_dirs`. |
+| `--directory-path` | sample directory | Process only this sample directory. If omitted, all discovered sample directories under `samples/` are processed. |
+| `--csv-path` | CSV path | Populate generated README metadata from this CSV. Sample directories without a matching CSV row are skipped. |
 
-Dry-run all discovered sample directories:
+Rewrite all discovered sample READMEs:
 
 ```bash
 python scripts/generate-readmes.py
 ```
 
+Rewrite one sample README with CSV metadata:
+
+```bash
+python scripts/generate-readmes.py --directory-path samples/xiapi/example --csv-path metadata.csv
+```
+
 ## `generate-intro-comments.py`
 
-`generate-intro-comments.py` adds generated intro comments/docstrings to supported sample source files. By default it writes template placeholder metadata and does not read the samples CSV. Pass `--use-csv` to populate metadata from the CSV.
+`generate-intro-comments.py` writes generated intro comments/docstrings to supported sample source files. With no parameters, it finds all supported sample entry files, derives the sample name, API type, and OS platform from their paths, and uses `TODO` for unavailable values. Pass `--csv-path` to populate metadata from a CSV; blank displayed metadata fields are rendered as `TODO` unless the script derives the value independently. A recognized existing intro—a leading `/* ... */` block, legacy consecutive `//` lines, or Python module docstring—is removed before the generated intro is written.
 
 ### Parameters
 
 | Parameter | Value | Description |
 |-----------|-------|-------------|
 | `-h`, `--help` | - | Show command help and exit. |
-| `files` | one or more source files | Optional positional list of sample source files to process. Defaults to all supported sample entry files. |
-| `--use-csv` | - | Populate intro metadata from the samples CSV. Without this flag, CSV is not read. |
-| `--csv` | CSV path | Path to the samples CSV used only with `--use-csv`. Default: `ximea-samples.csv` at the repository root. |
-| `--samples` | directory path | Samples root directory. Defaults to the repository `samples/` directory. |
-| `--write` | - | Write missing intro comments/docstrings. Without this flag, the script is a dry run. |
-| `--check` | - | Return exit code `1` if any file would change. Intended for CI/check mode. |
-| `--file` | source file | Legacy repeated flag for selecting source files. Can be passed multiple times and can be combined with positional `files`. |
+| `--csv-path` | CSV path | Populate generated intro metadata from this CSV. |
+| `--file-path` | source file | Process only this supported sample entry file. If omitted, all supported entry files under `samples/` are processed. |
 
-Dry-run all supported sample source files:
+Write intros to all supported sample source files:
 
 ```bash
 python scripts/generate-intro-comments.py
 ```
 
+Populate one file from CSV metadata:
+
+```bash
+python scripts/generate-intro-comments.py --csv-path ximea-samples.csv --file-path samples/xiapi/example/main.c
+```
+
 Supported source entry files are:
 
-- `main.c` (`/* ... */` intro block)
-- `main.cpp` (`// ...` intro block)
-- `Program.cs` (`// ...` intro block)
-- `main.py` (module docstring, preserving a shebang or coding line)
+- `main.c` (multiline `/* ... */` intro block)
+- `main.cpp` (multiline `/* ... */` intro block)
+- `Program.cs` (multiline `/* ... */` intro block)
+- `main.py` (multiline module docstring, preserving a shebang or coding line)
 
-Existing intro comments/docstrings are left unchanged. Missing files, unsupported filenames, and files outside `samples/` are skipped. In `--use-csv` mode, files that cannot be matched to a CSV row are also skipped.
+An existing leading `/* ... */` block, legacy consecutive `//` lines, or Python module docstring is replaced completely. A legacy `//` intro extends through all consecutive leading `//` lines. Generated C, C++, and C# intros all use multiline `/* ... */` comments; Python uses a multiline module docstring. For Python, a leading shebang or encoding line is preserved. Content after the recognized intro is preserved. Missing files, unsupported filenames, and files outside `samples/` are skipped. When `--csv-path` is provided, files that cannot be matched to a CSV row are also skipped.
 

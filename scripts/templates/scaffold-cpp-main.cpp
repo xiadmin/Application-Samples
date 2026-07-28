@@ -1,5 +1,3 @@
-{{intro_comment}}
-
 #include <cstdlib>
 #include <iostream>
 #include <xiapiplus.h>
