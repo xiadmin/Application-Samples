@@ -1,7 +1,7 @@
 /*
  * Sample name: Capture-10-images
  * Category: Basic acquisition / image capture
- * OS platform: Cross-Platform
+ * OS platform: Windows
  * Hardware platform: Cross-platform
  * API type: xiAPI.NET
  * Short description: Captures 10 images.
@@ -32,6 +32,7 @@ const int GrabTimeoutMs = 5_000; // must exceed exposure
 var cam = new xiCam();
 bool isDeviceOpen = false;
 bool isAcquiring = false;
+int exitCode = 0;
 
 try
 {
@@ -59,24 +60,44 @@ try
         xiApi.XI_IMG img = cam.GetXI_IMG(GrabTimeoutMs);
         Console.WriteLine($"Frame {i + 1}/{FrameCount}: {img.width}x{img.height} nframe={img.acq_nframe}");
     }
-
-    Console.WriteLine("Done");
-    return 0;
 }
 catch (xiExc ex)
 {
     Console.Error.WriteLine($"Error: {ex.Message}");
-    return 1;
+    exitCode = 1;
 }
 finally
 {
     if (isAcquiring)
     {
-        cam.StopAcquisition();
+        try
+        {
+            cam.StopAcquisition();
+        }
+        catch (xiExc ex)
+        {
+            Console.Error.WriteLine($"Error while stopping acquisition: {ex.Message}");
+            exitCode = 1;
+        }
     }
 
     if (isDeviceOpen)
     {
-        cam.CloseDevice();
+        try
+        {
+            cam.CloseDevice();
+        }
+        catch (xiExc ex)
+        {
+            Console.Error.WriteLine($"Error while closing device: {ex.Message}");
+            exitCode = 1;
+        }
     }
 }
+
+if (exitCode == 0)
+{
+    Console.WriteLine("Done");
+}
+
+return exitCode;

@@ -63,4 +63,6 @@ Alternatively, build each sample separately by following the instructions in its
 ## Links
 
 - [XIMEA API Manual](https://www.ximea.com/support/wiki/apis/xiapi_manual)
+- [XIMEA .NET API Manual](https://www.ximea.com/support/wiki/apis/XiAPINET_Manual)
+- [XIMEA Python API Manual](https://www.ximea.com/support/wiki/apis/XiAPI_Python_Manual)
 - [XIMEA Software Packages](https://www.ximea.com/software-downloads)
