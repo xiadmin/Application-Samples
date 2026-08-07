@@ -1,4 +1,4 @@
-# Application-Samples
+# Application-Samples-Core
 
 Code samples for XIMEA cameras, showing how to control your camera using the XIMEA APIs. Each sample is self-contained and includes its own README.md file with detailed instructions.
 
@@ -7,7 +7,7 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 ## Prerequisites
 
 - [XIMEA Software Package](https://www.ximea.com/software-downloads) installed (latest beta).
-- Python 3.11 or newer for Python samples and maintenance scripts.
+- Python 3.11 or newer for Python samples.
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples.
 
@@ -22,7 +22,6 @@ samples/
   xiapi-net-csharp/         # C# samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
 cmake/                      # shared/root CMake support files
-scripts/                    # maintenance, generation, and build helpers
 ```
 
 Each sample folder contains everything needed to build and run it, along with a README.md explaining what the sample does and how to use it.
@@ -44,19 +43,11 @@ Each sample folder contains everything needed to build and run it, along with a 
 
 ## Building samples
 
-Use the canonical build helper:
-
-```bash
-python scripts/build.py
-```
-
-This opens the interactive selector by default. For a non-interactive full-repository build/check, run:
-
-```bash
-python scripts/build.py --all
-```
-
-Alternatively, build each sample separately by following the instructions in its own README.md file.
+Build each sample separately by following the instructions in its own README.md file.
+Repository-wide CI, build orchestration, and integration tests live in the
+[Application-Samples](https://github.com/xiadmin/Application-Samples) repository,
+which consumes this repository as a submodule. The tiny workflow under
+`.github/workflows/` calls that reusable CI workflow with the exact pushed commit.
 
 ---
 

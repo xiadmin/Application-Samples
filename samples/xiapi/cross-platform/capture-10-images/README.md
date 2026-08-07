@@ -23,10 +23,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 
 ## Build
 
-Build from the sample folder using CMake directly, or use `scripts/build.py`
-at the repo root to build all samples in one shot.
-
-### CMake directly — Linux
+### Linux
 
 ```bash
 cd samples/xiapi/cross-platform/capture-10-images
@@ -36,7 +33,7 @@ cmake --build .cmake-tmp
 
 Binary lands in `.cmake-tmp/build/`.
 
-### CMake directly — Windows (PowerShell)
+### Windows (PowerShell)
 
 ```powershell
 cd samples\xiapi\cross-platform\capture-10-images

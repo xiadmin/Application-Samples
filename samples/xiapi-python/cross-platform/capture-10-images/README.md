@@ -31,18 +31,8 @@ No build step is required for this Python sample.
 
 ## Run
 
-### From source
-
 ```bash
 python main.py
-```
-
-### From repository build checks
-
-`scripts/build.py` runs a Python syntax check for this sample:
-
-```bash
-python3 scripts/build.py --sample xiapi-python-cross-platform-capture-10-images
 ```
 
 ---

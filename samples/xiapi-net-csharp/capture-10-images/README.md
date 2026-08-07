@@ -22,21 +22,6 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 
 ## Build
 
-### Using scripts/build.py
-
-```powershell
-cd <repo-root>
-python scripts/build.py --all
-```
-
-Binary and supporting files land in:
-
-```
-build\xiapi-net-csharp-capture-10-images\
-```
-
-### Directly with dotnet
-
 ```powershell
 cd samples\xiapi-net-csharp\capture-10-images
 dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
@@ -47,14 +32,6 @@ Binary lands in `.dotnet-tmp\` inside the sample folder.
 ---
 
 ## Run
-
-### After scripts/build.py
-
-```powershell
-.\build\xiapi-net-csharp-capture-10-images\capture-10-images-csharp.exe
-```
-
-### After a direct dotnet build
 
 ```powershell
 .\samples\xiapi-net-csharp\capture-10-images\.dotnet-tmp\capture-10-images-csharp.exe
