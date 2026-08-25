@@ -21,10 +21,12 @@ samples/
   xiapiplus/                # C++ samples using xiAPIplus
   xiapi-net-csharp/         # C# samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
+libs/
+  tiff-writer/              # repository-local baseline TIFF writer library
 cmake/                      # shared/root CMake support files
 ```
 
-Each sample folder contains everything needed to build and run it, along with a README.md explaining what the sample does and how to use it.
+Each sample has a README.md explaining what it does and how to use it. Reusable support code under `libs/` is consumed directly by sample CMake projects and does not need to be installed system-wide.
 
 ---
 
@@ -32,7 +34,7 @@ Each sample folder contains everything needed to build and run it, along with a 
 
 | Sample | API / Language | What it shows |
 |--------|-----------------|---------------|
-| [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Capture 10 frames for metadata printing, TIFF output, or retention in application-owned RAM |
 | [xiapiplus/cross-platform/capture-10-images](samples/xiapiplus/cross-platform/capture-10-images/) | xiAPIplus (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-net-csharp/capture-10-images](samples/xiapi-net-csharp/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-python/cross-platform/capture-10-images](samples/xiapi-python/cross-platform/capture-10-images/) | XiApiPython (Python) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
