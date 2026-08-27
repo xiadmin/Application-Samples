@@ -34,7 +34,9 @@ Each sample has a README.md explaining what it does and how to use it. Reusable 
 
 | Sample | API / Language | What it shows |
 |--------|-----------------|---------------|
-| [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Capture 10 frames for metadata printing, TIFF output, or retention in application-owned RAM |
+| [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Capture 10 frames and print basic frame information |
+| [xiapi/cross-platform/capture-10-images-to-file](samples/xiapi/cross-platform/capture-10-images-to-file/) | XiAPI (C) | Capture 10 stabilized frames and save them as TIFF files |
+| [xiapi/cross-platform/capture-10-images-to-ram](samples/xiapi/cross-platform/capture-10-images-to-ram/) | XiAPI (C) | Capture 10 frames into application-owned RAM and access them after closing the camera |
 | [xiapiplus/cross-platform/capture-10-images](samples/xiapiplus/cross-platform/capture-10-images/) | xiAPIplus (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-net-csharp/capture-10-images](samples/xiapi-net-csharp/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-python/cross-platform/capture-10-images](samples/xiapi-python/cross-platform/capture-10-images/) | XiApiPython (Python) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
