@@ -49,7 +49,7 @@ Each sample has a README.md explaining what it does and how to use it. Reusable 
 
 Build each sample separately by following the instructions in its own README.md file.
 Repository-wide CI, build orchestration, and integration tests live in the
-[Application-Samples](https://github.com/xiadmin/Application-Samples) repository,
+[Application-Samples-Infra](https://github.com/xiadmin/Application-Samples-Infra) repository,
 which consumes this repository as a submodule. The tiny workflow under
 `.github/workflows/` calls that reusable CI workflow with the exact pushed commit.
 

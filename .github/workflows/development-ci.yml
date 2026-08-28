@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-and-test:
-    uses: xiadmin/Application-Samples/.github/workflows/development-ci.yml@main
+    uses: xiadmin/Application-Samples-Infra/.github/workflows/development-ci.yml@main
     with:
       source_repository: ${{ github.repository }}
       source_ref: ${{ github.sha }}
