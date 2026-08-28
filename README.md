@@ -1,4 +1,4 @@
-# Application-Samples-Core
+# Application-Samples
 
 Code samples for XIMEA cameras, showing how to control your camera using the XIMEA APIs. Each sample is self-contained and includes its own README.md file with detailed instructions.
 
