@@ -3,17 +3,34 @@ name: Development CI
 on:
   push:
     branches: [development]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: development-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
-    uses: xiadmin/Application-Samples-Infra/.github/workflows/development-ci.yml@main
-    with:
-      source_repository: ${{ github.repository }}
-      source_ref: ${{ github.sha }}
-    secrets:
-      # Read-only token for the private CI tooling repository. The caller's own
-      # GITHUB_TOKEN is scoped to this repository and cannot check it out.
-      infra_token: ${{ secrets.INFRA_CI_TOKEN }}
+  dispatch:
+    name: Dispatch to CI tooling
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Trigger Development CI in Application-Samples-Infra
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh workflow run development-ci.yml \
+            --repo xiadmin/Application-Samples-Infra \
+            --ref main \
+            --field source_repository="$GITHUB_REPOSITORY" \
+            --field source_ref="$GITHUB_SHA"
+      - name: Link to the run
+        run: |
+          {
+            echo "Dispatched \`$GITHUB_SHA\` to the private CI tooling repository."
+            echo
+            echo "[Development CI runs](https://github.com/xiadmin/Application-Samples-Infra/actions/workflows/development-ci.yml)"
+          } >> "$GITHUB_STEP_SUMMARY"
