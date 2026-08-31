@@ -13,3 +13,7 @@ jobs:
     with:
       source_repository: ${{ github.repository }}
       source_ref: ${{ github.sha }}
+    secrets:
+      # Read-only token for the private CI tooling repository. The caller's own
+      # GITHUB_TOKEN is scoped to this repository and cannot check it out.
+      infra_token: ${{ secrets.INFRA_CI_TOKEN }}
