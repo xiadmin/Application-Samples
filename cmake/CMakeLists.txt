@@ -4,6 +4,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_LIST_DIR)
     project(ximea-sample-cmake-helpers LANGUAGES C CXX)
 endif()
 
+include("${CMAKE_CURRENT_LIST_DIR}/../dependencies/Dependencies.cmake")
+
 function(_sample_derive_output_name out_var)
     set(_src "${CMAKE_CURRENT_SOURCE_DIR}")
     string(REPLACE "\\" "/" _src "${_src}")
@@ -131,7 +133,7 @@ function(ximea_find_sdk)
     endif()
 
     if(XIMEA_FOUND AND CMAKE_CXX_COMPILER_LOADED AND NOT TARGET XIMEA::xiAPIplus)
-        if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp" AND CMAKE_CXX_COMPILER_LOADED)
+        if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
             find_package(TIFF QUIET)
 
             set(_ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
@@ -155,6 +157,15 @@ function(ximea_find_sdk)
 
                 if(TIFF_FOUND)
                     target_link_libraries(XIMEA_xiAPIplus PUBLIC TIFF::TIFF)
+                    # XIMEA SP 4.33 xiAPIplus_tiff.cpp omits <cstring>.
+                    set(_tiff_src "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_tiff.cpp")
+                    if(MSVC)
+                        set_source_files_properties("${_tiff_src}" PROPERTIES
+                            COMPILE_OPTIONS "/FIcstring")
+                    else()
+                        set_source_files_properties("${_tiff_src}" PROPERTIES
+                            COMPILE_OPTIONS "-include;cstring")
+                    endif()
                 endif()
             endif()
 

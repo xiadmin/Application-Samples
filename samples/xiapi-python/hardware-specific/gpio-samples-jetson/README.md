@@ -32,6 +32,8 @@ cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
 python3 -m pip install -r requirements.txt
 ```
 
+`requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions (`gpiod`, `spidev`, `pyserial`); update it there to change versions across all samples.
+
 ---
 
 ## Run

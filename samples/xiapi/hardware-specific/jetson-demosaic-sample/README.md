@@ -15,7 +15,7 @@ GPU demosaicing sample for Nvidia Jetson that bypasses xiAPI CPU processing for 
 |------|-------------|
 | OS | Linux on Nvidia Jetson |
 | Hardware | Nvidia Jetson kit with a supported XIMEA color camera |
-| XIMEA SDK | 4.32+ |
+| XIMEA SP | [Approved version in DEPENDENCIES.md](../../../../DEPENDENCIES.md#2-approved-dependency-table) |
 | CMake | 3.16 or newer |
 | Compiler | GCC/G++ with C++17 support and CUDA `nvcc` |
 | Libraries | CUDA Toolkit, NPP, OpenCV built with CUDA/OpenGL support |

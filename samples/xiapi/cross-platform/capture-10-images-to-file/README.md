@@ -15,11 +15,15 @@ Captures 10 stabilized frames from the first available XIMEA camera and saves th
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SDK | 4.32+ |
+| XIMEA SP | [Approved version in DEPENDENCIES.md](../../../../DEPENDENCIES.md#2-approved-dependency-table) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
+| Network | Required on the first clean build to download libtiff 4.7.1 |
 
-No external TIFF library is required. The sample links the repository-local baseline TIFF writer in `libs/tiff-writer/`.
+CMake downloads libtiff 4.7.1 automatically into `.cmake-tmp` during the first configure.
+The download is controlled by `dependencies/Dependencies.cmake` at the repository root.
+Reconfiguring and building in the same populated build tree works without network access.
+A clean build (empty `.cmake-tmp`) needs network access or a pre-populated FetchContent cache.
 
 ---
 
@@ -76,7 +80,7 @@ Done
 - A connected XIMEA camera and installed SDK runtime are required.
 - The sample always opens camera index 0 and captures a fixed count of 10 frames after 10 auto-exposure warm-up frames.
 - Existing `image000.tif` through `image009.tif` files in the current directory are overwritten.
-- The repository-local writer produces uncompressed baseline TIFF files for MONO8 and RGB24 images.
+- Output files are uncompressed baseline TIFF (no compression) for maximum reader compatibility.
 
 ---
 

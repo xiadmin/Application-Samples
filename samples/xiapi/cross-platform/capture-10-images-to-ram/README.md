@@ -15,7 +15,7 @@ Captures 10 RAW8 frames into application-owned RAM and accesses them after the c
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SDK | 4.32+ |
+| XIMEA SP | [Approved version in DEPENDENCIES.md](../../../../DEPENDENCIES.md#2-approved-dependency-table) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
 

@@ -6,10 +6,25 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 
 ## Prerequisites
 
-- [XIMEA Software Package](https://www.ximea.com/software-downloads) installed (latest beta).
+- [XIMEA Software Package (SP)](https://www.ximea.com/software-downloads) — see the [approved dependency table](DEPENDENCIES.md#2-approved-dependency-table) for the approved version.
 - Python 3.11 or newer for Python samples.
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples.
+
+On Windows, set `XIMEA_SP_PATH` to the SP installation root (for example `C:\XIMEA`).
+On Linux, the SP installs to `/opt/XIMEA` by default.
+
+---
+
+## Dependency management
+
+- No external source code or built library is committed to this repository.
+- CMake downloads only approved open-source dependencies during configure. The download is controlled by `dependencies/Dependencies.cmake`.
+- Python package versions come from `dependencies/python-constraints.txt`.
+- NuGet package versions are controlled centrally by `dependencies/Directory.Packages.props`. Each C# project imports this file explicitly.
+- XIMEA Software Package, Compute Unified Device Architecture (CUDA), NVIDIA Performance Primitives (NPP), and Jetson OpenCV remain system dependencies installed separately.
+- `DEPENDENCIES.md` records the approved version for each dependency.
+- The first clean CMake configure for a fetched dependency needs network access. Subsequent builds in the same populated build tree work without network access unless dependencies change.
 
 ---
 
@@ -21,12 +36,16 @@ samples/
   xiapiplus/                # C++ samples using xiAPIplus
   xiapi-net-csharp/         # C# samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
-libs/
-  tiff-writer/              # repository-local baseline TIFF writer library
-cmake/                      # shared/root CMake support files
+cmake/                      # shared sample CMake support files
+dependencies/
+  Dependencies.cmake       # central FetchContent declarations
+  Directory.Packages.props # central NuGet package version control
+  python-constraints.txt   # pinned Python package versions
+DEPENDENCIES.md             # approved dependency versions
+tests/                      # dependency policy checks
 ```
 
-Each sample has a README.md explaining what it does and how to use it. Reusable support code under `libs/` is consumed directly by sample CMake projects and does not need to be installed system-wide.
+Each sample has a README.md explaining what it does and how to use it.
 
 ---
 

@@ -15,8 +15,10 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SDK | 4.32 or newer |
+| XIMEA SP | [Approved version in DEPENDENCIES.md](../../../DEPENDENCIES.md#2-approved-dependency-table) |
 | .NET SDK | 8.0 or newer |
+
+`xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
 
 ---
 
@@ -64,7 +66,7 @@ Done
 
 - Windows-only: the XIMEA .NET wrapper is not available for Linux or macOS.
 - The project targets net8.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest
-  version shipped with the SDK). Forward compatibility is supported by the .NET runtime.
+  version shipped with the SP). Forward compatibility is supported by the .NET runtime.
 
 ---
 
