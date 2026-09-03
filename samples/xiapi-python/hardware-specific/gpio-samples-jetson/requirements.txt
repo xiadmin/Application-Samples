@@ -1,7 +1,7 @@
 -c ../../../../dependencies/python-constraints.txt
 
 # GPIO samples
-gpiod==2.3.0
+gpiod
 # SPI samples
 spidev
 # UART samples
