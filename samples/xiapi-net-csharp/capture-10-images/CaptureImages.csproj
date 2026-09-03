@@ -16,8 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Deliberate CI experiment: conflicts with the centrally managed 8.0.0 version. -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <Reference Include="xiApi.NETX64">
       <HintPath>$(XimeaSpPath)\API\xiAPI.NET.NET.7.0\xiApi.NETX64.dll</HintPath>
     </Reference>
