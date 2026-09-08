@@ -1,0 +1,19 @@
+# Build output
+/build/
+
+# Downloaded dependencies
+.deps/
+
+# Temporary CMake build directories
+**/.cmake-tmp/
+
+# Temporary .NET build directories
+**/.dotnet-tmp/
+
+# Python bytecode
+**/__pycache__/
+*.py[cod]
+
+# Local Python tools
+/.venv/
+/.pytest_cache/

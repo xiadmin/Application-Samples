@@ -20,8 +20,10 @@ Captures 10 stabilized frames from the first available XIMEA camera and saves th
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
 | Network | Required on the first clean build to download libtiff 4.7.1 |
 
-CMake downloads libtiff 4.7.1 automatically into `.cmake-tmp` during the first configure.
-The download is controlled by `dependencies/Dependencies.cmake` at the repository root.
+This sample calls `application_samples_use(libtiff)`. CMake then downloads libtiff 4.7.1
+automatically into `.cmake-tmp` during the first configure and builds it as a static library.
+The version, the archive hash, and the build options come from the libtiff record in
+`dependencies/Dependencies.cmake` at the repository root; this sample selects none of them.
 Reconfiguring and building in the same populated build tree works without network access.
 A clean build (empty `.cmake-tmp`) needs network access or a pre-populated FetchContent cache.
 

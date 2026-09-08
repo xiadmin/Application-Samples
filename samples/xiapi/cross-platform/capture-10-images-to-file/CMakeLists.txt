@@ -4,7 +4,7 @@ project(xiapi-cross-platform-capture-10-images-to-file VERSION 0.1.0 LANGUAGES C
 
 include("${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/CMakeLists.txt")
 ximea_find_sdk(REQUIRED)
-application_samples_use_libtiff()
+application_samples_use(libtiff)
 
 add_executable(capture_images_to_file_c main.c)
 target_compile_features(capture_images_to_file_c PRIVATE c_std_11)
