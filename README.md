@@ -11,24 +11,6 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples.
 
-On Windows, set `XIMEA_SP_PATH` to the SP installation root (for example `C:\XIMEA`).
-On Linux, the SP installs to `/opt/XIMEA` by default.
-
----
-
-## Dependency management
-
-- No external source code or built library is committed to this repository.
-- Every build-file package version belongs in one of the three files under `dependencies/`.
-- Each C/C++ library is one `application_samples_dependency()` record in `dependencies/Dependencies.cmake`, holding its URL, SHA256, target, and build options.
-- A sample requests a recorded library with `application_samples_use(<name>)`, which downloads and builds it into that sample's build tree. Unversioned `find_package` calls are also permitted; `FetchContent` declarations and package versions are not.
-- Sample Python requirements must activate `dependencies/python-constraints.txt`, request only packages listed there, and contain no local version specifiers.
-- Every NuGet `PackageReference` must be versionless and have a matching `PackageVersion` in `dependencies/Directory.Packages.props`.
-- Project-owned source libraries may remain inside a sample and use `add_library`, Python imports, or `ProjectReference` as applicable.
-- XIMEA Software Package, Compute Unified Device Architecture (CUDA), NVIDIA Performance Primitives (NPP), and Jetson OpenCV remain system dependencies installed separately.
-- The dependency policy test lives in the `Application-Samples-Infra` CI repository (`tests/test_dependency_policy.py`). It rejects sample-local versions, and rejects one library appearing at two different exact versions across the three central files and the sample build files.
-- The first clean CMake configure for a fetched dependency needs network access. Subsequent builds in the same populated build tree work without network access unless dependencies change.
-
 ---
 
 ## Repository layout
