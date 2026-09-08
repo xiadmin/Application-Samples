@@ -5,18 +5,6 @@
  * Hardware platform: Cross-platform
  * API type: xiAPI
  * Short description: Captures 10 images and saves them as TIFF files using libtiff.
- *
- * Image format notes:
- *   - MONO8 / RAW8 cameras  -> 8-bit grayscale, PhotometricInterpretation = MinIsBlack
- *   - RGB24 cameras          -> 8-bit RGB, PhotometricInterpretation = RGB
- *   - xiAPI delivers RGB24 data in BGR byte order; this sample swaps to RGB before
- *     writing so conforming TIFF readers see correct colors.
- *   - image->padding_x is the per-row pad applied by the driver; the row stride is
- *     (width * channels) + padding_x, but only (width * channels) bytes per row are
- *     written to the TIFF strip.
- *   - Files are written without compression (COMPRESSION_NONE) for maximum
- *     compatibility (baseline TIFF).
- *   - If any libtiff call fails the partial output file is deleted before returning.
  */
 
 #include <errno.h>

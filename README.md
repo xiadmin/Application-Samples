@@ -23,7 +23,7 @@ samples/
   xiapi-python/             # Python samples using xiAPI Python bindings
 cmake/                      # shared sample CMake support files
 dependencies/
-  Dependencies.cmake       # central C/C++ dependency records
+  Dependencies.cmake       # central C/C++ library list
   Directory.Packages.props # central NuGet package version control
   python-constraints.txt   # pinned Python package versions
 ```
