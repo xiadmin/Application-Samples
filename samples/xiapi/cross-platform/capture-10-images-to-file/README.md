@@ -15,7 +15,7 @@ Captures 10 stabilized frames from the first available XIMEA camera and saves th
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [Approved version in DEPENDENCIES.md](../../../../DEPENDENCIES.md#2-approved-dependency-table) |
+| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
 | Network | Required on the first clean build to download libtiff 4.7.1 |

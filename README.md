@@ -6,7 +6,7 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 
 ## Prerequisites
 
-- [XIMEA Software Package (SP)](https://www.ximea.com/software-downloads) — see the [approved dependency table](DEPENDENCIES.md#2-approved-dependency-table) for the approved version.
+- [XIMEA Software Package (SP) 4.33](https://www.ximea.com/software-downloads).
 - Python 3.11 or newer for Python samples.
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples.
@@ -19,11 +19,13 @@ On Linux, the SP installs to `/opt/XIMEA` by default.
 ## Dependency management
 
 - No external source code or built library is committed to this repository.
-- CMake downloads only approved open-source dependencies during configure. The download is controlled by `dependencies/Dependencies.cmake`.
-- Python package versions come from `dependencies/python-constraints.txt`.
-- NuGet package versions are controlled centrally by `dependencies/Directory.Packages.props`. Each C# project imports this file explicitly.
+- Every build-file package version belongs in one of the three files under `dependencies/`.
+- Sample CMake files may use unversioned `find_package` calls, but all `FetchContent` declarations and package versions belong in `dependencies/Dependencies.cmake`.
+- Sample Python requirements must activate `dependencies/python-constraints.txt`, request only packages listed there, and contain no local version specifiers.
+- Every NuGet `PackageReference` must be versionless and have a matching `PackageVersion` in `dependencies/Directory.Packages.props`.
+- Project-owned source libraries may remain inside a sample and use `add_library`, Python imports, or `ProjectReference` as applicable.
 - XIMEA Software Package, Compute Unified Device Architecture (CUDA), NVIDIA Performance Primitives (NPP), and Jetson OpenCV remain system dependencies installed separately.
-- `DEPENDENCIES.md` records the approved version for each dependency.
+- The dependency policy test rejects sample-local versions and conflicting exact versions across CMake, Python, and .NET build files.
 - The first clean CMake configure for a fetched dependency needs network access. Subsequent builds in the same populated build tree work without network access unless dependencies change.
 
 ---
@@ -41,7 +43,6 @@ dependencies/
   Dependencies.cmake       # central FetchContent declarations
   Directory.Packages.props # central NuGet package version control
   python-constraints.txt   # pinned Python package versions
-DEPENDENCIES.md             # approved dependency versions
 tests/                      # dependency policy checks
 ```
 

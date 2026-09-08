@@ -15,7 +15,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [Approved version in DEPENDENCIES.md](../../../../DEPENDENCIES.md#2-approved-dependency-table) |
+| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
 | Python | 3.11+ |
 
 The `ximea` package comes from the XIMEA Software Package (SP) installer, placed into `site-packages/ximea`. It is not a pip package and does not appear in `dependencies/python-constraints.txt`.
