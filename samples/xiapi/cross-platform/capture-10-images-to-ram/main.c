@@ -17,56 +17,23 @@ static const int frameCount = 10;
 static const int exposureUs = 10000;
 static const int grabTimeoutMs = 5000;
 
-static int cleanupSample(HANDLE cam, int isAcquisitionStarted, XI_IMG *images,
-                         unsigned char *storage, int result)
-{
-    XI_RETURN stat;
-
-    if (isAcquisitionStarted)
-    {
-        stat = xiStopAcquisition(cam);
-        if (stat != XI_OK)
-        {
-            fprintf(stderr, "Error: xiStopAcquisition returned %d\n", (int)stat);
-            result = EXIT_FAILURE;
-        }
-    }
-
-    if (cam)
-    {
-        stat = xiCloseDevice(cam);
-        if (stat != XI_OK)
-        {
-            fprintf(stderr, "Error: xiCloseDevice returned %d\n", (int)stat);
-            result = EXIT_FAILURE;
-        }
-    }
-
-    free(storage);
-    free(images);
-
-    if (result == EXIT_SUCCESS)
-        printf("Done\n");
-
-    return result;
-}
-
+/* Check error macro. Executes the call, reports and leaves main if it fails.
+ * The camera handle and the RAM buffers are released by the driver and the OS
+ * when the process exits, so the error path does not unwind explicitly. */
 #define CE(func)                                                               \
     do                                                                         \
     {                                                                          \
         XI_RETURN stat = (func);                                               \
         if (stat != XI_OK)                                                     \
         {                                                                      \
-            fprintf(stderr, "Error: %s returned %d\n", #func, (int)stat);    \
-            return cleanupSample(cam, isAcquisitionStarted, images, storage,   \
-                                 EXIT_FAILURE);                                \
+            fprintf(stderr, "Error: %s returned %d\n", #func, (int)stat);      \
+            return EXIT_FAILURE;                                               \
         }                                                                      \
     } while (0)
 
 int main(void)
 {
     HANDLE cam = NULL;
-    int isAcquisitionStarted = 0;
     int payloadSize = 0;
     XI_IMG *images = NULL;
     unsigned char *storage = NULL;
@@ -78,10 +45,11 @@ int main(void)
     CE(xiSetParamInt(cam, XI_PRM_EXPOSURE, exposureUs));
     CE(xiGetParamInt(cam, XI_PRM_IMAGE_PAYLOAD_SIZE, &payloadSize));
 
+    /* All frames are held at once, so the total size must not overflow size_t. */
     if (payloadSize <= 0 || (size_t)payloadSize > SIZE_MAX / (size_t)frameCount)
     {
         fprintf(stderr, "Error: invalid image payload size %d\n", payloadSize);
-        return cleanupSample(cam, isAcquisitionStarted, images, storage, EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     images = calloc((size_t)frameCount, sizeof(*images));
@@ -89,9 +57,10 @@ int main(void)
     if (!images || !storage)
     {
         fprintf(stderr, "Error: could not allocate RAM for %d images\n", frameCount);
-        return cleanupSample(cam, isAcquisitionStarted, images, storage, EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
+    /* XI_BP_SAFE copies each frame into the buffer pointed to by bp. */
     for (int i = 0; i < frameCount; i++)
     {
         images[i].size = sizeof(images[i]);
@@ -100,15 +69,12 @@ int main(void)
     }
 
     CE(xiStartAcquisition(cam));
-    isAcquisitionStarted = 1;
 
     for (int i = 0; i < frameCount; i++)
         CE(xiGetImage(cam, grabTimeoutMs, &images[i]));
 
     CE(xiStopAcquisition(cam));
-    isAcquisitionStarted = 0;
     CE(xiCloseDevice(cam));
-    cam = NULL;
 
     printf("Camera closed; reading retained images from RAM\n");
     for (int i = 0; i < frameCount; i++)
@@ -119,5 +85,9 @@ int main(void)
                images[i].bp ? (int)((const unsigned char *)images[i].bp)[0] : -1);
     }
 
-    return cleanupSample(cam, isAcquisitionStarted, images, storage, EXIT_SUCCESS);
+    free(storage);
+    free(images);
+
+    printf("Done\n");
+    return EXIT_SUCCESS;
 }

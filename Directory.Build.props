@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- Point MSBuild's automatic Central Package Management import at the
+         central list. Without this the file is only found next to a project or
+         above it, and an explicit <Import> in a sample does not enable CPM. -->
+    <DirectoryPackagesPropsPath>$(MSBuildThisFileDirectory)dependencies/Directory.Packages.props</DirectoryPackagesPropsPath>
+  </PropertyGroup>
+</Project>

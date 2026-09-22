@@ -18,7 +18,7 @@ Captures 10 stabilized frames from the first available XIMEA camera and saves th
 | XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
-| Network | Required on the first clean build to download libtiff 4.7.1 |
+| Network | Required only until `.deps/downloads/` at the repository root holds libtiff 4.7.1; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
 
 ---
 

@@ -17,58 +17,29 @@ static const int frameCount = 10;
 static const int exposureUs = 10000;
 static const int grabTimeoutMs = 5000;
 
-static int cleanupCamera(HANDLE cam, int isAcquisitionStarted, int result)
-{
-    XI_RETURN stat;
-
-    if (isAcquisitionStarted)
-    {
-        stat = xiStopAcquisition(cam);
-        if (stat != XI_OK)
-        {
-            fprintf(stderr, "Error: xiStopAcquisition returned %d\n", (int)stat);
-            result = EXIT_FAILURE;
-        }
-    }
-
-    if (cam)
-    {
-        stat = xiCloseDevice(cam);
-        if (stat != XI_OK)
-        {
-            fprintf(stderr, "Error: xiCloseDevice returned %d\n", (int)stat);
-            result = EXIT_FAILURE;
-        }
-    }
-
-    if (result == EXIT_SUCCESS)
-        printf("Done\n");
-
-    return result;
-}
-
+/* Check error macro. Executes the call, reports and leaves main if it fails.
+ * The camera handle is released by the driver when the process exits, so the
+ * error path does not unwind explicitly. */
 #define CE(func)                                                              \
     do                                                                        \
     {                                                                         \
         XI_RETURN stat = (func);                                              \
         if (stat != XI_OK)                                                    \
         {                                                                     \
-            fprintf(stderr, "Error: %s returned %d\n", #func, (int)stat);   \
-            return cleanupCamera(cam, isAcquisitionStarted, EXIT_FAILURE);    \
+            fprintf(stderr, "Error: %s returned %d\n", #func, (int)stat);     \
+            return EXIT_FAILURE;                                              \
         }                                                                     \
     } while (0)
 
 int main(void)
 {
     HANDLE cam = NULL;
-    int isAcquisitionStarted = 0;
     XI_IMG image;
 
     printf("Opening camera index 0\n");
     CE(xiOpenDevice(0, &cam));
     CE(xiSetParamInt(cam, XI_PRM_EXPOSURE, exposureUs));
     CE(xiStartAcquisition(cam));
-    isAcquisitionStarted = 1;
 
     memset(&image, 0, sizeof(image));
     image.size = sizeof(image);
@@ -82,5 +53,9 @@ int main(void)
                image.bp ? (int)((const unsigned char *)image.bp)[0] : -1);
     }
 
-    return cleanupCamera(cam, isAcquisitionStarted, EXIT_SUCCESS);
+    CE(xiStopAcquisition(cam));
+    CE(xiCloseDevice(cam));
+
+    printf("Done\n");
+    return EXIT_SUCCESS;
 }

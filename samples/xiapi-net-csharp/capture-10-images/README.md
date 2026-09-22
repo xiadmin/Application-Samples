@@ -31,6 +31,8 @@ dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
 
 Binary lands in `.dotnet-tmp\` inside the sample folder.
 
+NuGet packages restore into `.deps\nuget-packages\` at the repository root, shared by every C# sample, from the sources listed in `nuget.config`. Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`. Once a restore has run, `dotnet build --no-restore` works without network access.
+
 ---
 
 ## Run

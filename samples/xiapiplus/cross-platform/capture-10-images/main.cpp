@@ -18,9 +18,9 @@ static constexpr int grabTimeoutMs = 5000;
 
 int main()
 {
+    // xiAPIplus_Camera closes the camera in its destructor, so an exception
+    // thrown below needs no explicit cleanup.
     xiAPIplus_Camera cam;
-    bool acquisitionStarted = false;
-    bool cameraOpened = false;
 
     try
     {
@@ -33,9 +33,7 @@ int main()
         }
 
         std::cout << "Found " << count << " camera(s), opening index 0\n";
-
         cam.OpenByID(0);
-        cameraOpened = true;
 
         cam.SetExposureTime(exposureUs);
         std::cout << "Exposure: " << static_cast<int>(exposureUs) << " us ("
@@ -43,7 +41,6 @@ int main()
 
         cam.SetNextImageTimeout_ms(grabTimeoutMs);
         cam.StartAcquisition();
-        acquisitionStarted = true;
         std::cout << "Capturing " << frameCount << " frames\n";
 
         xiAPIplus_Image img;
@@ -59,46 +56,19 @@ int main()
         }
 
         cam.StopAcquisition();
-        acquisitionStarted = false;
-        std::cout << "Done\n";
-
         cam.Close();
-        cameraOpened = false;
-        return EXIT_SUCCESS;
     }
     catch (xiAPIplus_Exception& exception)
     {
         exception.PrintError();
+        return EXIT_FAILURE;
     }
     catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << "\n";
-    }
-    catch (...)
-    {
-        std::cerr << "Error: unknown exception occurred\n";
+        return EXIT_FAILURE;
     }
 
-    if (acquisitionStarted)
-    {
-        try
-        {
-            cam.StopAcquisition();
-        }
-        catch (...)
-        {
-        }
-    }
-    if (cameraOpened)
-    {
-        try
-        {
-            cam.Close();
-        }
-        catch (...)
-        {
-        }
-    }
-
-    return EXIT_FAILURE;
+    std::cout << "Done\n";
+    return EXIT_SUCCESS;
 }

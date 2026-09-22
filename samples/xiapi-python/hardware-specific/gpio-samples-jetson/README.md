@@ -34,6 +34,13 @@ python3 -m pip install -r requirements.txt
 
 `requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions (`gpiod`, `spidev`, `pyserial`); update it there to change versions across all samples.
 
+The same file also points at the shared wheelhouse, `.deps/wheels/` at the repository root, which pip ignores while it is empty. To install without network access, fill it on the Jetson itself once — wheels are specific to platform and Python version:
+
+```bash
+python3 -m pip download -r requirements.txt -d ../../../../.deps/wheels   # once, online
+python3 -m pip install --no-index -r requirements.txt                     # offline
+```
+
 ---
 
 ## Run

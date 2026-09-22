@@ -9,10 +9,22 @@ include(FetchContent)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL
     "Skip network update checks for already-downloaded FetchContent dependencies")
 
-function(application_samples_dependency)
-    cmake_parse_arguments(ARG "" "NAME;URL;SHA256;TARGET" "OPTIONS" ${ARGN})
+# Archive cache shared by every sample build tree, so a library is downloaded
+# once per machine instead of once per sample. Archive contents are not
+# verified; a version change is picked up through the URL in the central list.
+get_filename_component(_application_samples_cache_default
+    "${CMAKE_CURRENT_LIST_DIR}/../.deps" ABSOLUTE)
+set(APPLICATION_SAMPLES_CACHE_DIR "${_application_samples_cache_default}" CACHE PATH
+    "Shared directory holding downloaded dependency archives")
+unset(_application_samples_cache_default)
 
-    foreach(required IN ITEMS NAME URL SHA256 TARGET)
+option(APPLICATION_SAMPLES_OFFLINE
+    "Report a missing cached archive instead of reaching for the network" OFF)
+
+function(application_samples_dependency)
+    cmake_parse_arguments(ARG "" "NAME;URL;TARGET" "OPTIONS" ${ARGN})
+
+    foreach(required IN ITEMS NAME URL TARGET)
         if(NOT ARG_${required})
             message(FATAL_ERROR
                 "application_samples_dependency: ${required} is required")
@@ -32,7 +44,7 @@ function(application_samples_dependency)
     endif()
 
     set_property(GLOBAL APPEND PROPERTY APPLICATION_SAMPLES_DEPENDENCIES "${ARG_NAME}")
-    foreach(field IN ITEMS URL SHA256 TARGET OPTIONS)
+    foreach(field IN ITEMS URL TARGET OPTIONS)
         set_property(GLOBAL PROPERTY
             APPLICATION_SAMPLES_DEPENDENCY_${ARG_NAME}_${field} "${ARG_${field}}")
     endforeach()
@@ -47,7 +59,7 @@ function(application_samples_use name)
             "Declared: ${_known}. Add it to dependencies/Dependencies.cmake.")
     endif()
 
-    foreach(field IN ITEMS URL SHA256 TARGET OPTIONS)
+    foreach(field IN ITEMS URL TARGET OPTIONS)
         get_property(_${field} GLOBAL PROPERTY
             APPLICATION_SAMPLES_DEPENDENCY_${name}_${field})
     endforeach()
@@ -73,10 +85,39 @@ function(application_samples_use name)
         endif()
     endforeach()
 
+    set(_download_dir "${APPLICATION_SAMPLES_CACHE_DIR}/downloads")
+    get_filename_component(_archive "${_URL}" NAME)
+
+    set(_hash_args)
+    if(EXISTS "${_download_dir}/${_archive}")
+        # The download step keeps an archive only when it can match it against a
+        # hash, and deletes it otherwise. Hand it the hash of the copy already on
+        # disk so the cache survives; this checks nothing about the contents.
+        file(SHA256 "${_download_dir}/${_archive}" _cached_sha256)
+        set(_hash_args URL_HASH SHA256=${_cached_sha256})
+        message(STATUS
+            "application_samples_use(${name}): reusing cached ${_archive}")
+    elseif(APPLICATION_SAMPLES_OFFLINE)
+        # A failed download is retried five times with growing sleeps, so an
+        # offline build would otherwise stall for minutes before failing.
+        message(FATAL_ERROR
+            "application_samples_use(${name}): ${_archive} is not in the cache "
+            "at ${_download_dir}, and APPLICATION_SAMPLES_OFFLINE is ON. "
+            "Configure once with network access, or copy ${_URL} into that "
+            "directory.")
+    else()
+        message(STATUS
+            "application_samples_use(${name}): downloading ${_archive} into "
+            "${_download_dir}; later builds reuse it and need no network")
+    endif()
+
     FetchContent_Declare(
         ${name}
-        URL      ${_URL}
-        URL_HASH SHA256=${_SHA256}
+        URL                ${_URL}
+        ${_hash_args}
+        DOWNLOAD_DIR       "${_download_dir}"
+        TIMEOUT            600
+        INACTIVITY_TIMEOUT 30
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     FetchContent_MakeAvailable(${name})
@@ -220,10 +261,22 @@ function(ximea_find_sdk)
 
     if(XIMEA_FOUND AND CMAKE_CXX_COMPILER_LOADED AND NOT TARGET XIMEA::xiAPIplus)
         if(EXISTS "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
-            find_package(TIFF QUIET)
+            # libtiff names its own target TIFF::tiff, CMake's FindTIFF module
+            # names the system one TIFF::TIFF. Prefer the central dependency
+            # when the sample asked for it with application_samples_use(libtiff)
+            # before calling this function.
+            set(_ximea_tiff_target "")
+            if(TARGET TIFF::tiff)
+                set(_ximea_tiff_target TIFF::tiff)
+            else()
+                find_package(TIFF QUIET)
+                if(TIFF_FOUND)
+                    set(_ximea_tiff_target TIFF::TIFF)
+                endif()
+            endif()
 
             set(_ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_core.cpp")
-            if(TIFF_FOUND)
+            if(_ximea_tiff_target)
                 list(APPEND _ximea_plus_sources "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_tiff.cpp")
             endif()
 
@@ -241,8 +294,8 @@ function(ximea_find_sdk)
                 endif()
                 target_link_libraries(XIMEA_xiAPIplus PUBLIC XIMEA::xiAPI)
 
-                if(TIFF_FOUND)
-                    target_link_libraries(XIMEA_xiAPIplus PUBLIC TIFF::TIFF)
+                if(_ximea_tiff_target)
+                    target_link_libraries(XIMEA_xiAPIplus PUBLIC ${_ximea_tiff_target})
                     # XIMEA SP 4.33 xiAPIplus_tiff.cpp omits <cstring>.
                     set(_tiff_src "${XIMEA_INCLUDE_PLUS_DIR}/xiAPIplus_tiff.cpp")
                     if(MSVC)

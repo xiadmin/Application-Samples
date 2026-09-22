@@ -1,8 +1,8 @@
 # Central list of external C/C++ libraries.
 #
-# One application_samples_dependency() record per library: where to get it, how
-# to check it, the target it defines, and the options that configure its build.
-# A sample asks for one with application_samples_use(<name>).
+# One application_samples_dependency() record per library: where to get it, the
+# target it defines, and the options that configure its build. A sample asks for
+# one with application_samples_use(<name>).
 #
 # The functions live in cmake/CMakeLists.txt. Include that file, not this one.
 
@@ -18,7 +18,6 @@ endif()
 application_samples_dependency(
     NAME    libtiff
     URL     https://download.osgeo.org/libtiff/tiff-4.7.1.tar.gz
-    SHA256  f698d94f3103da8ca7438d84e0344e453fe0ba3b7486e04c5bf7a9a3fabe9b69
     TARGET  TIFF::tiff
     OPTIONS
         BUILD_SHARED_LIBS=OFF
@@ -41,4 +40,3 @@ application_samples_dependency(
         lerc=OFF
         pixarlog=OFF
 )
-

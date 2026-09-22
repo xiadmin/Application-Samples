@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="../../../dependencies/Directory.Packages.props" />
+  <!-- dependencies/Directory.Packages.props is imported automatically through
+       DirectoryPackagesPropsPath in the repository-root Directory.Build.props. -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
