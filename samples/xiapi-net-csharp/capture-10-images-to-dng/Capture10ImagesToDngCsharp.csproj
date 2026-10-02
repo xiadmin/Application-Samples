@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- dependencies/Directory.Packages.props is imported automatically through
+       DirectoryPackagesPropsPath in the repository-root Directory.Build.props. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Target latest LTS .NET; update when a new LTS ships. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>capture-10-images-to-dng-csharp</AssemblyName>
+    <RootNamespace>Ximea.Samples</RootNamespace>
+    <!-- Force x64 — xiApi.NETX64.dll is 64-bit only. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <XimeaSpPath Condition="'$(XimeaSpPath)' == ''">$(XIMEA_SP_PATH)</XimeaSpPath>
+    <DngStoreDll>$(XimeaSpPath)\DNG Store\binX64\xiapi_dng_store.dll</DngStoreDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="xiApi.NETX64">
+      <HintPath>$(XimeaSpPath)\API\xiAPI.NET.NET.7.0\xiApi.NETX64.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- xiapi_dng_store.dll is not on PATH after an SP install; ship it with the sample. -->
+  <ItemGroup Condition="Exists('$(DngStoreDll)')">
+    <None Include="$(DngStoreDll)" Link="xiapi_dng_store.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+  <Target Name="CheckXimeaSpPath" BeforeTargets="Build">
+    <Error Condition="'$(XimeaSpPath)' == ''"
+           Text="XIMEA SDK path is not set. Run the XIMEA installer (which sets XIMEA_SP_PATH) or pass -p:XimeaSpPath=&lt;path&gt; to dotnet build." />
+    <Error Condition="'$(XimeaSpPath)' != '' And !Exists('$(DngStoreDll)')"
+           Text="XIMEA DNG Store not found at $(DngStoreDll). Install the &quot;DNG Store&quot; component of the XIMEA Software Package." />
+  </Target>
+
+</Project>
