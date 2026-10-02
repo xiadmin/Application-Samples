@@ -5,17 +5,17 @@
 .deps/
 
 # Temporary CMake build directories
-**/.cmake-tmp/
+.cmake-tmp/
 
 # Temporary .NET build directories
-**/.dotnet-tmp/
+.dotnet-tmp/
 
 # .NET build output and restore artifacts, created even when --output is given
 bin/
 obj/
 
 # Python bytecode
-**/__pycache__/
+__pycache__/
 *.py[cod]
 
 # Local Python tools
