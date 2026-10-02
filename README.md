@@ -46,9 +46,27 @@ Each sample has a README.md explaining what it does and how to use it.
 | [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Capture 10 frames and print basic frame information |
 | [xiapi/cross-platform/capture-10-images-to-file](samples/xiapi/cross-platform/capture-10-images-to-file/) | XiAPI (C) | Capture 10 stabilized frames and save them as TIFF files |
 | [xiapi/cross-platform/capture-10-images-to-ram](samples/xiapi/cross-platform/capture-10-images-to-ram/) | XiAPI (C) | Capture 10 frames into application-owned RAM and access them after closing the camera |
+| [xiapi/cross-platform/error-handling](samples/xiapi/cross-platform/error-handling/) | XiAPI (C) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
+| [xiapi/cross-platform/capture-10-images-to-dng](samples/xiapi/cross-platform/capture-10-images-to-dng/) | XiAPI (C) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
+| [xiapi/cross-platform/offline-processing](samples/xiapi/cross-platform/offline-processing/) | XiAPI (C) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
 | [xiapiplus/cross-platform/capture-10-images](samples/xiapiplus/cross-platform/capture-10-images/) | xiAPIplus (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapiplus/cross-platform/capture-10-images-to-file](samples/xiapiplus/cross-platform/capture-10-images-to-file/) | xiAPIplus (C++) | Capture 10 stabilized frames and save them as TIFF files |
+| [xiapiplus/cross-platform/capture-10-images-to-ram](samples/xiapiplus/cross-platform/capture-10-images-to-ram/) | xiAPIplus (C++) | Capture 10 frames into application-owned RAM and access them after closing the camera |
+| [xiapiplus/cross-platform/error-handling](samples/xiapiplus/cross-platform/error-handling/) | xiAPIplus (C++) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
+| [xiapiplus/cross-platform/capture-10-images-to-dng](samples/xiapiplus/cross-platform/capture-10-images-to-dng/) | xiAPIplus (C++) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
+| [xiapiplus/cross-platform/offline-processing](samples/xiapiplus/cross-platform/offline-processing/) | xiAPIplus (C++) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
 | [xiapi-net-csharp/capture-10-images](samples/xiapi-net-csharp/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi-net-csharp/capture-10-images-to-file](samples/xiapi-net-csharp/capture-10-images-to-file/) | XiAPI.NET (C#) | Capture 10 stabilized frames and save them as TIFF files |
+| [xiapi-net-csharp/capture-10-images-to-ram](samples/xiapi-net-csharp/capture-10-images-to-ram/) | XiAPI.NET (C#) | Capture 10 frames into application-owned RAM and access them after closing the camera |
+| [xiapi-net-csharp/error-handling](samples/xiapi-net-csharp/error-handling/) | XiAPI.NET (C#) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
+| [xiapi-net-csharp/capture-10-images-to-dng](samples/xiapi-net-csharp/capture-10-images-to-dng/) | XiAPI.NET (C#) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
+| [xiapi-net-csharp/offline-processing](samples/xiapi-net-csharp/offline-processing/) | XiAPI.NET (C#) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
+| [xiapi-net-csharp/display-images-in-window](samples/xiapi-net-csharp/display-images-in-window/) | XiAPI.NET (C#) | Live preview in a Windows Forms window with an exposure slider |
 | [xiapi-python/cross-platform/capture-10-images](samples/xiapi-python/cross-platform/capture-10-images/) | XiApiPython (Python) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
+| [xiapi-python/cross-platform/capture-10-images-to-file](samples/xiapi-python/cross-platform/capture-10-images-to-file/) | XiApiPython (Python) | Capture 10 stabilized frames and save them as TIFF files |
+| [xiapi-python/cross-platform/capture-10-images-to-ram](samples/xiapi-python/cross-platform/capture-10-images-to-ram/) | XiApiPython (Python) | Capture 10 frames into application-owned RAM and access them after closing the camera |
+| [xiapi-python/cross-platform/error-handling](samples/xiapi-python/cross-platform/error-handling/) | XiApiPython (Python) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
+| [xiapi-python/cross-platform/capture-10-images-to-dng](samples/xiapi-python/cross-platform/capture-10-images-to-dng/) | XiApiPython (Python) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
 | [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
 | [xiapi-python/hardware-specific/gpio-samples-jetson](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | XiApiPython (Python) | GPIO, I2C, SPI and UART samples for the Jetson kit |
 
