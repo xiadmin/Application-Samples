@@ -318,3 +318,88 @@ function(ximea_find_sdk)
 
     mark_as_advanced(XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR XIMEA_LIBRARY)
 endfunction()
+
+# Finds the DNG Store library that ships with the XIMEA Software Package and
+# defines XIMEA::DngStore. It is part of the SDK like xiAPI, so it carries no
+# central version. Call ximea_find_sdk() first; a sample checks
+# XIMEA_DNG_STORE_FOUND and skips itself when the SP component is missing.
+function(ximea_find_dng_store)
+    set(_ximea_sp_path "$ENV{XIMEA_SP_PATH}")
+    set(_dng_roots "${_ximea_sp_path}" "${XIMEA_ROOT}" "$ENV{XIMEA_ROOT}")
+    set(_dng_inc_hints)
+    set(_dng_lib_hints)
+    foreach(_root IN LISTS _dng_roots)
+        if(_root)
+            list(APPEND _dng_inc_hints "${_root}/DNG Store/Include" "${_root}/include")
+            list(APPEND _dng_lib_hints "${_root}/DNG Store/binX64" "${_root}/lib" "${_root}/lib64")
+        endif()
+    endforeach()
+    if(APPLE)
+        list(APPEND _dng_inc_hints "/Library/Frameworks/m3api.framework/Headers")
+        list(APPEND _dng_lib_hints "/Library/Frameworks/m3api.framework/Libraries"
+            "/Library/Frameworks/m3api.framework/Versions/B/Libraries")
+    elseif(NOT WIN32)
+        # The Linux installer copies the header into /opt/XIMEA/include, links
+        # /usr/include/m3api to it, and puts the library in /opt/XIMEA/lib.
+        list(APPEND _dng_inc_hints "/opt/XIMEA/include")
+        list(APPEND _dng_lib_hints "/opt/XIMEA/lib" "/opt/XIMEA/lib64")
+    endif()
+
+    find_path(XIMEA_DNG_STORE_INCLUDE_DIR NAMES xiapi_dng_store.h HINTS ${_dng_inc_hints})
+    find_library(XIMEA_DNG_STORE_LIBRARY NAMES xiapi_dng_store HINTS ${_dng_lib_hints})
+    if(WIN32)
+        find_file(XIMEA_DNG_STORE_DLL NAMES xiapi_dng_store.dll HINTS ${_dng_lib_hints})
+    endif()
+    mark_as_advanced(XIMEA_DNG_STORE_INCLUDE_DIR XIMEA_DNG_STORE_LIBRARY XIMEA_DNG_STORE_DLL)
+
+    set(_dng_found FALSE)
+    if(TARGET XIMEA::xiAPI AND XIMEA_DNG_STORE_INCLUDE_DIR AND XIMEA_DNG_STORE_LIBRARY
+       AND (NOT WIN32 OR XIMEA_DNG_STORE_DLL))
+        set(_dng_found TRUE)
+    endif()
+    set(XIMEA_DNG_STORE_FOUND ${_dng_found} PARENT_SCOPE)
+
+    if(NOT _dng_found)
+        message(WARNING
+            "XIMEA DNG Store not found, skipping ${PROJECT_NAME}. Install the "
+            "\"DNG Store\" component of the XIMEA Software Package; on Windows it "
+            "is expected at <XIMEA_SP_PATH>/DNG Store/{Include,binX64}.")
+        return()
+    endif()
+
+    if(NOT TARGET XIMEA::DngStore)
+        if(WIN32)
+            add_library(XIMEA::DngStore SHARED IMPORTED GLOBAL)
+            set_target_properties(XIMEA::DngStore PROPERTIES
+                IMPORTED_LOCATION "${XIMEA_DNG_STORE_DLL}"
+                IMPORTED_IMPLIB "${XIMEA_DNG_STORE_LIBRARY}")
+        else()
+            add_library(XIMEA::DngStore UNKNOWN IMPORTED GLOBAL)
+            set_target_properties(XIMEA::DngStore PROPERTIES
+                IMPORTED_LOCATION "${XIMEA_DNG_STORE_LIBRARY}")
+            if(APPLE)
+                # xiapi_dng_store.h includes <m3api/xiApi.h>, a framework header.
+                target_compile_options(XIMEA::DngStore INTERFACE "-F/Library/Frameworks")
+            endif()
+        endif()
+        # Linked after XIMEA::xiAPI, so the SDK's own xiApi.h stays first on the
+        # include path instead of the copy in DNG Store/Include.
+        target_include_directories(XIMEA::DngStore INTERFACE "${XIMEA_DNG_STORE_INCLUDE_DIR}")
+        target_link_libraries(XIMEA::DngStore INTERFACE XIMEA::xiAPI)
+    endif()
+endfunction()
+
+# xiapi_dng_store.dll is not on PATH after an SP install, so put it next to the
+# executable in the build tree and in the install prefix.
+function(ximea_dng_store_runtime)
+    cmake_parse_arguments(ARG "" "TARGET" "" ${ARGN})
+    if(NOT ARG_TARGET)
+        message(FATAL_ERROR "ximea_dng_store_runtime: TARGET must be specified")
+    endif()
+    if(WIN32 AND XIMEA_DNG_STORE_DLL)
+        add_custom_command(TARGET ${ARG_TARGET} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${XIMEA_DNG_STORE_DLL}" "$<TARGET_FILE_DIR:${ARG_TARGET}>")
+        install(FILES "${XIMEA_DNG_STORE_DLL}" DESTINATION bin)
+    endif()
+endfunction()

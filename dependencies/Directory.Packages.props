@@ -2,4 +2,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="BitMiracle.LibTiff.NET" Version="2.4.660" />
+  </ItemGroup>
 </Project>
