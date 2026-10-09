@@ -1,0 +1,7 @@
+-c ../../../../dependencies/python-constraints.txt
+# Offline wheelhouse; ignored when the directory is absent. Fill it with:
+# python -m pip download -r requirements.txt -d <path>
+--find-links ../../../../.deps/wheels
+
+numpy
+opencv-python

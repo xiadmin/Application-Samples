@@ -10,7 +10,8 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 - Python 3.11 or newer for Python samples.
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
 - OpenCV 4 for the `*-opencv` xiAPIplus samples.
-- .NET SDK 8.0 or newer for xiAPI.NET samples.
+- OpenCV and Pillow, installed with pip from each sample's `requirements.txt`, for the `*-opencv` and `*-pillow` Python samples.
+- .NET SDK 8.0 or newer for xiAPI.NET samples (C# and VB.NET).
 
 ---
 
@@ -22,6 +23,7 @@ samples/
   xiapiplus/                # C++ samples using xiAPIplus
   gentl/                    # C++ samples using GenTL, alone or alongside xiAPI
   xiapi-net-csharp/         # C# samples using xiAPI.NET
+  xiapi-net-vb/             # VB.NET samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
 cmake/                      # shared sample CMake support files
 dependencies/
@@ -70,13 +72,21 @@ Each sample has a README.md explaining what it does and how to use it.
 | [xiapi-net-csharp/capture-10-images-to-dng](samples/xiapi-net-csharp/capture-10-images-to-dng/) | XiAPI.NET (C#) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
 | [xiapi-net-csharp/offline-processing](samples/xiapi-net-csharp/offline-processing/) | XiAPI.NET (C#) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
 | [xiapi-net-csharp/display-images-in-window](samples/xiapi-net-csharp/display-images-in-window/) | XiAPI.NET (C#) | Live preview in a Windows Forms window with an exposure slider |
+| [xiapi-net-vb/capture-100-images-to-file](samples/xiapi-net-vb/capture-100-images-to-file/) | XiAPI.NET (VB.NET) | Capture 100 grayscale frames and save them as JPEG files with WPF |
 | [xiapi-python/cross-platform/capture-10-images](samples/xiapi-python/cross-platform/capture-10-images/) | XiApiPython (Python) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-python/cross-platform/capture-10-images-to-file](samples/xiapi-python/cross-platform/capture-10-images-to-file/) | XiApiPython (Python) | Capture 10 stabilized frames and save them as TIFF files |
 | [xiapi-python/cross-platform/capture-10-images-to-ram](samples/xiapi-python/cross-platform/capture-10-images-to-ram/) | XiApiPython (Python) | Capture 10 frames into application-owned RAM and access them after closing the camera |
 | [xiapi-python/cross-platform/error-handling](samples/xiapi-python/cross-platform/error-handling/) | XiApiPython (Python) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
 | [xiapi-python/cross-platform/capture-10-images-to-dng](samples/xiapi-python/cross-platform/capture-10-images-to-dng/) | XiApiPython (Python) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
+| [xiapi-python/cross-platform/capture-from-two-cameras](samples/xiapi-python/cross-platform/capture-from-two-cameras/) | XiApiPython (Python) | Open two cameras, split the interface bandwidth between them and capture one frame from each |
+| [xiapi-python/cross-platform/display-image-opencv](samples/xiapi-python/cross-platform/display-image-opencv/) | XiApiPython (Python) | Capture one MONO8, RGB24 or MONO16 frame and show it in an OpenCV window |
+| [xiapi-python/cross-platform/display-video-opencv](samples/xiapi-python/cross-platform/display-video-opencv/) | XiApiPython (Python) | Live MONO8 or RGB24 video in an OpenCV window with an elapsed-time overlay |
+| [xiapi-python/cross-platform/display-image-pillow](samples/xiapi-python/cross-platform/display-image-pillow/) | XiApiPython (Python) | Capture one MONO8, RGB24 or RGB32 frame and open it with Pillow in the system image viewer |
+| [xiapi-python/cross-platform/save-image-pillow](samples/xiapi-python/cross-platform/save-image-pillow/) | XiApiPython (Python) | Capture one frame and save it with Pillow in the format given by the file extension |
 | [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
 | [xiapi-python/hardware-specific/gpio-samples-jetson](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | XiApiPython (Python) | GPIO, I2C, SPI and UART samples for the Jetson kit |
+
+LabVIEW examples are not part of this repository. They ship with the XIMEA Software Package when its optional "NI Labview interface - xiLib" component is installed, under `VisionLibraries\xiLib\xiLIB_64bit\APP_REQUIREMENTS\Examples` (or `xiLIB_32bit`) in the SP installation folder.
 
 ---
 
