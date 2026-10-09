@@ -546,3 +546,155 @@ function(ximea_find_opencv_wrapper)
         add_library(XIMEA::xiAPIplusOpenCV ALIAS XIMEA_xiAPIplusOpenCV)
     endif()
 endfunction()
+
+# Enables the CUDA language and finds the CUDA toolkit, which provides
+# CUDA::cudart. A macro, because enable_language() must run in the sample's own
+# directory scope. A sample checks APPLICATION_SAMPLES_CUDA_FOUND and skips
+# itself when the toolkit or a working CUDA compiler is missing.
+macro(application_samples_find_cuda)
+    # Lets CMake pick the compiler's default GPU architecture instead of
+    # warning that CUDA_ARCHITECTURES is empty.
+    if(POLICY CMP0104)
+        cmake_policy(SET CMP0104 NEW)
+    endif()
+
+    include(CheckLanguage)
+    check_language(CUDA)
+    set(APPLICATION_SAMPLES_CUDA_FOUND FALSE)
+    if(CMAKE_CUDA_COMPILER)
+        enable_language(CUDA)
+        find_package(CUDAToolkit QUIET)
+        if(CUDAToolkit_FOUND)
+            set(APPLICATION_SAMPLES_CUDA_FOUND TRUE)
+        endif()
+    endif()
+
+    if(APPLICATION_SAMPLES_CUDA_FOUND)
+        _ximea_sample_skip_marker()
+    else()
+        message(WARNING
+            "CUDA toolkit not found, skipping ${PROJECT_NAME}. Install the NVIDIA "
+            "CUDA Toolkit and make sure nvcc is on PATH or CUDA_PATH is set. With a "
+            "Visual Studio generator, the toolkit's Visual Studio integration must "
+            "be installed as well; otherwise configure with -G Ninja from a "
+            "developer command prompt.")
+        _ximea_sample_skip_marker(REASON "CUDA toolkit not found")
+    endif()
+endmacro()
+
+# Finds an OpenCL SDK (headers and ICD loader) with find_package(OpenCL), which
+# defines OpenCL::OpenCL. GPU vendor SDKs, including the CUDA toolkit, ship
+# one. A sample checks APPLICATION_SAMPLES_OPENCL_FOUND and skips itself when
+# it is missing.
+function(application_samples_find_opencl)
+    find_package(OpenCL QUIET)
+    set(APPLICATION_SAMPLES_OPENCL_FOUND ${OpenCL_FOUND} PARENT_SCOPE)
+
+    if(NOT OpenCL_FOUND)
+        message(WARNING
+            "OpenCL not found, skipping ${PROJECT_NAME}. Install an OpenCL SDK: "
+            "the GPU vendor's SDK (the CUDA toolkit for NVIDIA) on Windows, or the "
+            "OpenCL headers and ICD loader on Linux (opencl-headers and "
+            "ocl-icd-opencl-dev on Debian/Ubuntu).")
+        _ximea_sample_skip_marker(REASON "OpenCL not found")
+        return()
+    endif()
+    _ximea_sample_skip_marker()
+endfunction()
+
+# Finds the MultiRecorder sources that ship with the XIMEA Software Package
+# under Examples/MultiRecorder/sources (examples/MultiRecorder/sources on Linux)
+# and builds the parts a camera server or client needs as XIMEA::MultiRecorder.
+# The OpenCV live preview is loaded at run time only if OpenCV is installed, and
+# recording to FIS storage and TIFF export are left out. Call ximea_find_sdk()
+# first; a sample checks XIMEA_MULTIRECORDER_FOUND and skips itself when the SP
+# component is missing.
+function(ximea_find_multirecorder)
+    set(_ximea_sp_path "$ENV{XIMEA_SP_PATH}")
+    set(_mr_roots "${_ximea_sp_path}" "${XIMEA_ROOT}" "$ENV{XIMEA_ROOT}")
+    set(_mr_hints)
+    foreach(_root IN LISTS _mr_roots)
+        if(_root)
+            list(APPEND _mr_hints
+                "${_root}/Examples/MultiRecorder/sources"
+                "${_root}/examples/MultiRecorder/sources")
+        endif()
+    endforeach()
+    if(NOT WIN32)
+        list(APPEND _mr_hints "/opt/XIMEA/examples/MultiRecorder/sources")
+    endif()
+
+    find_path(XIMEA_MULTIRECORDER_SOURCE_DIR NAMES RecorderApi.h HINTS ${_mr_hints})
+    mark_as_advanced(XIMEA_MULTIRECORDER_SOURCE_DIR)
+    find_package(Threads QUIET)
+
+    set(_mr_dir "${XIMEA_MULTIRECORDER_SOURCE_DIR}")
+    set(_mr_found FALSE)
+    if(TARGET XIMEA::xiAPI AND Threads_FOUND AND _mr_dir
+       AND EXISTS "${_mr_dir}/tinyxml/tinyxml.cpp"
+       AND EXISTS "${_mr_dir}/xiApi/xiApiEnumerators.cpp"
+       AND EXISTS "${_mr_dir}/httplib/httplib.h")
+        set(_mr_found TRUE)
+    endif()
+    set(XIMEA_MULTIRECORDER_FOUND ${_mr_found} PARENT_SCOPE)
+
+    if(NOT _mr_found)
+        message(WARNING
+            "XIMEA MultiRecorder sources not found, skipping ${PROJECT_NAME}. "
+            "Install the XIMEA Software Package with its examples; RecorderApi.h "
+            "is expected at <XIMEA_SP_PATH>/Examples/MultiRecorder/sources on "
+            "Windows or /opt/XIMEA/examples/MultiRecorder/sources on Linux.")
+        _ximea_sample_skip_marker(REASON "XIMEA MultiRecorder sources not found")
+        return()
+    endif()
+    _ximea_sample_skip_marker()
+
+    if(NOT TARGET XIMEA_MultiRecorder)
+        # Same server and client sources as the SP's camera-side processing
+        # example, without the MultiRecorder application itself.
+        add_library(XIMEA_MultiRecorder STATIC EXCLUDE_FROM_ALL
+            "${_mr_dir}/CameraClient.cpp"
+            "${_mr_dir}/CameraControl.cpp"
+            "${_mr_dir}/CameraServer.cpp"
+            "${_mr_dir}/ImageExporter.cpp"
+            "${_mr_dir}/LiveImagePreview.cpp"
+            "${_mr_dir}/RecorderApi.cpp"
+            "${_mr_dir}/RemoteCameraClient.cpp"
+            "${_mr_dir}/UserImageProcessor.cpp"
+            "${_mr_dir}/tinyxml/tinyxml.cpp"
+            "${_mr_dir}/tinyxml/tinyxmlerror.cpp"
+            "${_mr_dir}/tinyxml/tinyxmlparser.cpp"
+            "${_mr_dir}/xiApi/xiApiEnumerators.cpp"
+        )
+        target_compile_features(XIMEA_MultiRecorder PUBLIC cxx_std_17)
+        # The SDK's xiApi.h comes first; the sources folder adds the
+        # xiApiParams.h and xiApiEnumerators.h helpers it ships alongside.
+        target_include_directories(XIMEA_MultiRecorder
+            PUBLIC "${XIMEA_INCLUDE_DIR}" "${_mr_dir}" "${_mr_dir}/tinyxml"
+            PRIVATE "${_mr_dir}/xiApi")
+        # TIXML_USE_STL changes the TinyXML class layout, so consumers that
+        # include tinyxml.h need it too.
+        target_compile_definitions(XIMEA_MultiRecorder
+            PUBLIC TIXML_USE_STL
+            PRIVATE
+                CPPHTTPLIB_CONNECTION_TIMEOUT_SECOND=5
+                CPPHTTPLIB_KEEPALIVE_TIMEOUT_SECOND=30
+                CPPHTTPLIB_WRITE_TIMEOUT_SECOND=30
+                CPPHTTPLIB_READ_TIMEOUT_SECOND=30)
+        if(MSVC)
+            target_compile_definitions(XIMEA_MultiRecorder PRIVATE _CRT_SECURE_NO_WARNINGS)
+        endif()
+        if(APPLE)
+            target_compile_definitions(XIMEA_MultiRecorder PUBLIC MACOS)
+        elseif(UNIX)
+            target_compile_definitions(XIMEA_MultiRecorder PUBLIC LINUX)
+        endif()
+        target_link_libraries(XIMEA_MultiRecorder PUBLIC XIMEA::xiAPI Threads::Threads)
+        if(WIN32)
+            target_link_libraries(XIMEA_MultiRecorder PUBLIC ws2_32)
+        else()
+            target_link_libraries(XIMEA_MultiRecorder PUBLIC ${CMAKE_DL_LIBS})
+        endif()
+        add_library(XIMEA::MultiRecorder ALIAS XIMEA_MultiRecorder)
+    endif()
+endfunction()

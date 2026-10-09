@@ -1,0 +1,16 @@
+<RecordingSetup>
+<recordingStorages>
+    <storage name="s6">
+        <folder>data</folder> <!-- relative to the working directory; usually a full path -->
+    </storage>
+</recordingStorages>
+<tasks>
+    <!-- Like record-10-images, but the TIFF export happens later: the recorded
+         data stays in the storage, and the session is saved to the file
+         "recorded-session.xirecsession". exportImageFormat sets the image format
+         used when the session is opened in xiCamTool or exported to TIFF. -->
+    <cameraTask frameCount="10" recordingStorageName="s6" saveSession="recorded-session" exportImageFormat="XI_RGB24">
+        <setCameraParam name="XI_PRM_EXPOSURE" value="200000"/>
+    </cameraTask>
+</tasks>
+</RecordingSetup>

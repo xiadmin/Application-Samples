@@ -1,0 +1,17 @@
+<RecordingSetup>
+<recordingStorages>
+    <!-- See record-10-images/setup.xml for a description of storages. -->
+    <storage name="RemoteDataStorage">
+        <folder>data</folder>  <!-- the folder is on the computer that runs the camera server -->
+    </storage>
+</recordingStorages>
+<tasks>
+    <!-- Connect to the camera server, record 10 frames of its first camera to the
+         storage on the server computer, and export them as RGB TIFF files to the
+         folder "output" there. Replace localhost with the IP address of the
+         server computer, and keep the port the server listens at. -->
+    <cameraTask connectToServer="localhost:8090" frameCount="10" recordingStorageName="RemoteDataStorage" exportImageFormat="XI_RGB24" exportFolder="output">
+        <setCameraParam name="XI_PRM_EXPOSURE" value="200000"/>
+    </cameraTask>
+</tasks>
+</RecordingSetup>

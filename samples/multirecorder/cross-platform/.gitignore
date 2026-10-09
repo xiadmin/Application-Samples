@@ -1,0 +1,9 @@
+# Files written when the MultiRecorder setups run in their own folders
+data/
+data-*/
+output/
+output-*/
+exported/
+*.xirecsession
+MultiRecorder-log.txt
+server-log.txt

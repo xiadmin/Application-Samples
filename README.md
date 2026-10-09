@@ -10,6 +10,10 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 - Python 3.11 or newer for Python samples.
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
 - OpenCV 4 for the `*-opencv` xiAPIplus samples.
+- The NVIDIA CUDA Toolkit and an NVIDIA GPU for the `*-cuda` sample.
+- An OpenCL SDK at build time and an OpenCL runtime (part of the GPU driver) for the `*-opencl` sample.
+- harvesters and genicam, installed with pip from the sample's `requirements.txt`, for the GenTL Python sample.
+- The SP examples, which include MultiRecorder and its sources, for the `multirecorder/` samples.
 - OpenCV and Pillow, installed with pip from each sample's `requirements.txt`, for the `*-opencv` and `*-pillow` Python samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples (C# and VB.NET).
 
@@ -21,7 +25,8 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 samples/
   xiapi/                    # C samples using xiAPI, plus xiAPI-based hardware-specific samples
   xiapiplus/                # C++ samples using xiAPIplus
-  gentl/                    # C++ samples using GenTL, alone or alongside xiAPI
+  gentl/                    # C++ and Python samples using GenTL, alone or alongside xiAPI
+  multirecorder/            # MultiRecorder recording setups and camera server/client samples
   xiapi-net-csharp/         # C# samples using xiAPI.NET
   xiapi-net-vb/             # VB.NET samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
@@ -65,6 +70,18 @@ Each sample has a README.md explaining what it does and how to use it.
 | [gentl/cross-platform/capture-10-images-to-file](samples/gentl/cross-platform/capture-10-images-to-file/) | GenTL (C++) | Load the GenTL producer (.cti) at run time, capture 10 frames through pure GenTL and save them as TIFF files |
 | [gentl/cross-platform/capture-50-images-zero-copy](samples/gentl/cross-platform/capture-50-images-zero-copy/) | GenTL (C++) | Configure the camera with xiAPI, capture 50 frames through its GenTL data stream into application-allocated buffers |
 | [gentl/cross-platform/capture-10-concatenated-images-to-file](samples/gentl/cross-platform/capture-10-concatenated-images-to-file/) | GenTL (C++) | Capture buffers of 5 concatenated images, split them and save every image as a TIFF file |
+| [gentl/cross-platform/capture-10-images-python](samples/gentl/cross-platform/capture-10-images-python/) | GenTL (Python) | Load the GenTL producer with harvesters, set exposure and pixel format, capture 10 frames |
+| [xiapiplus/cross-platform/compute-histogram-cuda](samples/xiapiplus/cross-platform/compute-histogram-cuda/) | xiAPIplus + CUDA (C++) | Deliver frames to CPU, managed, zero-copy or GPU memory and compute a 64-bin histogram on the GPU |
+| [xiapiplus/cross-platform/demosaic-images-opencl](samples/xiapiplus/cross-platform/demosaic-images-opencl/) | xiAPIplus + OpenCL (C++) | Demosaic RAW8 Bayer frames on the GPU with OpenCL and save them as RGB TIFF files |
+| [multirecorder/cross-platform/averaging-camera-server](samples/multirecorder/cross-platform/averaging-camera-server/) | xiAPI + MultiRecorder (C++) | Camera server that averages every N frames on the camera computer before sending them |
+| [multirecorder/cross-platform/averaging-camera-client](samples/multirecorder/cross-platform/averaging-camera-client/) | xiAPI + MultiRecorder (C++) | Connect to the averaging server, set N and print statistics of the averaged images |
+| [multirecorder/cross-platform/record-10-images](samples/multirecorder/cross-platform/record-10-images/) | MultiRecorder (XML) | Record 10 frames and export them as RGB TIFF files |
+| [multirecorder/cross-platform/record-with-camera-settings-file](samples/multirecorder/cross-platform/record-with-camera-settings-file/) | MultiRecorder (XML) | Apply an xiCamTool `.xicamera` settings file before recording |
+| [multirecorder/cross-platform/record-from-multiple-cameras](samples/multirecorder/cross-platform/record-from-multiple-cameras/) | MultiRecorder (XML) | Record from three cameras with their own settings, storages and export formats |
+| [multirecorder/cross-platform/record-through-local-server](samples/multirecorder/cross-platform/record-through-local-server/) | MultiRecorder (XML) | Record through a camera server process on the same computer |
+| [multirecorder/cross-platform/record-through-remote-server](samples/multirecorder/cross-platform/record-through-remote-server/) | MultiRecorder (XML) | Record from a camera connected to another computer that runs a camera server |
+| [multirecorder/cross-platform/export-recorded-session](samples/multirecorder/cross-platform/export-recorded-session/) | MultiRecorder (XML) | Save a recording session and export it to TIFF files in a later step |
+| [multirecorder/cross-platform/record-concatenated-images](samples/multirecorder/cross-platform/record-concatenated-images/) | MultiRecorder (XML) | Record buffers of 2 concatenated images from a PCIe xiX or xiB camera |
 | [xiapi-net-csharp/capture-10-images](samples/xiapi-net-csharp/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-net-csharp/capture-10-images-to-file](samples/xiapi-net-csharp/capture-10-images-to-file/) | XiAPI.NET (C#) | Capture 10 stabilized frames and save them as TIFF files |
 | [xiapi-net-csharp/capture-10-images-to-ram](samples/xiapi-net-csharp/capture-10-images-to-ram/) | XiAPI.NET (C#) | Capture 10 frames into application-owned RAM and access them after closing the camera |
@@ -85,6 +102,8 @@ Each sample has a README.md explaining what it does and how to use it.
 | [xiapi-python/cross-platform/save-image-pillow](samples/xiapi-python/cross-platform/save-image-pillow/) | XiApiPython (Python) | Capture one frame and save it with Pillow in the format given by the file extension |
 | [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
 | [xiapi-python/hardware-specific/gpio-samples-jetson](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | XiApiPython (Python) | GPIO, I2C, SPI and UART samples for the Jetson kit |
+
+xiFAPI has no samples of its own. It is not a separate SDK: it is built into xiAPI (`xiapi64` / `libm3api`) and exports the same `xi*` functions, and its offline `xiProc` processing is shown by the `offline-processing` samples.
 
 LabVIEW examples are not part of this repository. They ship with the XIMEA Software Package when its optional "NI Labview interface - xiLib" component is installed, under `VisionLibraries\xiLib\xiLIB_64bit\APP_REQUIREMENTS\Examples` (or `xiLIB_32bit`) in the SP installation folder.
 

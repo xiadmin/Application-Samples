@@ -1,0 +1,16 @@
+<RecordingSetup>
+<recordingStorages>
+    <!-- See record-10-images/setup.xml for a description of storages. -->
+    <storage name="s7">
+        <folder>data</folder>
+    </storage>
+</recordingStorages>
+<tasks>
+    <!-- Record 10 images in groups of 2; each group is transferred and stored
+         in one buffer. Concatenated images are supported by PCIe xiX and xiB
+         cameras. -->
+    <cameraTask frameCount="10" concatImgCount="2" recordingStorageName="s7" exportImageFormat="XI_RGB24" exportFolder="output">
+        <setCameraParam name="XI_PRM_EXPOSURE" value="200000"/>
+    </cameraTask>
+</tasks>
+</RecordingSetup>
