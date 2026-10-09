@@ -319,6 +319,20 @@ function(ximea_find_sdk)
     mark_as_advanced(XIMEA_INCLUDE_DIR XIMEA_INCLUDE_PLUS_DIR XIMEA_LIBRARY)
 endfunction()
 
+# Records in the build tree why a sample skipped itself, so build tooling can
+# report it as skipped instead of as a build without output. Called by the
+# ximea_find_* helpers below; a found component removes a stale marker.
+function(_ximea_sample_skip_marker)
+    cmake_parse_arguments(ARG "" "REASON" "" ${ARGN})
+    set(_marker "${CMAKE_BINARY_DIR}/sample-skipped.txt")
+    if(ARG_REASON)
+        file(WRITE "${_marker}" "${ARG_REASON}
+")
+    else()
+        file(REMOVE "${_marker}")
+    endif()
+endfunction()
+
 # Finds the DNG Store library that ships with the XIMEA Software Package and
 # defines XIMEA::DngStore. It is part of the SDK like xiAPI, so it carries no
 # central version. Call ximea_find_sdk() first; a sample checks
@@ -364,8 +378,10 @@ function(ximea_find_dng_store)
             "XIMEA DNG Store not found, skipping ${PROJECT_NAME}. Install the "
             "\"DNG Store\" component of the XIMEA Software Package; on Windows it "
             "is expected at <XIMEA_SP_PATH>/DNG Store/{Include,binX64}.")
+        _ximea_sample_skip_marker(REASON "XIMEA DNG Store not found")
         return()
     endif()
+    _ximea_sample_skip_marker()
 
     if(NOT TARGET XIMEA::DngStore)
         if(WIN32)
@@ -401,5 +417,132 @@ function(ximea_dng_store_runtime)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${XIMEA_DNG_STORE_DLL}" "$<TARGET_FILE_DIR:${ARG_TARGET}>")
         install(FILES "${XIMEA_DNG_STORE_DLL}" DESTINATION bin)
+    endif()
+endfunction()
+
+# Finds the GenTL headers and consumer helpers that ship with the XIMEA Software
+# Package under Examples/Sources/_libs/GenTL and defines:
+#   XIMEA::GenTL         headers only, for consumers that load a GenTL producer
+#                        (.cti) at run time; adds the dlopen library off Windows.
+#   XIMEA::GenTLHelpers  xiGenTL/GenTLStream/ImgBuffer helpers built from the SP
+#                        sources. They call the GenTL functions that xiAPI
+#                        exports, so they link XIMEA::xiAPI.
+# Call ximea_find_sdk() first; a sample checks XIMEA_GENTL_FOUND and skips
+# itself when the SP component is missing.
+function(ximea_find_gentl)
+    set(_ximea_sp_path "$ENV{XIMEA_SP_PATH}")
+    set(_gentl_roots "${_ximea_sp_path}" "${XIMEA_ROOT}" "$ENV{XIMEA_ROOT}")
+    set(_gentl_inc_hints)
+    foreach(_root IN LISTS _gentl_roots)
+        if(_root)
+            list(APPEND _gentl_inc_hints
+                "${_root}/Examples/Sources/_libs/GenTL"
+                "${_root}/samples/_libs/GenTL")
+        endif()
+    endforeach()
+    if(NOT WIN32)
+        list(APPEND _gentl_inc_hints "/opt/XIMEA/samples/_libs/GenTL")
+    endif()
+
+    find_path(XIMEA_GENTL_INCLUDE_DIR NAMES GenTL_v1_5.h HINTS ${_gentl_inc_hints})
+    mark_as_advanced(XIMEA_GENTL_INCLUDE_DIR)
+
+    set(_gentl_found FALSE)
+    if(TARGET XIMEA::xiAPI AND XIMEA_GENTL_INCLUDE_DIR)
+        set(_gentl_found TRUE)
+    endif()
+    set(XIMEA_GENTL_FOUND ${_gentl_found} PARENT_SCOPE)
+
+    if(NOT _gentl_found)
+        message(WARNING
+            "XIMEA GenTL headers not found, skipping ${PROJECT_NAME}. Install the "
+            "XIMEA Software Package with its examples; GenTL_v1_5.h is expected at "
+            "<XIMEA_SP_PATH>/Examples/Sources/_libs/GenTL on Windows or "
+            "/opt/XIMEA/samples/_libs/GenTL on Linux.")
+        _ximea_sample_skip_marker(REASON "XIMEA GenTL headers not found")
+        return()
+    endif()
+    _ximea_sample_skip_marker()
+
+    if(NOT TARGET XIMEA::GenTL)
+        add_library(XIMEA::GenTL INTERFACE IMPORTED GLOBAL)
+        target_include_directories(XIMEA::GenTL INTERFACE "${XIMEA_GENTL_INCLUDE_DIR}")
+        if(NOT WIN32)
+            target_link_libraries(XIMEA::GenTL INTERFACE ${CMAKE_DL_LIBS})
+        endif()
+    endif()
+
+    if(NOT TARGET XIMEA_GenTLHelpers)
+        add_library(XIMEA_GenTLHelpers STATIC EXCLUDE_FROM_ALL
+            "${XIMEA_GENTL_INCLUDE_DIR}/GenTLStream.cpp"
+            "${XIMEA_GENTL_INCLUDE_DIR}/xi_GenTL.cpp"
+            "${XIMEA_GENTL_INCLUDE_DIR}/xi_ImgBuffer.cpp"
+            "${XIMEA_GENTL_INCLUDE_DIR}/xi_exception.cpp"
+        )
+        set_target_properties(XIMEA_GenTLHelpers PROPERTIES LINKER_LANGUAGE CXX)
+        target_compile_features(XIMEA_GenTLHelpers PUBLIC cxx_std_17)
+        if(NOT WIN32)
+            target_compile_definitions(XIMEA_GenTLHelpers PRIVATE UNIX)
+        endif()
+        target_link_libraries(XIMEA_GenTLHelpers PUBLIC XIMEA::GenTL XIMEA::xiAPI)
+        add_library(XIMEA::GenTLHelpers ALIAS XIMEA_GenTLHelpers)
+    endif()
+endfunction()
+
+# Finds OpenCV with find_package() and builds the xiAPIplus OpenCV wrapper that
+# ships with the XIMEA Software Package (_libs/xiAPIplusOpenCV) as
+# XIMEA::xiAPIplusOpenCV. xiApiPlusOcv.hpp carries its own copy of the
+# xiAPIplus classes, so the target links XIMEA::xiAPI and must not be combined
+# with XIMEA::xiAPIplus. Call ximea_find_sdk() first; a sample checks
+# XIMEA_OPENCV_FOUND and skips itself when OpenCV or the wrapper is missing.
+function(ximea_find_opencv_wrapper)
+    set(_ximea_sp_path "$ENV{XIMEA_SP_PATH}")
+    set(_ocv_roots "${_ximea_sp_path}" "${XIMEA_ROOT}" "$ENV{XIMEA_ROOT}")
+    set(_ocv_inc_hints)
+    foreach(_root IN LISTS _ocv_roots)
+        if(_root)
+            list(APPEND _ocv_inc_hints
+                "${_root}/Examples/Sources/_libs/xiAPIplusOpenCV"
+                "${_root}/samples/_libs/xiAPIplusOpenCV")
+        endif()
+    endforeach()
+    if(NOT WIN32)
+        list(APPEND _ocv_inc_hints "/opt/XIMEA/samples/_libs/xiAPIplusOpenCV")
+    endif()
+
+    find_path(XIMEA_OPENCV_WRAPPER_DIR NAMES xiApiPlusOcv.hpp HINTS ${_ocv_inc_hints})
+    mark_as_advanced(XIMEA_OPENCV_WRAPPER_DIR)
+    find_package(OpenCV QUIET COMPONENTS core imgproc highgui videoio)
+
+    set(_ocv_found FALSE)
+    if(TARGET XIMEA::xiAPI AND XIMEA_OPENCV_WRAPPER_DIR
+       AND EXISTS "${XIMEA_OPENCV_WRAPPER_DIR}/xiApiPlusOcv.cpp" AND OpenCV_FOUND)
+        set(_ocv_found TRUE)
+    endif()
+    set(XIMEA_OPENCV_FOUND ${_ocv_found} PARENT_SCOPE)
+
+    if(NOT _ocv_found)
+        message(WARNING
+            "OpenCV or the XIMEA xiAPIplus OpenCV wrapper not found, skipping "
+            "${PROJECT_NAME}. Install OpenCV 4 (core, imgproc, highgui, videoio) "
+            "and point OpenCV_DIR at its CMake package, or install it with the "
+            "system package manager (libopencv-dev on Debian/Ubuntu). "
+            "xiApiPlusOcv.hpp is expected at "
+            "<XIMEA_SP_PATH>/Examples/Sources/_libs/xiAPIplusOpenCV on Windows or "
+            "/opt/XIMEA/samples/_libs/xiAPIplusOpenCV on Linux.")
+        _ximea_sample_skip_marker(REASON "OpenCV or the xiAPIplus OpenCV wrapper not found")
+        return()
+    endif()
+    _ximea_sample_skip_marker()
+
+    if(NOT TARGET XIMEA_xiAPIplusOpenCV)
+        add_library(XIMEA_xiAPIplusOpenCV STATIC "${XIMEA_OPENCV_WRAPPER_DIR}/xiApiPlusOcv.cpp")
+        target_compile_features(XIMEA_xiAPIplusOpenCV PUBLIC cxx_std_17)
+        target_include_directories(XIMEA_xiAPIplusOpenCV PUBLIC "${XIMEA_OPENCV_WRAPPER_DIR}")
+        if(NOT WIN32)
+            target_compile_definitions(XIMEA_xiAPIplusOpenCV PRIVATE UNIX)
+        endif()
+        target_link_libraries(XIMEA_xiAPIplusOpenCV PUBLIC XIMEA::xiAPI ${OpenCV_LIBS})
+        add_library(XIMEA::xiAPIplusOpenCV ALIAS XIMEA_xiAPIplusOpenCV)
     endif()
 endfunction()

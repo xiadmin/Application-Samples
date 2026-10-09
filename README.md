@@ -9,6 +9,7 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 - [XIMEA Software Package (SP) 4.33](https://www.ximea.com/software-downloads).
 - Python 3.11 or newer for Python samples.
 - CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
+- OpenCV 4 for the `*-opencv` xiAPIplus samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples.
 
 ---
@@ -19,6 +20,7 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 samples/
   xiapi/                    # C samples using xiAPI, plus xiAPI-based hardware-specific samples
   xiapiplus/                # C++ samples using xiAPIplus
+  gentl/                    # C++ samples using GenTL, alone or alongside xiAPI
   xiapi-net-csharp/         # C# samples using xiAPI.NET
   xiapi-python/             # Python samples using xiAPI Python bindings
 cmake/                      # shared sample CMake support files
@@ -55,6 +57,12 @@ Each sample has a README.md explaining what it does and how to use it.
 | [xiapiplus/cross-platform/error-handling](samples/xiapiplus/cross-platform/error-handling/) | xiAPIplus (C++) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
 | [xiapiplus/cross-platform/capture-10-images-to-dng](samples/xiapiplus/cross-platform/capture-10-images-to-dng/) | xiAPIplus (C++) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
 | [xiapiplus/cross-platform/offline-processing](samples/xiapiplus/cross-platform/offline-processing/) | xiAPIplus (C++) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
+| [xiapiplus/cross-platform/capture-25-images-in-parallel](samples/xiapiplus/cross-platform/capture-25-images-in-parallel/) | xiAPIplus (C++) | Open several cameras in parallel, trigger the slaves from the master's GPO1, capture bursts on per-camera threads |
+| [xiapiplus/cross-platform/capture-50-images-and-display-opencv](samples/xiapiplus/cross-platform/capture-50-images-and-display-opencv/) | xiAPIplus + OpenCV (C++) | Capture 50 frames as `cv::Mat` and show them in an OpenCV window |
+| [xiapiplus/cross-platform/capture-50-images-to-video-file-opencv](samples/xiapiplus/cross-platform/capture-50-images-to-video-file-opencv/) | xiAPIplus + OpenCV (C++) | Capture 50 grayscale frames, show them and record them to a Motion JPEG AVI file |
+| [gentl/cross-platform/capture-10-images-to-file](samples/gentl/cross-platform/capture-10-images-to-file/) | GenTL (C++) | Load the GenTL producer (.cti) at run time, capture 10 frames through pure GenTL and save them as TIFF files |
+| [gentl/cross-platform/capture-50-images-zero-copy](samples/gentl/cross-platform/capture-50-images-zero-copy/) | GenTL (C++) | Configure the camera with xiAPI, capture 50 frames through its GenTL data stream into application-allocated buffers |
+| [gentl/cross-platform/capture-10-concatenated-images-to-file](samples/gentl/cross-platform/capture-10-concatenated-images-to-file/) | GenTL (C++) | Capture buffers of 5 concatenated images, split them and save every image as a TIFF file |
 | [xiapi-net-csharp/capture-10-images](samples/xiapi-net-csharp/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
 | [xiapi-net-csharp/capture-10-images-to-file](samples/xiapi-net-csharp/capture-10-images-to-file/) | XiAPI.NET (C#) | Capture 10 stabilized frames and save them as TIFF files |
 | [xiapi-net-csharp/capture-10-images-to-ram](samples/xiapi-net-csharp/capture-10-images-to-ram/) | XiAPI.NET (C#) | Capture 10 frames into application-owned RAM and access them after closing the camera |
