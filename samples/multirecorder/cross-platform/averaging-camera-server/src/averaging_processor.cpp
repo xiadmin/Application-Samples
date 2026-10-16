@@ -1,10 +1,11 @@
-#include "averaging_processor.h"
-
 #include <algorithm>
 #include <iostream>
 
-#include <CameraControl.h>
 #include <tinyxml.h>
+
+#include <CameraControl.h>
+
+#include "averaging_processor.h"
 
 namespace sample
 {

@@ -1,10 +1,9 @@
-#include "histogram64.h"
-
 #include <algorithm>
 
 #include <cuda_runtime.h>
 
 #include "cuda_helpers.h"
+#include "histogram64.h"
 
 namespace sample
 {

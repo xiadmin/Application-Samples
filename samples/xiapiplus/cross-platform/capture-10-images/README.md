@@ -5,7 +5,10 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
+| OS platform | Cross-Platform |
+| Hardware platform | Cross-platform |
 | API type | xiAPIplus |
+| Language | C++ |
 
 ---
 
@@ -15,7 +18,8 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | None |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
 
@@ -47,13 +51,15 @@ Binary lands in `.cmake-tmp\build\`.
 
 ## Run
 
-After a direct CMake build:
+After a direct CMake build, from the repository root:
 
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/capture-10-images
 .cmake-tmp/build/xiapiplus-cross-platform-capture-10-images
 
 # Windows PowerShell
+cd samples\xiapiplus\cross-platform\capture-10-images
 .\.cmake-tmp\build\xiapiplus-cross-platform-capture-10-images.exe
 ```
 
@@ -61,7 +67,7 @@ After a direct CMake build:
 
 ## Expected output
 
-```
+```text
 Found 1 camera(s), opening index 0
 Exposure: 100000 us (100 ms)
 Capturing 10 frames

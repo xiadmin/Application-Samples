@@ -22,7 +22,7 @@ Captures RAW8 Bayer frames from a color camera, demosaics them with a Malvar-He-
 | OpenCL | Headers and ICD loader at build time; an OpenCL runtime (part of the GPU driver) at run time |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff (downloaded by CMake from `dependencies/Dependencies.cmake`) |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, fetched and built at configure time) |
 
 CMake finds OpenCL with `find_package(OpenCL)`, and the sample is skipped with a warning when it is missing:
 
@@ -56,11 +56,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
+Run from the repository root. Output files are written to `frames/` inside the current directory (the sample folder in the commands below).
+
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/demosaic-images-opencl
 .cmake-tmp/build/xiapiplus-cross-platform-demosaic-images-opencl --output-dir frames
 
 # Windows PowerShell
+cd samples\xiapiplus\cross-platform\demosaic-images-opencl
 .\.cmake-tmp\build\xiapiplus-cross-platform-demosaic-images-opencl.exe --output-dir frames
 ```
 

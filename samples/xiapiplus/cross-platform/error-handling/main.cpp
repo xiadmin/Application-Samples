@@ -35,15 +35,19 @@ int main()
     {
         xiAPIplus_Camera unopened;
         unopened.GetExposureTime();
-        std::cout << "A call without an open camera succeeded unexpectedly\n";
+        std::cerr << "Error: a call without an open camera succeeded unexpectedly\n";
+        return EXIT_FAILURE;
     }
     catch (xiAPIplus_Exception& exception)
     {
-        if (exception.GetErrorNumber() == XI_INVALID_HANDLE)
-            std::cout << "Caught XI_INVALID_HANDLE (" << XI_INVALID_HANDLE
-                      << ") from a call without an open camera\n";
-        else
-            std::cout << "A call without an open camera failed with " << exception.GetErrorNumber() << "\n";
+        if (exception.GetErrorNumber() != XI_INVALID_HANDLE)
+        {
+            std::cerr << "Error: a call without an open camera failed with "
+                      << exception.GetErrorNumber() << " instead of XI_INVALID_HANDLE\n";
+            return EXIT_FAILURE;
+        }
+        std::cout << "Caught XI_INVALID_HANDLE (" << XI_INVALID_HANDLE
+                  << ") from a call without an open camera\n";
     }
 
     // xiAPIplus_Camera closes the camera in its destructor, so an exception

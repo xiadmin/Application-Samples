@@ -1,7 +1,7 @@
-#include "cuda_helpers.h"
-
 #include <stdexcept>
 #include <string>
+
+#include "cuda_helpers.h"
 
 namespace sample
 {

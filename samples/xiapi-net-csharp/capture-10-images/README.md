@@ -5,7 +5,10 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
+| OS platform | Windows |
+| Hardware platform | Cross-platform |
 | API type | xiAPI.NET |
+| Language | C# |
 
 ---
 
@@ -15,8 +18,9 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 |------|-------------|
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | .NET SDK | 8.0 or newer |
+| Libraries | None |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
 
@@ -31,14 +35,13 @@ dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
 
 Binary lands in `.dotnet-tmp\` inside the sample folder.
 
-NuGet packages restore into `.deps\nuget-packages\` at the repository root, shared by every C# sample, from the sources listed in `nuget.config`. Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`. Once a restore has run, `dotnet build --no-restore` works without network access.
-
 ---
 
 ## Run
 
 ```powershell
-.\samples\xiapi-net-csharp\capture-10-images\.dotnet-tmp\capture-10-images-csharp.exe
+cd samples\xiapi-net-csharp\capture-10-images
+.\.dotnet-tmp\capture-10-images-csharp.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):
@@ -52,7 +55,7 @@ dotnet run --project CaptureImages.csproj
 
 ## Expected output
 
-```
+```text
 Found 1 camera(s), opening index 0
 Exposure: 100000 us (100 ms)
 Capturing 10 frames

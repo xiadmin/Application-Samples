@@ -5,7 +5,10 @@ GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 | Item | Value |
 |------|-------|
 | Category | Trigger / GPIO / I/O / strobe |
-| API type | None |
+| OS platform | Linux (NVIDIA JetPack) |
+| Hardware platform | NVIDIA Jetson |
+| API type | None (Jetson GPIO/I2C/SPI/UART; no xiAPI calls) |
+| Language | Python |
 
 ---
 
@@ -17,7 +20,7 @@ GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 | Hardware | XEC-NX-3P-X2G3 carrier board and supported peripherals |
 | XIMEA SDK | Not required unless a script is extended to access a XIMEA camera |
 | Python | 3.11+ |
-| Libraries | See `requirements.txt`; `install_libi2c.sh` helps install libi2c prerequisites |
+| Libraries | gpiod, spidev, pyserial (versions pinned in `dependencies/python-constraints.txt`); pylibi2c, built from source by `install_libi2c.sh` |
 
 ---
 
@@ -41,11 +44,27 @@ python3 -m pip download -r requirements.txt -d ../../../../.deps/wheels   # once
 python3 -m pip install --no-index -r requirements.txt                     # offline
 ```
 
+`bmp280_i2c.py` imports `pylibi2c`, which is not in `requirements.txt`. `install_libi2c.sh` clones [libi2c](https://github.com/amaork/libi2c) into `~/Downloads`, checks out the pinned commit `dcdf6c6` and installs it with `sudo python setup.py install`. It needs `git`, network access, sudo rights and an existing `~/Downloads` directory:
+
+```bash
+cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
+bash install_libi2c.sh
+```
+
 ---
 
 ## Run
 
-Run the script that matches the hardware interface you want to test:
+Run the script that matches the hardware interface you want to test. Each script needs one package:
+
+| Script | Interface | Package |
+|--------|-----------|---------|
+| `blinky.py`, `simple_input.py`, `polling_button.py` | GPIO | gpiod |
+| `bmp280_spi.py` | SPI | spidev |
+| `uart_loopback.py`, `uart_p2p_jetson.py`, `uart_p2p_pc.py` | UART | pyserial |
+| `bmp280_i2c.py` | I2C | pylibi2c |
+
+`uart_p2p_pc.py` is the PC side of the PING/PONG pair: run it on the PC connected to the Jetson UART0, not on the Jetson, while `uart_p2p_jetson.py` runs on the Jetson. The PC needs pyserial too (`python -m pip install -r requirements.txt` from this folder installs it there), and `PORT` at the top of the script (default `/dev/ttyUSB0`) must name the PC's serial adapter.
 
 ```bash
 cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
@@ -69,12 +88,11 @@ Each script prints status for the selected GPIO, I2C, SPI, or UART operation. Ex
 
 ## Known limitations / caveats
 
-- Jetson-specific: these scripts assume Nvidia Jetson GPIO/I2C/SPI/UART interfaces and the carrier-board wiring documented in `Mapping_table.md`.
+- Jetson-specific: these scripts assume Nvidia Jetson GPIO/I2C/SPI/UART interfaces and the carrier-board wiring. The device paths, line offsets, bus numbers and serial ports are constants at the top of each script (for example `DEVICE`/`OFFSET`, `I2C_BUS`, `BUS`/`CHIP_SELECT`, `PORT`), set for Orin NX; check them against the carrier board pin mapping in the XIMEA documentation before use.
 - Some scripts require connected peripherals, loopback wiring, or elevated permissions for device access.
 
 ---
 
 ## Links
 
-- [Mapping table](Mapping_table.md)
 - [XIMEA Software Packages](https://www.ximea.com/software-downloads)

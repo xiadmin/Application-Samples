@@ -57,9 +57,23 @@ samples\multirecorder\cross-platform\record-through-remote-server\run.bat
 sh samples/multirecorder/cross-platform/record-through-remote-server/run.sh
 ```
 
-The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there. MultiRecorder prints its progress and also writes it to `MultiRecorder-log.txt`.
+The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
 
-The data and the exported images stay on the server computer, in `data/` and `output/` next to `start-server`.
+---
+
+## Expected output
+
+The recording process prints its progress to the console and also writes it to `MultiRecorder-log.txt` on the recording computer. The server keeps running after the recording until you stop it with Ctrl+C.
+
+The data and the exported images stay on the server computer, in the sample folder next to `start-server`:
+
+```text
+samples/multirecorder/cross-platform/record-through-remote-server/   (server computer)
+  data/                   raw camera data
+  output/                 10 exported RGB (XI_RGB24) TIFF images
+```
+
+MultiRecorder exits with code 0 even when a task fails, so confirm that `output/` on the server computer holds 10 TIFF files and that the console output or `MultiRecorder-log.txt` reports no errors.
 
 ---
 

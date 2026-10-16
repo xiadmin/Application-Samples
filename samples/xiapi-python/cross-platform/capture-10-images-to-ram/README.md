@@ -18,7 +18,8 @@ Captures 10 images into application-owned RAM.
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | None |
 | Python | 3.11+ |
 
 The `ximea` package comes from the XIMEA Software Package (SP) installer. It is not a pip package and does not appear in `dependencies/python-constraints.txt`.

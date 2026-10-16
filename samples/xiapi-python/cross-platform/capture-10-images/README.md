@@ -5,7 +5,10 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
+| OS platform | Cross-Platform |
+| Hardware platform | Cross-platform |
 | API type | xiAPI Python |
+| Language | Python |
 
 ---
 
@@ -13,10 +16,11 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 
 | Item | Requirement |
 |------|-------------|
-| OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
+| OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | Python | 3.11+ |
+| Libraries | numpy (versions pinned in `dependencies/python-constraints.txt`) |
 
 The `ximea` package comes from the XIMEA Software Package (SP) installer, placed into `site-packages/ximea`. It is not a pip package and does not appear in `dependencies/python-constraints.txt`.
 
@@ -24,13 +28,19 @@ The `ximea` package comes from the XIMEA Software Package (SP) installer, placed
 
 ## Build
 
-No build step is required for this Python sample.
+Install the third-party packages. `requirements.txt` activates the central constraints file, so the versions come from `dependencies/python-constraints.txt`:
+
+```bash
+cd samples/xiapi-python/cross-platform/capture-10-images
+python -m pip install -r requirements.txt
+```
 
 ---
 
 ## Run
 
 ```bash
+cd samples/xiapi-python/cross-platform/capture-10-images
 python main.py
 ```
 
@@ -38,7 +48,7 @@ python main.py
 
 ## Expected output
 
-```
+```text
 Found 1 camera(s), opening index 0
 Exposure: 100000 us (100 ms)
 Capturing 10 frames
@@ -61,3 +71,4 @@ Done
 
 - [xiAPI Python documentation](https://www.ximea.com/support/wiki/apis/Python)
 - [xiAPI documentation](https://www.ximea.com/support/wiki/apis/xiapi_manual)
+- [XIMEA Software Packages](https://www.ximea.com/software-downloads)

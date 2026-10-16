@@ -51,11 +51,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
+Run from the repository root. Output files are written to the current directory (the sample folder in the commands below).
+
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/capture-50-images-to-video-file-opencv
 .cmake-tmp/build/xiapiplus-cross-platform-capture-50-images-to-video-file-opencv --output capture.avi
 
 # Windows PowerShell (OpenCV's bin folder must be on PATH)
+cd samples\xiapiplus\cross-platform\capture-50-images-to-video-file-opencv
 .\.cmake-tmp\build\xiapiplus-cross-platform-capture-50-images-to-video-file-opencv.exe --output capture.avi
 ```
 

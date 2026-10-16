@@ -18,11 +18,11 @@ Captures 10 images and saves them as TIFF files using libtiff.
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff 4.7.1 (central dependency, fetched and built at configure time) |
-| Network | Required only until `.deps/downloads/` at the repository root holds libtiff 4.7.1; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, fetched and built at configure time) |
+| Network | Required only until `.deps/downloads/` at the repository root holds the libtiff archive; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
 
 ---
 
@@ -50,13 +50,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
-Run from the directory where the TIFF files should be created:
+Run from the repository root. Output files are written to the current directory (the sample folder in the commands below).
 
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/capture-10-images-to-file
 .cmake-tmp/build/xiapiplus-cross-platform-capture-10-images-to-file
 
 # Windows PowerShell
+cd samples\xiapiplus\cross-platform\capture-10-images-to-file
 .\.cmake-tmp\build\xiapiplus-cross-platform-capture-10-images-to-file.exe
 ```
 

@@ -18,8 +18,9 @@ Shows how to detect and recover from an xiAPI error such as XI_TIMEOUT.
 |------|-------------|
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | .NET SDK | 8.0 or newer |
+| Libraries | None |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
 
@@ -34,14 +35,13 @@ dotnet build ErrorHandlingCsharp.csproj -c Release --output .dotnet-tmp
 
 The binary lands in `.dotnet-tmp\` inside the sample folder.
 
-NuGet packages restore into `.deps\nuget-packages\` at the repository root, shared by every C# sample, from the sources listed in `nuget.config`. Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`.
-
 ---
 
 ## Run
 
 ```powershell
-.\samples\xiapi-net-csharp\error-handling\.dotnet-tmp\error-handling-csharp.exe
+cd samples\xiapi-net-csharp\error-handling
+.\.dotnet-tmp\error-handling-csharp.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):

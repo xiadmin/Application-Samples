@@ -43,9 +43,22 @@ samples\multirecorder\cross-platform\record-concatenated-images\run.bat
 sh samples/multirecorder/cross-platform/record-concatenated-images/run.sh
 ```
 
-The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there. MultiRecorder prints its progress and also writes it to `MultiRecorder-log.txt`.
+The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
 
-The raw data goes to `data/`, and the 10 exported images go to `output/`.
+---
+
+## Expected output
+
+MultiRecorder prints its progress to the console and also writes it to `MultiRecorder-log.txt`. After a successful run the sample folder contains:
+
+```text
+samples/multirecorder/cross-platform/record-concatenated-images/
+  data/                   raw camera data, stored as buffers of 2 concatenated images
+  output/                 10 exported RGB (XI_RGB24) TIFF images, one per image
+  MultiRecorder-log.txt   MultiRecorder log
+```
+
+On a camera that does not support concatenated images, MultiRecorder reports an error instead. It exits with code 0 even when a task fails, so confirm that `output/` holds 10 TIFF files and that the console output or `MultiRecorder-log.txt` reports no errors.
 
 ---
 

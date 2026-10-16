@@ -16,6 +16,13 @@ static constexpr int frameCount = 10;
 static constexpr float exposureUs = 100000.0f;
 static constexpr int grabTimeoutMs = 5000;
 
+static void printXiError(xiAPIplus_Exception& exception)
+{
+    char description[256] = "";
+    exception.GetDescription(description, sizeof(description) - 1);
+    std::cerr << "Error " << exception.GetErrorNumber() << ": " << description << "\n";
+}
+
 int main()
 {
     // xiAPIplus_Camera closes the camera in its destructor, so an exception
@@ -60,7 +67,8 @@ int main()
     }
     catch (xiAPIplus_Exception& exception)
     {
-        exception.PrintError();
+        // PrintError() writes to stdout; report the error on stderr instead.
+        printXiError(exception);
         return EXIT_FAILURE;
     }
     catch (const std::exception& e)

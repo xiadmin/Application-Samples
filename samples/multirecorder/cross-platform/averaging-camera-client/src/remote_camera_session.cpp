@@ -1,7 +1,7 @@
-#include "remote_camera_session.h"
-
 #include <iostream>
 #include <stdexcept>
+
+#include "remote_camera_session.h"
 
 namespace sample
 {

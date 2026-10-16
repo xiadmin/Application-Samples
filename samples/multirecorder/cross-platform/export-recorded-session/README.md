@@ -43,9 +43,23 @@ samples\multirecorder\cross-platform\export-recorded-session\run.bat
 sh samples/multirecorder/cross-platform/export-recorded-session/run.sh
 ```
 
-The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there. MultiRecorder prints its progress and also writes it to `MultiRecorder-log.txt`.
+The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
 
-The raw data goes to `data/` and the session description to `recorded-session.xirecsession`. The export writes the TIFF files to `exported/`.
+---
+
+## Expected output
+
+MultiRecorder runs twice: first to record, then to export. Both runs print their progress to the console, and MultiRecorder also writes it to `MultiRecorder-log.txt`. After a successful run the sample folder contains:
+
+```text
+samples/multirecorder/cross-platform/export-recorded-session/
+  data/                          raw camera data of the 10 recorded images
+  recorded-session.xirecsession  saved session description
+  exported/                      10 exported RGB (XI_RGB24) TIFF images
+  MultiRecorder-log.txt          MultiRecorder log
+```
+
+If the recording fails, the export reports that it cannot open the session file. MultiRecorder exits with code 0 even when a task fails, so confirm that `exported/` holds 10 TIFF files and that the console output or `MultiRecorder-log.txt` reports no errors.
 
 ---
 

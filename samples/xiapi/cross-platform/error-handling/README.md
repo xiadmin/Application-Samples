@@ -18,7 +18,8 @@ Shows how to detect and recover from an xiAPI error such as XI_TIMEOUT.
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | None |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
 
@@ -50,9 +51,11 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ```bash
 # Linux
+cd samples/xiapi/cross-platform/error-handling
 .cmake-tmp/build/xiapi-cross-platform-error-handling
 
 # Windows PowerShell
+cd samples\xiapi\cross-platform\error-handling
 .\.cmake-tmp\build\xiapi-cross-platform-error-handling.exe
 ```
 

@@ -5,7 +5,10 @@ Captures 10 RAW8 frames into application-owned RAM and accesses them after the c
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
+| OS platform | Cross-Platform |
+| Hardware platform | Cross-platform |
 | API type | xiAPI |
+| Language | C |
 
 ---
 
@@ -15,7 +18,8 @@ Captures 10 RAW8 frames into application-owned RAM and accesses them after the c
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | None |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
 
@@ -41,13 +45,17 @@ cmake --build .cmake-tmp --config Release
 
 The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Windows.
 
+---
+
 ## Run
 
 ```bash
 # Linux
+cd samples/xiapi/cross-platform/capture-10-images-to-ram
 .cmake-tmp/build/xiapi-cross-platform-capture-10-images-to-ram
 
 # Windows PowerShell
+cd samples\xiapi\cross-platform\capture-10-images-to-ram
 .\.cmake-tmp\build\xiapi-cross-platform-capture-10-images-to-ram.exe
 ```
 

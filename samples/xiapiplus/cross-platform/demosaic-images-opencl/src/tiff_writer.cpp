@@ -1,10 +1,10 @@
-#include "tiff_writer.h"
-
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
 
 #include <tiffio.h>
+
+#include "tiff_writer.h"
 
 namespace sample
 {

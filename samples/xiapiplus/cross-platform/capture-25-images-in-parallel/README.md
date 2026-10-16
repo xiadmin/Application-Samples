@@ -22,7 +22,7 @@ Opens all connected cameras in parallel, triggers a master camera by software an
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | None besides xiAPIplus and the C++ standard thread library |
+| Libraries | None |
 
 ---
 
@@ -49,6 +49,20 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 ---
 
 ## Run
+
+From the repository root (the first camera found acts as master):
+
+```bash
+# Linux
+cd samples/xiapiplus/cross-platform/capture-25-images-in-parallel
+.cmake-tmp/build/xiapiplus-cross-platform-capture-25-images-in-parallel
+
+# Windows PowerShell
+cd samples\xiapiplus\cross-platform\capture-25-images-in-parallel
+.\.cmake-tmp\build\xiapiplus-cross-platform-capture-25-images-in-parallel.exe
+```
+
+Optional: choose the master camera explicitly. Replace `<serial>` with the serial number of a connected camera before running:
 
 ```bash
 # Linux

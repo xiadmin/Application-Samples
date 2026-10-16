@@ -18,7 +18,7 @@ Captures one MONO8, RGB24 or MONO16 image and shows it in an OpenCV window scale
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera; a color camera for `--format rgb24` |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | Python | 3.11+ |
 | Libraries | numpy, opencv-python (versions pinned in `dependencies/python-constraints.txt`) |
 

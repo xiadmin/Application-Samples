@@ -43,8 +43,16 @@ python -m pip install -r requirements.txt
 cd samples/gentl/cross-platform/capture-10-images-python
 python main.py
 python main.py --exposure-us 20000
+```
+
+To load a specific producer, pass its path with `--cti`. On Windows, for example:
+
+```powershell
+cd samples/gentl/cross-platform/capture-10-images-python
 python main.py --cti "C:\XIMEA\GenTL Producer\ximea.gentl2.cti"
 ```
+
+On Linux and macOS, pass the path of the `.cti` file the XIMEA Software Package installed: `python main.py --cti <path-to-ximea.gentl2.cti>`.
 
 | Option | Default | Meaning |
 |--------|---------|---------|

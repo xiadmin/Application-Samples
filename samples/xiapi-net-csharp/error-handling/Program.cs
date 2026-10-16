@@ -27,7 +27,8 @@ try
 {
     var unopened = new xiCam();
     unopened.GetParamInt(PRM.EXPOSURE);
-    Console.WriteLine("A call without an open camera succeeded unexpectedly");
+    Console.Error.WriteLine("Error: a call without an open camera succeeded unexpectedly");
+    return 1;
 }
 catch (xiExc ex) when (ex.ErrorCode == XiInvalidHandle)
 {
@@ -35,7 +36,8 @@ catch (xiExc ex) when (ex.ErrorCode == XiInvalidHandle)
 }
 catch (xiExc ex)
 {
-    Console.WriteLine($"A call without an open camera failed with {ex.ErrorCode}: {ex.Message}");
+    Console.Error.WriteLine($"Error: a call without an open camera failed with {ex.ErrorCode} instead of XI_INVALID_HANDLE: {ex.Message}");
+    return 1;
 }
 
 var cam = new xiCam();

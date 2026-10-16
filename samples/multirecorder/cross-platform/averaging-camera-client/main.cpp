@@ -19,9 +19,10 @@
 #include <string>
 #include <vector>
 
+#include <tinyxml.h>
+
 #include <RecorderApi.h>
 #include <RemoteCameraClient.h>
-#include <tinyxml.h>
 #include <xiApi.h>
 
 #include "remote_camera_session.h"

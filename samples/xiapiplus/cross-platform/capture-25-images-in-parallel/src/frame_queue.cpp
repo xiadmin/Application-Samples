@@ -1,8 +1,8 @@
-#include "frame_queue.h"
-
 #include <iostream>
 #include <sstream>
 #include <utility>
+
+#include "frame_queue.h"
 
 namespace sample
 {

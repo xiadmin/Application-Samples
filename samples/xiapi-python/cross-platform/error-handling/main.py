@@ -23,24 +23,32 @@ SHORT_TIMEOUT_MS = 1
 GRAB_TIMEOUT_MS = 5_000
 
 
-def show_invalid_handle() -> None:
-    """A call on a camera that was never opened fails with XI_INVALID_HANDLE."""
+def show_invalid_handle() -> bool:
+    """A call on a camera that was never opened fails with XI_INVALID_HANDLE.
+
+    Returns False when the call does not fail that way.
+    """
     unopened = xiapi.Camera()
     try:
         unopened.get_exposure()
     except xiapi.Xi_error as error:
-        if error.status == XI_INVALID_HANDLE:
-            print(f"Caught XI_INVALID_HANDLE ({error.status}) from a call without an open camera")
-        else:
-            print(f"A call without an open camera failed with {error}")
-    else:
-        print("A call without an open camera succeeded unexpectedly")
+        if error.status != XI_INVALID_HANDLE:
+            print(
+                f"Error: a call without an open camera failed with {error} instead of XI_INVALID_HANDLE",
+                file=sys.stderr,
+            )
+            return False
+        print(f"Caught XI_INVALID_HANDLE ({error.status}) from a call without an open camera")
+        return True
+    print("Error: a call without an open camera succeeded unexpectedly", file=sys.stderr)
+    return False
 
 
 def main() -> int:
     # 1. Every failed xiAPI call raises xiapi.Xi_error with the XI_RETURN code
     #    in error.status. This part needs no camera.
-    show_invalid_handle()
+    if not show_invalid_handle():
+        return 1
 
     cam = xiapi.Camera()
     is_device_open = False

@@ -5,7 +5,10 @@ Captures 10 stabilized frames from the first available XIMEA camera and saves th
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
+| OS platform | Cross-Platform |
+| Hardware platform | Cross-platform |
 | API type | xiAPI |
+| Language | C |
 
 ---
 
@@ -15,10 +18,11 @@ Captures 10 stabilized frames from the first available XIMEA camera and saves th
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, fetched and built at configure time) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ |
-| Network | Required only until `.deps/downloads/` at the repository root holds libtiff 4.7.1; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
+| Network | Required only until `.deps/downloads/` at the repository root holds the libtiff source archive; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
 
 ---
 
@@ -42,15 +46,19 @@ cmake --build .cmake-tmp --config Release
 
 The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Windows.
 
+---
+
 ## Run
 
-Run from the directory where the TIFF files should be created:
+Output files are written to the current directory (the sample folder in the commands below).
 
 ```bash
 # Linux
+cd samples/xiapi/cross-platform/capture-10-images-to-file
 .cmake-tmp/build/xiapi-cross-platform-capture-10-images-to-file
 
 # Windows PowerShell
+cd samples\xiapi\cross-platform\capture-10-images-to-file
 .\.cmake-tmp\build\xiapi-cross-platform-capture-10-images-to-file.exe
 ```
 

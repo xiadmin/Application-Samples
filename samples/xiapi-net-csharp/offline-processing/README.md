@@ -18,7 +18,7 @@ Captures 10 RAW8 images, converts them to RGB24 with xiAPI offline processing af
 |------|-------------|
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | .NET SDK | 8.0 or newer |
 | Libraries | BitMiracle.LibTiff.NET (version pinned in `dependencies/Directory.Packages.props`) |
 | Network | Required for the first NuGet restore into `.deps/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. |
@@ -42,10 +42,11 @@ NuGet packages restore into `.deps\nuget-packages\` at the repository root, shar
 
 ## Run
 
-Run from the directory where the TIFF files should be created:
+Output files are written to the current directory (the sample folder in the commands below).
 
 ```powershell
-.\samples\xiapi-net-csharp\offline-processing\.dotnet-tmp\offline-processing-csharp.exe
+cd samples\xiapi-net-csharp\offline-processing
+.\.dotnet-tmp\offline-processing-csharp.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):

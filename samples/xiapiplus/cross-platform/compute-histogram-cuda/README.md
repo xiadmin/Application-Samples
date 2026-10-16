@@ -22,7 +22,7 @@ Delivers 8-bit frames to CPU, CUDA managed, mapped host or GPU memory with XI_PR
 | CUDA | [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11 or newer and the NVIDIA driver |
 | CMake | 3.18 or newer |
 | Compiler | MSVC 2022+ or GCC 9+ (C++17), supported by the installed CUDA Toolkit |
-| Libraries | None besides xiAPIplus and the CUDA runtime |
+| Libraries | CUDA runtime (`CUDA::cudart`), found with `find_package(CUDAToolkit)` |
 
 When CMake does not find the CUDA Toolkit, the sample is skipped with a warning. With a Visual Studio generator, CMake also needs the toolkit's Visual Studio integration (selected in the CUDA installer). Without it, build with Ninja from a "x64 Native Tools Command Prompt for VS".
 
@@ -55,6 +55,7 @@ cmake --build .cmake-tmp --config Release
 Without the CUDA Visual Studio integration, run these from an "x64 Native Tools Command Prompt for VS" instead:
 
 ```bat
+cd samples\xiapiplus\cross-platform\compute-histogram-cuda
 cmake -B .cmake-tmp -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build .cmake-tmp
 ```
@@ -65,11 +66,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
+From the repository root:
+
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/compute-histogram-cuda
 .cmake-tmp/build/xiapiplus-cross-platform-compute-histogram-cuda --target zerocopy
 
 # Windows PowerShell
+cd samples\xiapiplus\cross-platform\compute-histogram-cuda
 .\.cmake-tmp\build\xiapiplus-cross-platform-compute-histogram-cuda.exe --target cpu
 ```
 

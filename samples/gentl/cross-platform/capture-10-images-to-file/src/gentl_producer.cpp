@@ -1,5 +1,3 @@
-#include "gentl_producer.h"
-
 #include <iostream>
 
 #ifdef _WIN32
@@ -7,6 +5,8 @@
 #else
 #include <dlfcn.h>
 #endif
+
+#include "gentl_producer.h"
 
 namespace sample
 {

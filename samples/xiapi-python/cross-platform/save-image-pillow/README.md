@@ -18,7 +18,7 @@ Captures one image (RGB24 on color cameras, MONO8 on monochrome cameras) and sav
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | Python | 3.11+ |
 | Libraries | numpy, pillow (versions pinned in `dependencies/python-constraints.txt`) |
 

@@ -1,7 +1,7 @@
-#include "synchronized_camera.h"
-
 #include <sstream>
 #include <utility>
+
+#include "synchronized_camera.h"
 
 namespace sample
 {

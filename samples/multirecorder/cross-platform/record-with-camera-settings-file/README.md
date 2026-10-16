@@ -43,9 +43,23 @@ samples\multirecorder\cross-platform\record-with-camera-settings-file\run.bat
 sh samples/multirecorder/cross-platform/record-with-camera-settings-file/run.sh
 ```
 
-The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there. MultiRecorder prints its progress and also writes it to `MultiRecorder-log.txt`.
+The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
 
-The raw data goes to `data/`, and the 10 exported images go to `output/`.
+---
+
+## Expected output
+
+MultiRecorder prints its progress to the console and also writes it to `MultiRecorder-log.txt`. After a successful run the sample folder contains:
+
+```text
+samples/multirecorder/cross-platform/record-with-camera-settings-file/
+  camera-settings.xicamera   settings file (part of the sample, not created by the run)
+  data/                      raw camera data written during the acquisition
+  output/                    10 exported RGB (XI_RGB24) TIFF images
+  MultiRecorder-log.txt      MultiRecorder log
+```
+
+Settings from the file that the camera does not support are skipped without an error. MultiRecorder exits with code 0 even when a task fails, so confirm that `output/` holds 10 TIFF files and that the console output or `MultiRecorder-log.txt` reports no errors.
 
 ---
 

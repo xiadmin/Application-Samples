@@ -51,11 +51,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
+From the repository root:
+
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/capture-50-images-and-display-opencv
 .cmake-tmp/build/xiapiplus-cross-platform-capture-50-images-and-display-opencv
 
 # Windows PowerShell (OpenCV's bin folder must be on PATH)
+cd samples\xiapiplus\cross-platform\capture-50-images-and-display-opencv
 .\.cmake-tmp\build\xiapiplus-cross-platform-capture-50-images-and-display-opencv.exe
 ```
 

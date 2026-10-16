@@ -5,7 +5,10 @@ GPU demosaicing sample for Nvidia Jetson that bypasses xiAPI CPU processing for 
 | Item | Value |
 |------|-------|
 | Category | Color / Bayer / color correction |
+| OS platform | Linux (NVIDIA JetPack) |
+| Hardware platform | NVIDIA Jetson |
 | API type | xiAPI |
+| Language | C++ / CUDA |
 
 ---
 
@@ -15,10 +18,10 @@ GPU demosaicing sample for Nvidia Jetson that bypasses xiAPI CPU processing for 
 |------|-------------|
 | OS | Linux on Nvidia Jetson |
 | Hardware | Nvidia Jetson kit with a supported XIMEA color camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | CUDA Toolkit, NPP, OpenCV built with CUDA/OpenGL support |
 | CMake | 3.16 or newer |
 | Compiler | GCC/G++ with C++17 support and CUDA `nvcc` |
-| Libraries | CUDA Toolkit, NPP, OpenCV built with CUDA/OpenGL support |
 
 ---
 
@@ -52,12 +55,14 @@ make
 After a direct CMake build:
 
 ```bash
+cd samples/xiapi/hardware-specific/jetson-demosaic-sample
 .cmake-tmp/build/xiapi-hardware-specific-jetson-demosaic-sample
 ```
 
 After a Makefile build:
 
 ```bash
+cd samples/xiapi/hardware-specific/jetson-demosaic-sample
 ./jetson_sample
 ```
 

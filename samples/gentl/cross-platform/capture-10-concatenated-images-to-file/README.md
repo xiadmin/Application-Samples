@@ -21,7 +21,7 @@ Captures 2 GenTL transport buffers that each hold 5 concatenated images, splits 
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads), including the examples |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | XIMEA GenTL helpers (`xiGenTL`), built from the SP sources by `ximea_find_gentl()`; libtiff 4.7.1 (central dependency, fetched and built at configure time) |
+| Libraries | XIMEA GenTL helpers (`xiGenTL`), built from the SP sources by `ximea_find_gentl()`; libtiff (central dependency in `dependencies/Dependencies.cmake`, fetched and built at configure time) |
 
 ---
 

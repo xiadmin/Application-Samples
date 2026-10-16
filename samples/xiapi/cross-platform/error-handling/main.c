@@ -44,10 +44,12 @@ int main(void)
     /* 1. Every xiAPI call returns an XI_RETURN code. A call on a handle that
      *    was never opened fails with XI_INVALID_HANDLE; no camera is needed. */
     stat = xiGetParamInt(NULL, XI_PRM_EXPOSURE, &exposure);
-    if (stat == XI_INVALID_HANDLE)
-        printf("Caught XI_INVALID_HANDLE (%d) from a call without an open camera\n", (int)stat);
-    else
-        printf("A call without an open camera returned %d\n", (int)stat);
+    if (stat != XI_INVALID_HANDLE)
+    {
+        fprintf(stderr, "Error: a call without an open camera returned %d instead of XI_INVALID_HANDLE\n", (int)stat);
+        return EXIT_FAILURE;
+    }
+    printf("Caught XI_INVALID_HANDLE (%d) from a call without an open camera\n", (int)stat);
 
     CE(xiGetNumberDevices(&deviceCount));
     if (deviceCount == 0)

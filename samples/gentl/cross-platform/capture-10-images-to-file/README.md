@@ -21,7 +21,7 @@ Loads the XIMEA GenTL producer (`.cti`) at run time, opens the first camera thro
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads), including the GenTL producer and the examples (`GenTL_v1_5.h`) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff 4.7.1 (central dependency, fetched and built at configure time) |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, fetched and built at configure time) |
 
 ---
 

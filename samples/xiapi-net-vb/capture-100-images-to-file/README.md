@@ -18,7 +18,7 @@ Captures 100 MONO8 images and saves them as JPEG files with the WPF JpegBitmapEn
 |------|-------------|
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | .NET SDK | 8.0 or newer |
 | Libraries | WPF imaging (`System.Windows.Media.Imaging`, part of the .NET Windows Desktop runtime) |
 
@@ -39,10 +39,11 @@ The binary lands in `.dotnet-tmp\` inside the sample folder.
 
 ## Run
 
-Run from the directory where the `images` folder should be created:
+Output files are written to an `images` folder in the current directory (the sample folder in the commands below).
 
 ```powershell
-.\samples\xiapi-net-vb\capture-100-images-to-file\.dotnet-tmp\capture-100-images-to-file-vb.exe
+cd samples\xiapi-net-vb\capture-100-images-to-file
+.\.dotnet-tmp\capture-100-images-to-file-vb.exe
 ```
 
 Or use `dotnet run` (no separate build step needed):

@@ -18,10 +18,10 @@ Captures 10 raw images and saves them as DNG files using the XIMEA DNG Store lib
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
-| XIMEA SP | [4.33](https://www.ximea.com/software-downloads) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | XIMEA DNG Store (`XIMEA::DngStore`): the "DNG Store" component of the XIMEA Software Package (installed by default), found with `ximea_find_dng_store()` |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| DNG Store | The "DNG Store" component of the XIMEA SP (installed by default) |
 
 ---
 
@@ -49,13 +49,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
-`xiapi_dng_store.dll` is copied next to the executable on Windows. Run from the directory where the DNG files should be created:
+`xiapi_dng_store.dll` is copied next to the executable on Windows. Run from the repository root. Output files are written to the current directory (the sample folder in the commands below).
 
 ```bash
 # Linux
+cd samples/xiapiplus/cross-platform/capture-10-images-to-dng
 .cmake-tmp/build/xiapiplus-cross-platform-capture-10-images-to-dng
 
 # Windows PowerShell
+cd samples\xiapiplus\cross-platform\capture-10-images-to-dng
 .\.cmake-tmp\build\xiapiplus-cross-platform-capture-10-images-to-dng.exe
 ```
 

@@ -1,8 +1,7 @@
-#include "opencl_demosaic.h"
-
 #include <chrono>
 
 #include "demosaic_kernel.h"
+#include "opencl_demosaic.h"
 
 namespace sample
 {

@@ -43,9 +43,26 @@ samples\multirecorder\cross-platform\record-from-multiple-cameras\run.bat
 sh samples/multirecorder/cross-platform/record-from-multiple-cameras/run.sh
 ```
 
-The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there. MultiRecorder prints its progress and also writes it to `MultiRecorder-log.txt`.
+The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
 
-Cameras 0 and 1 share storage `s1`, whose frames alternate between `data-1/` and `data-2/`; camera 2 writes to `data-3/`. The exports go to `output-camera-1/` (RGB32), `output-camera-2/` and `output-camera-3/` (MONO16).
+---
+
+## Expected output
+
+MultiRecorder prints its progress to the console and also writes it to `MultiRecorder-log.txt`. After a successful run the sample folder contains:
+
+```text
+samples/multirecorder/cross-platform/record-from-multiple-cameras/
+  data-1/                 raw data of storage s1 (cameras 0 and 1), even frames
+  data-2/                 raw data of storage s1 (cameras 0 and 1), odd frames
+  data-3/                 raw data of storage s2 (camera 2)
+  output-camera-1/        10 exported RGB (XI_RGB32) TIFF images from camera 0
+  output-camera-2/        10 exported MONO16 TIFF images from camera 1
+  output-camera-3/        10 exported MONO16 TIFF images from camera 2
+  MultiRecorder-log.txt   MultiRecorder log
+```
+
+With fewer than three cameras, the tasks for the missing ones fail and their output folders stay empty or missing. MultiRecorder exits with code 0 even when a task fails, so confirm that each `output-camera-*` folder holds 10 TIFF files and that the console output or `MultiRecorder-log.txt` reports no errors.
 
 ---
 
