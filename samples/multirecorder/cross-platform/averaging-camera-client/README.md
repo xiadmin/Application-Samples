@@ -52,13 +52,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
-Start the server first, then:
+Start the server first, then, from the repository root:
 
 ```bash
 # Linux
+cd samples/multirecorder/cross-platform/averaging-camera-client
 .cmake-tmp/build/multirecorder-cross-platform-averaging-camera-client --averaging 8
 
 # Windows PowerShell
+cd samples\multirecorder\cross-platform\averaging-camera-client
 .\.cmake-tmp\build\multirecorder-cross-platform-averaging-camera-client.exe --server 192.168.1.10:9001
 ```
 
@@ -69,7 +71,9 @@ Start the server first, then:
 | `--frame-count <n>` | 100 | Camera frames to request; the client receives `frame-count / averaging` images |
 | `--exposure-us <us>` | 10000 | Exposure time in microseconds |
 
-Expected output:
+---
+
+## Expected output
 
 ```text
 Opening camera MC031CG-SY-UB (CECAU0000001) at localhost:9001

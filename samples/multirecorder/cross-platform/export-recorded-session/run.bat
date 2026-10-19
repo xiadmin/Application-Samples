@@ -10,5 +10,9 @@ if not exist "%MULTIRECORDER%" (
     exit /b 1
 )
 "%MULTIRECORDER%" --run setup.xml
+if errorlevel 1 (
+    echo Error: recording failed; skipping the export. 1>&2
+    exit /b 1
+)
 "%MULTIRECORDER%" --export-tiffs recorded-session.xirecsession --export-tiffs-folder exported
 exit /b %ERRORLEVEL%

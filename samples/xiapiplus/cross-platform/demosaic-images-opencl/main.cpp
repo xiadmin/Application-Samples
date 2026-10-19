@@ -39,8 +39,8 @@ struct Options
 // Position of the red pixel in the top-left 2x2 tile of a Bayer frame.
 struct RedPixelOffset
 {
-    int x = 0;
-    int y = 0;
+    int column = 0;
+    int row = 0;
 };
 
 static void printUsage(const char* p_program)
@@ -236,8 +236,8 @@ static int run(const Options& options)
     {
         camera.GetNextImage(&image);
         const int rawStride = image.GetWidth() + image.GetPadding_X();
-        const sample::DemosaicTiming timing = demosaic.process(image.GetPixels(), rawStride, redOffset->x,
-                                                               redOffset->y, gains, rgb);
+        const sample::DemosaicTiming timing = demosaic.process(image.GetPixels(), rawStride, redOffset->column,
+                                                               redOffset->row, gains, rgb);
         totalKernelMs += timing.kernelMs;
         totalMs += timing.totalMs;
 

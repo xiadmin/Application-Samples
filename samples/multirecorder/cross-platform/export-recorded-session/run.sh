@@ -8,5 +8,8 @@ if [ ! -x "$MULTIRECORDER" ]; then
     echo "Error: MultiRecorder not found at $MULTIRECORDER. Install the XIMEA Software Package with its examples, or set MULTIRECORDER to the MultiRecorder executable." >&2
     exit 1
 fi
-"$MULTIRECORDER" --run setup.xml
+if ! "$MULTIRECORDER" --run setup.xml; then
+    echo "Error: recording failed; skipping the export." >&2
+    exit 1
+fi
 exec "$MULTIRECORDER" --export-tiffs recorded-session.xirecsession --export-tiffs-folder exported

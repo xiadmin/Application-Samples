@@ -78,7 +78,7 @@ void DepackPfncLsb10BitCPU(uint8_t* src_buffer, uint8_t* dst_buffer, int width, 
         dst_buffer[dst_i+4] = (src_buffer[src_i+2] & 0b11110000) >> 4 | (src_buffer[src_i+3] & 0b00001111) << 4;
         dst_buffer[dst_i+5] = (src_buffer[src_i+3] & 0b00110000) >> 4;
 
-        dst_buffer[dst_i+6] = (src_buffer[src_i+3] & 0b11000000) >> 6 | (src_buffer[src_i+4] & 0b00111111) << 6;
+        dst_buffer[dst_i+6] = (src_buffer[src_i+3] & 0b11000000) >> 6 | (src_buffer[src_i+4] & 0b00111111) << 2;
         dst_buffer[dst_i+7] = (src_buffer[src_i+4] & 0b11000000) >> 6;
     }
 }
@@ -156,7 +156,7 @@ void Depack10bitGrouping160CPU(uint8_t* src_buffer, uint8_t* dst_buffer, int wid
         dst_buffer[dst_i+18] = (src_buffer[src_i+9] & 0b00111111) << 2 | (src_buffer[src_i+18] & 0b00001100) >> 2;
         dst_buffer[dst_i+19] = (src_buffer[src_i+9] &  0b11000000) >> 6;
 
-        dst_buffer[dst_i+20] = (src_buffer[src_i+10] & 0b00111111) << 2 | (src_buffer[src_i+18] & 0b00110000) << 4;
+        dst_buffer[dst_i+20] = (src_buffer[src_i+10] & 0b00111111) << 2 | (src_buffer[src_i+18] & 0b00110000) >> 4;
         dst_buffer[dst_i+21] = (src_buffer[src_i+10] &  0b11000000) >> 6;
 
         dst_buffer[dst_i+22] = (src_buffer[src_i+11] & 0b00111111) << 2 | (src_buffer[src_i+18] & 0b11000000) >> 6;

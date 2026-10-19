@@ -141,9 +141,10 @@ void SynchronizedCamera::acquisitionLoop(FrameQueue& queue)
     while (true)
     {
         const bool isStopping = !m_isRunning.load();
-        m_camera.SetNextImageTimeout_ms(isStopping ? drainTimeoutMs : frameTimeoutMs);
         try
         {
+            // Inside the try: an exception escaping a std::thread calls std::terminate.
+            m_camera.SetNextImageTimeout_ms(isStopping ? drainTimeoutMs : frameTimeoutMs);
             m_camera.GetNextImage(&image);
         }
         catch (xiAPIplus_Exception& exception)

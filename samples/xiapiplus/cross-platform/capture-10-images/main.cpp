@@ -54,8 +54,8 @@ int main()
         for (int i = 0; i < frameCount; ++i)
         {
             cam.GetNextImage(&img);
-            unsigned char* data = img.GetPixels();
-            int firstByte = data ? static_cast<int>(data[0]) : -1;
+            unsigned char* p_data = img.GetPixels();
+            int firstByte = p_data ? static_cast<int>(p_data[0]) : -1;
             std::cout << "Frame " << i + 1 << "/" << frameCount
                       << ": " << img.GetWidth() << "x" << img.GetHeight()
                       << " nframe=" << img.GetFrameNumber()

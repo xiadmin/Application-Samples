@@ -86,7 +86,9 @@ cd samples\xiapiplus\cross-platform\compute-histogram-cuda
 | `--target gpu` | | The camera writes frames straight into GPU memory over GPUDirect RDMA |
 | `--frame-count <n>` | 100 | Frames to process after one untimed warm-up frame |
 
-Expected output:
+---
+
+## Expected output
 
 ```text
 CUDA device 0: NVIDIA RTX A4000

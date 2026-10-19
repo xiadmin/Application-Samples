@@ -74,7 +74,9 @@ cd samples\xiapiplus\cross-platform\demosaic-images-opencl
 | `--exposure-us <us>` | 10000 | Exposure time in microseconds |
 | `--output-dir <dir>` | current directory | Directory for `image_00.tiff`, `image_01.tiff`, ... |
 
-Expected output:
+---
+
+## Expected output
 
 ```text
 Opening first camera

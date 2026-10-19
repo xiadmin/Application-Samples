@@ -59,7 +59,9 @@ On Linux and macOS, pass the path of the `.cti` file the XIMEA Software Package 
 | `--cti <file>` | `ximea.gentl2.cti`, else `ximea.gentl.cti`, from `GENICAM_GENTL64_PATH` | GenTL producer to load |
 | `--exposure-us <us>` | 10000 | Exposure time in microseconds, written to the `ExposureTime` feature |
 
-Expected output:
+---
+
+## Expected output
 
 ```text
 Loading GenTL producer C:\XIMEA\GenTL Producer\ximea.gentl2.cti

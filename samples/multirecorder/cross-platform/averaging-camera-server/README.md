@@ -53,11 +53,15 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ## Run
 
+From the repository root:
+
 ```bash
 # Linux
+cd samples/multirecorder/cross-platform/averaging-camera-server
 .cmake-tmp/build/multirecorder-cross-platform-averaging-camera-server
 
 # Windows PowerShell
+cd samples\multirecorder\cross-platform\averaging-camera-server
 .\.cmake-tmp\build\multirecorder-cross-platform-averaging-camera-server.exe --address 0.0.0.0
 ```
 
@@ -66,7 +70,13 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 | `--address <host>` | `localhost` | Address to listen at; `localhost` accepts local clients only, `0.0.0.0` or this computer's IP address accepts clients from other computers |
 | `--port <port>` | 9001 | TCP port to listen at |
 
-The server runs until you press Ctrl+C. Expected output while a client is connected:
+The server runs until you press Ctrl+C.
+
+---
+
+## Expected output
+
+While a client is connected:
 
 ```text
 Starting camera server at localhost:9001; press Ctrl+C to stop

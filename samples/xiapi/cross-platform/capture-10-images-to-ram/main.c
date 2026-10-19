@@ -35,8 +35,8 @@ int main(void)
 {
     HANDLE cam = NULL;
     int payloadSize = 0;
-    XI_IMG *images = NULL;
-    unsigned char *storage = NULL;
+    XI_IMG *p_images = NULL;
+    unsigned char *p_storage = NULL;
 
     printf("Opening camera index 0\n");
     CE(xiOpenDevice(0, &cam));
@@ -52,9 +52,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    images = calloc((size_t)frameCount, sizeof(*images));
-    storage = malloc((size_t)payloadSize * (size_t)frameCount);
-    if (!images || !storage)
+    p_images = calloc((size_t)frameCount, sizeof(*p_images));
+    p_storage = malloc((size_t)payloadSize * (size_t)frameCount);
+    if (!p_images || !p_storage)
     {
         fprintf(stderr, "Error: could not allocate RAM for %d images\n", frameCount);
         return EXIT_FAILURE;
@@ -63,15 +63,15 @@ int main(void)
     /* XI_BP_SAFE copies each frame into the buffer pointed to by bp. */
     for (int i = 0; i < frameCount; i++)
     {
-        images[i].size = sizeof(images[i]);
-        images[i].bp = storage + (size_t)i * (size_t)payloadSize;
-        images[i].bp_size = (uint32_t)payloadSize;
+        p_images[i].size = sizeof(p_images[i]);
+        p_images[i].bp = p_storage + (size_t)i * (size_t)payloadSize;
+        p_images[i].bp_size = (uint32_t)payloadSize;
     }
 
     CE(xiStartAcquisition(cam));
 
     for (int i = 0; i < frameCount; i++)
-        CE(xiGetImage(cam, grabTimeoutMs, &images[i]));
+        CE(xiGetImage(cam, grabTimeoutMs, &p_images[i]));
 
     CE(xiStopAcquisition(cam));
     CE(xiCloseDevice(cam));
@@ -80,13 +80,13 @@ int main(void)
     for (int i = 0; i < frameCount; i++)
     {
         printf("Frame %d/%d: %ux%u nframe=%u first_byte=%d\n", i + 1, frameCount,
-               (unsigned)images[i].width, (unsigned)images[i].height,
-               (unsigned)images[i].nframe,
-               images[i].bp ? (int)((const unsigned char *)images[i].bp)[0] : -1);
+               (unsigned)p_images[i].width, (unsigned)p_images[i].height,
+               (unsigned)p_images[i].nframe,
+               p_images[i].bp ? (int)((const unsigned char *)p_images[i].bp)[0] : -1);
     }
 
-    free(storage);
-    free(images);
+    free(p_storage);
+    free(p_images);
 
     printf("Done\n");
     return EXIT_SUCCESS;
