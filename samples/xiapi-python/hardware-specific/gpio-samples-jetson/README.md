@@ -20,7 +20,7 @@ GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 | Hardware | XEC-NX-3P-X2G3 carrier board and supported peripherals |
 | XIMEA SDK | Not required unless a script is extended to access a XIMEA camera |
 | Python | 3.11+ |
-| Libraries | gpiod, spidev, pyserial (versions pinned in `dependencies/python-constraints.txt`); pylibi2c, built from source by `install_libi2c.sh` |
+| Libraries | gpiod, smbus2, spidev, pyserial (versions pinned in `dependencies/python-constraints.txt`) |
 
 ---
 
@@ -35,20 +35,13 @@ cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
 python3 -m pip install -r requirements.txt
 ```
 
-`requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions (`gpiod`, `spidev`, `pyserial`); update it there to change versions across all samples.
+`requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions (`gpiod`, `smbus2`, `spidev`, `pyserial`); update it there to change versions across all samples.
 
 The same file also points at the shared wheelhouse, `.deps/wheels/` at the repository root, which pip ignores while it is empty. To install without network access, fill it on the Jetson itself once — wheels are specific to platform and Python version:
 
 ```bash
 python3 -m pip download -r requirements.txt -d ../../../../.deps/wheels   # once, online
 python3 -m pip install --no-index -r requirements.txt                     # offline
-```
-
-`bmp280_i2c.py` imports `pylibi2c`, which is not in `requirements.txt`. `install_libi2c.sh` clones [libi2c](https://github.com/amaork/libi2c) into `~/Downloads`, checks out the pinned commit `dcdf6c6` and installs it with `sudo python setup.py install`. It needs `git`, network access, sudo rights and an existing `~/Downloads` directory:
-
-```bash
-cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
-bash install_libi2c.sh
 ```
 
 ---
@@ -62,7 +55,7 @@ Run the script that matches the hardware interface you want to test. Each script
 | `blinky.py`, `simple_input.py`, `polling_button.py` | GPIO | gpiod |
 | `bmp280_spi.py` | SPI | spidev |
 | `uart_loopback.py`, `uart_p2p_jetson.py`, `uart_p2p_pc.py` | UART | pyserial |
-| `bmp280_i2c.py` | I2C | pylibi2c |
+| `bmp280_i2c.py` | I2C | smbus2 |
 
 `uart_p2p_pc.py` is the PC side of the PING/PONG pair: run it on the PC connected to the Jetson UART0, not on the Jetson, while `uart_p2p_jetson.py` runs on the Jetson. The PC needs pyserial too (`python -m pip install -r requirements.txt` from this folder installs it there), and `PORT` at the top of the script (default `/dev/ttyUSB0`) must name the PC's serial adapter.
 

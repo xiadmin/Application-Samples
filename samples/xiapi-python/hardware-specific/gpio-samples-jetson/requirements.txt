@@ -5,6 +5,8 @@
 
 # GPIO samples
 gpiod
+# I2C samples
+smbus2
 # SPI samples
 spidev
 # UART samples
