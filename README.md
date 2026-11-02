@@ -100,6 +100,7 @@ Each sample has a README.md explaining what it does and how to use it.
 | [xiapi-python/cross-platform/display-video-opencv](samples/xiapi-python/cross-platform/display-video-opencv/) | XiApiPython (Python) | Live MONO8 or RGB24 video in an OpenCV window with an elapsed-time overlay |
 | [xiapi-python/cross-platform/display-image-pillow](samples/xiapi-python/cross-platform/display-image-pillow/) | XiApiPython (Python) | Capture one MONO8, RGB24 or RGB32 frame and open it with Pillow in the system image viewer |
 | [xiapi-python/cross-platform/save-image-pillow](samples/xiapi-python/cross-platform/save-image-pillow/) | XiApiPython (Python) | Capture one frame and save it with Pillow in the format given by the file extension |
+| [xiapi-python/cross-platform/ffs-parameter-preset](samples/xiapi-python/cross-platform/ffs-parameter-preset/) | XiApiPython (Python) | Save `name=value` parameters into the camera FFS file `User1` and apply them on any PC |
 | [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
 | [xiapi-python/hardware-specific/gpio-samples-jetson](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | XiApiPython (Python) | GPIO, I2C, SPI and UART samples for the Jetson kit |
 
