@@ -489,6 +489,51 @@ function(ximea_find_gentl)
     endif()
 endfunction()
 
+# Windows only: scripts/install-opencv-windows.ps1 installs the pinned OpenCV
+# version with Chocolatey (and Chocolatey itself when missing). With this option
+# ON, a configure that finds no OpenCV runs it; Windows then asks for
+# Administrator rights. OFF by default, as it installs system software.
+option(APPLICATION_SAMPLES_INSTALL_OPENCV
+    "On Windows, install the pinned OpenCV with scripts/install-opencv-windows.ps1 when it is missing"
+    OFF)
+get_filename_component(_APPLICATION_SAMPLES_OPENCV_INSTALLER
+    "${CMAKE_CURRENT_LIST_DIR}/../scripts/install-opencv-windows.ps1" ABSOLUTE)
+# Where that script puts the OpenCV CMake package, so OpenCV is found right
+# after the install, before a new terminal picks up OpenCV_DIR.
+set(_APPLICATION_SAMPLES_OPENCV_WINDOWS_DIR "C:/tools/opencv/build")
+
+# find_package(OpenCV) for the given components, plus the Windows install above.
+# A macro, so OpenCV_FOUND, OpenCV_LIBS and the rest reach the caller.
+macro(_application_samples_find_opencv)
+    if(WIN32)
+        find_package(OpenCV QUIET COMPONENTS ${ARGN}
+            HINTS "${_APPLICATION_SAMPLES_OPENCV_WINDOWS_DIR}")
+    else()
+        find_package(OpenCV QUIET COMPONENTS ${ARGN})
+    endif()
+
+    if(WIN32 AND NOT OpenCV_FOUND AND APPLICATION_SAMPLES_INSTALL_OPENCV)
+        message(STATUS
+            "OpenCV not found; running ${_APPLICATION_SAMPLES_OPENCV_INSTALLER}. "
+            "Windows asks for Administrator rights.")
+        execute_process(
+            COMMAND powershell -NoProfile -ExecutionPolicy Bypass
+                -File "${_APPLICATION_SAMPLES_OPENCV_INSTALLER}" -SelfElevate
+            RESULT_VARIABLE _application_samples_opencv_install_result)
+        if(_application_samples_opencv_install_result EQUAL 0)
+            # find_package cached OpenCV_DIR as NOTFOUND; point it at the install.
+            set(OpenCV_DIR "${_APPLICATION_SAMPLES_OPENCV_WINDOWS_DIR}" CACHE PATH
+                "The directory containing a CMake configuration file for OpenCV." FORCE)
+            find_package(OpenCV QUIET COMPONENTS ${ARGN})
+        else()
+            message(WARNING
+                "Installing OpenCV failed (${_application_samples_opencv_install_result}). "
+                "Run scripts/install-opencv-windows.ps1 from an Administrator "
+                "PowerShell to see the full output.")
+        endif()
+    endif()
+endmacro()
+
 # Finds OpenCV with find_package() and builds the xiAPIplus OpenCV wrapper that
 # ships with the XIMEA Software Package (_libs/xiAPIplusOpenCV) as
 # XIMEA::xiAPIplusOpenCV. xiApiPlusOcv.hpp carries its own copy of the
@@ -512,7 +557,7 @@ function(ximea_find_opencv_wrapper)
 
     find_path(XIMEA_OPENCV_WRAPPER_DIR NAMES xiApiPlusOcv.hpp HINTS ${_ocv_inc_hints})
     mark_as_advanced(XIMEA_OPENCV_WRAPPER_DIR)
-    find_package(OpenCV QUIET COMPONENTS core imgproc highgui videoio)
+    _application_samples_find_opencv(core imgproc highgui videoio)
 
     set(_ocv_found FALSE)
     if(TARGET XIMEA::xiAPI AND XIMEA_OPENCV_WRAPPER_DIR
@@ -526,7 +571,9 @@ function(ximea_find_opencv_wrapper)
             "OpenCV or the XIMEA xiAPIplus OpenCV wrapper not found, skipping "
             "${PROJECT_NAME}. Install OpenCV 4 (core, imgproc, highgui, videoio) "
             "and point OpenCV_DIR at its CMake package, or install it with the "
-            "system package manager (libopencv-dev on Debian/Ubuntu). "
+            "system package manager (libopencv-dev on Debian/Ubuntu). On Windows, "
+            "run scripts/install-opencv-windows.ps1 or configure with "
+            "-DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON. "
             "xiApiPlusOcv.hpp is expected at "
             "<XIMEA_SP_PATH>/Examples/Sources/_libs/xiAPIplusOpenCV on Windows or "
             "/opt/XIMEA/samples/_libs/xiAPIplusOpenCV on Linux.")

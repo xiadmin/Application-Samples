@@ -17,6 +17,31 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 - OpenCV and Pillow, installed with pip from each sample's `requirements.txt`, for the `*-opencv` and `*-pillow` Python samples.
 - .NET SDK 8.0 or newer for xiAPI.NET samples (C# and VB.NET).
 
+### Optional: OpenCV (Windows)
+
+The `*-opencv` C++ samples skip themselves when OpenCV is not found. On Windows,
+`scripts/install-opencv-windows.ps1` installs the pinned OpenCV version with
+[Chocolatey](https://chocolatey.org) and installs Chocolatey first if it is missing.
+OpenCV goes to `C:\tools\opencv`; the script sets `OpenCV_DIR` and adds the OpenCV
+DLL folder to the user `PATH` (`-Scope Machine` for all users). Either:
+
+- run it from an elevated PowerShell (**Run as Administrator**) in the repository root:
+
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts\install-opencv-windows.ps1
+  ```
+
+- or let CMake run it when a sample's configure finds no OpenCV; Windows asks
+  for Administrator rights:
+
+  ```powershell
+  cmake -S samples\xiapiplus\cross-platform\capture-50-images-and-display-opencv -B build -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON
+  ```
+
+Restart open terminals and IDEs afterwards so that they see the new `PATH`.
+On Linux use `apt install libopencv-dev`, on macOS `brew install opencv`, and on
+Jetson the OpenCV that comes with JetPack.
+
 ---
 
 ## Repository layout
@@ -35,6 +60,7 @@ dependencies/
   Dependencies.cmake       # central C/C++ library list
   Directory.Packages.props # central NuGet package version control
   python-constraints.txt   # pinned Python package versions
+scripts/                    # user setup helpers (OpenCV on Windows)
 Directory.Build.props       # points MSBuild at the central NuGet version list
 nuget.config                # NuGet package store and sources
 .deps/                      # shared download cache, not committed
