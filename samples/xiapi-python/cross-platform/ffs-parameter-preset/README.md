@@ -106,7 +106,9 @@ Errors go to stderr and the sample exits with 1. A misspelled parameter, an unkn
 - The preset must be ASCII text of at most 4096 bytes.
 - 64-bit integer parameters (read-only counters such as `timestamp`) and command parameters are rejected, because they do not describe a camera setting.
 - The sample does not apply the preset by itself when the camera opens; your application must call `load` (or `load_preset`) after opening it.
-- TODO: tested so far only offline. Results on MX022MG and MQ022MG cameras will be added here, including whether the MQ family supports `XI_GAIN_SELECTOR_DIGITAL_ALL`.
+- `gain_selector` is not available on every camera family. MQ cameras (tested on MQ022MG-CM) reject every `gain_selector` value with `ERROR 100`, so the digital-gain example above does not apply to them; use `gain` alone, which sets the sensor gain. `save` applies all pairs before writing, so such a preset is never stored.
+- Tested on MQ022MG-CM: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, and rejection of an out-of-range value (`ERROR 11`).
+- TODO: test on MX022MG, including `gain_selector=XI_GAIN_SELECTOR_DIGITAL_ALL`.
 
 ---
 
