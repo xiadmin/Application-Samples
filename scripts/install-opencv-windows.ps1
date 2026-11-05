@@ -137,8 +137,11 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
     }
 }
 
-$chocoVersion = (& choco --version | Select-Object -First 1).Trim()
+# Collect the whole output first: piping into Select-Object -First stops choco
+# early, and PowerShell 7 then leaves $LASTEXITCODE unset, which strict mode rejects.
+$chocoOutput = @(& choco --version)
 if ($LASTEXITCODE -ne 0) { throw "choco --version failed with exit code $LASTEXITCODE." }
+$chocoVersion = "$($chocoOutput | Select-Object -First 1)".Trim()
 if ([int]($chocoVersion -split '[.-]')[0] -lt 2) {
     throw "Chocolatey $chocoVersion is too old; version 2 or newer is required. Run 'choco upgrade chocolatey -y'."
 }
