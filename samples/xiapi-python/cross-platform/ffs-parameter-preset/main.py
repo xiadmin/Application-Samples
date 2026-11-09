@@ -14,6 +14,8 @@ File System (FFS) file User1, shows it, and applies it back to the camera.
 #   it selects (gain_selector before gain).
 # - User1 is the one FFS file name every camera family accepts (MX, MC, CB and
 #   MT allow only User1, User2 and User3).
+# - Works on cameras with FFS; tested on MQ (xiQ) and MX (xiX). MQ has no
+#   gain_selector (no digital gain), so store gain alone there.
 
 import argparse
 import contextlib

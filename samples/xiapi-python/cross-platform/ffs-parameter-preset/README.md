@@ -119,7 +119,7 @@ Errors go to stderr and the sample exits with 1. A misspelled parameter, an unkn
 - The preset must be ASCII text of at most 4096 bytes.
 - 64-bit integer parameters (read-only counters such as `timestamp`) and command parameters are rejected, because they do not describe a camera setting.
 - The sample does not apply the preset by itself when the camera opens; your application must call `load` (or `load_preset`) after opening it.
-- Available parameters and their ranges depend on the camera model; see [Camera-family-specific presets](#camera-family-specific-presets).
+- Available parameters and their ranges depend on the camera model; see [Camera-family-specific presets](#camera-family-specific-presets). The camera may round a value to its own step; for example, `exposure=10000` becomes 9998 µs on an MQ022MG-CM.
 - Not every XIMEA camera has a flash file system. The sample uses only the basic FFS parameters (`ffs_file_name`, `ffs_file_size`, `read_file_ffs`, `write_file_ffs`) and reports a camera without FFS as an error.
 - A missing preset is detected from a file size of 0 or from error 113 (`FFS file not found`). The sample checks the size before reading, because reading an empty file fails on MX cameras with `ERROR 12`. Other error codes are reported, not ignored.
 
@@ -127,8 +127,8 @@ Errors go to stderr and the sample exits with 1. A misspelled parameter, an unkn
 
 | Family | Model | Status |
 |--------|-------|--------|
-| MQ (xiQ) | MQ022MG-CM | Tested: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, rejection of an out-of-range value (`ERROR 11`). `gain_selector` not available (`ERROR 100`). |
-| MX (xiX) | MX050MG-SY-X2G2-FF (firmware 22.30, xiAPI 4.33.26) | Tested: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, rejection of an out-of-range value (`ERROR 11`), `show` and `load` with an empty file. `gain_selector` accepts `ALL`, `ANALOG_ALL` and `DIGITAL_ALL`, each 0–24 dB; `load` sets the digital gain and leaves the analog gain unchanged. |
+| MQ (xiQ) | MQ022MG-CM (Windows 11, driver 2.00.08.00) | Tested: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, rejection of an out-of-range value (`ERROR 11`), `show` and `load` with an empty file (reported as `ERROR 113`). `gain_selector` and digital gain are not available (`ERROR 100`); use `gain` alone, range -1.5 to 6 dB. |
+| MX (xiX) | MX050MG-SY-X2G2-FF (PCIe, firmware 22.30, xiAPI 4.33.26, L4T R39.2.1) | Tested: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, rejection of an out-of-range value (`ERROR 11`), `show` and `load` with an empty file (size 0; reading it would fail with `ERROR 12`). `gain_selector` accepts `ALL`, `ANALOG_ALL` and `DIGITAL_ALL`, each 0–24 dB; `load` sets the digital gain (0 to 0.91 dB) and leaves the analog gain unchanged. On Linux, xiAPI prints its own log lines (`xiAPI: ...`) to stderr in addition to the sample's output. |
 | MC (xiC) | — | TODO: test. |
 | CB (xiB) | — | TODO: test. |
 | MT (xiT) | — | TODO: test. |
