@@ -75,9 +75,8 @@ nuget.config                # NuGet package store and sources
 .deps/                      # shared download cache, not committed
 ```
 
-CI, build orchestration, and the dependency policy tests live in the separate
-`Application-Samples-Infra` repository, which consumes this repository as its
-`Application-Samples` submodule.
+CI, build orchestration, and the dependency policy tests run in a separate XIMEA
+repository. You do not need it to build or run the samples.
 
 Each sample has a README.md explaining what it does and how to use it.
 
@@ -260,10 +259,9 @@ too when a CI job caches only that directory:
 export PIP_CACHE_DIR=<repo>/.deps/pip-cache
 ```
 
-Repository-wide CI, build orchestration, and integration tests live in the
-[Application-Samples-Infra](https://github.com/xiadmin/Application-Samples-Infra) repository,
-which consumes this repository as a submodule. The tiny workflow under
-`.github/workflows/` calls that reusable CI workflow with the exact pushed commit.
+Repository-wide CI, build orchestration, and integration tests run in a separate
+XIMEA repository. The workflow under `.github/workflows/` starts that CI for the
+exact pushed commit; it is not needed to build or run the samples.
 
 ---
 

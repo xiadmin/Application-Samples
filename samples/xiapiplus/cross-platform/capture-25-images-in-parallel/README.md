@@ -109,7 +109,7 @@ Lines from different cameras interleave in arrival order. The sample exits with 
 - **Bandwidth:** `XI_PRM_AUTO_BANDWIDTH_CALCULATION` is switched off globally before any camera is opened, and every camera is limited to `total-bandwidth / camera count`. Lower `--total-bandwidth` if frames are skipped on transport.
 - **Memory:** every camera gets a 512 MiB acquisition buffer. With many cameras, check that the host has enough RAM.
 - **Timestamps and overlap:** trigger overlap and the software timestamp reset are optional. On cameras that do not support them the sample prints a warning and continues.
-- **Format:** frames are captured as RAW8 so that the sample runs on any model. The legacy version configured 12-bit packed RAW16, which only some sensors support.
+- **Format:** frames are captured as RAW8 so that the sample runs on any model. Formats such as 12-bit packed RAW16 are supported only by some sensors.
 - **Single camera:** with only one camera the sample still runs; it acts as master without slaves.
 
 ---

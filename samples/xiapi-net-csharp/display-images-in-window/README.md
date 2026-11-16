@@ -70,7 +70,7 @@ Without a camera, the sample prints `Error: no XIMEA cameras detected` on stderr
 ## Known limitations / caveats
 
 - Windows-only: Windows Forms and the XIMEA .NET wrapper are not available for Linux or macOS.
-- Frames are grabbed on a background task and handed to the UI thread with `Invoke()`, which replaces the `Application.DoEvents()` loop of the original sample. Exposure changes go to the grab task through `Interlocked`, so only one thread calls into the camera.
+- Frames are grabbed on a background task and handed to the UI thread with `Invoke()`, so the window stays responsive without an `Application.DoEvents()` loop. Exposure changes go to the grab task through `Interlocked`, so only one thread calls into the camera.
 - The net7.0 `xiApi.NETX64.dll` has no `Bitmap` overloads; `PreviewForm.CreateBitmap()` builds an 8-bit grayscale bitmap from the frame bytes and drops the line padding.
 - The project builds as a console application (`Exe`), so errors also appear on stderr next to the window.
 

@@ -129,9 +129,9 @@ Errors go to stderr and the sample exits with 1. A misspelled parameter, an unkn
 |--------|-------|--------|
 | MQ (xiQ) | MQ022MG-CM (Windows 11, driver 2.00.08.00) | Tested: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, rejection of an out-of-range value (`ERROR 11`), `show` and `load` with an empty file (reported as `ERROR 113`). `gain_selector` and digital gain are not available (`ERROR 100`); use `gain` alone, range -1.5 to 6 dB. |
 | MX (xiX) | MX050MG-SY-X2G2-FF (PCIe, firmware 22.30, xiAPI 4.33.26, L4T R39.2.1) | Tested: `save`, `show`, `load`, `-s SERIAL`, overwriting a longer preset with a shorter one, rejection of an out-of-range value (`ERROR 11`), `show` and `load` with an empty file (size 0; reading it would fail with `ERROR 12`). `gain_selector` accepts `ALL`, `ANALOG_ALL` and `DIGITAL_ALL`, each 0–24 dB; `load` sets the digital gain (0 to 0.91 dB) and leaves the analog gain unchanged. On Linux, xiAPI prints its own log lines (`xiAPI: ...`) to stderr in addition to the sample's output. |
-| MC (xiC) | — | TODO: test. |
-| CB (xiB) | — | TODO: test. |
-| MT (xiT) | — | TODO: test. |
+| MC (xiC) | — | Not tested yet. |
+| CB (xiB) | — | Not tested yet. |
+| MT (xiT) | — | Not tested yet. |
 
 ---
 

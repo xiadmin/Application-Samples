@@ -98,7 +98,7 @@ Done
 - `PixelFormat` is set to `Mono8` when the camera offers it; otherwise the camera's default format is kept and the printed pixel values are that format's raw samples.
 - The timestamp is printed in device ticks, as the producer reports it.
 - harvesters is imported after the producer lookup, so a machine without the XIMEA Software Package reports the missing producer first.
-- Ported from the internal `simple_acq_sample`, which looped over every producer in the search path; this version loads one XIMEA producer.
+- The sample loads one XIMEA GenTL producer; it does not iterate over every producer in the GenTL search path.
 
 ---
 

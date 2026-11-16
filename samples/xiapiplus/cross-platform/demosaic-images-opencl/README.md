@@ -122,7 +122,7 @@ The kernel time is measured by the OpenCL device with event profiling. The secon
 - **White balance:** xiAPI does not apply white balance to RAW8 data. The kernel multiplies the channels by the camera's current `XI_PRM_WB_KR/KG/KB` coefficients. There is no color correction matrix, gamma or sharpening, so the colors differ from xiAPI's own RGB output.
 - **Edges:** pixels outside the frame are mirrored by an even distance, which keeps the Bayer color, so the border pixels are demosaiced as well.
 - **Device selection:** the first GPU of the first OpenCL platform that has one, otherwise any OpenCL device (for example a CPU runtime).
-- The kernel follows Morgan McGuire's GPU formulation of the Malvar-He-Cutler filter, as in the internal `xiSample_opencl_debayer`. The OpenGL/GLUT preview and the OpenCV CUDA path of that sample are not part of this port. The kernel source is compiled into the executable, so no `.cl` file is needed at run time.
+- The kernel follows Morgan McGuire's GPU formulation of the Malvar-He-Cutler filter. The kernel source is compiled into the executable, so no `.cl` file is needed at run time.
 
 ---
 

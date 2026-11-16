@@ -114,7 +114,7 @@ Each line draws the 64 bins from dark (few pixels) to bright (many pixels) on a 
 - **GPUDirect RDMA:** when the platform, driver or GPU does not support it, xiAPI returns `XI_GPUDIRECT_NOT_AVAILABLE` and the sample says so. The acquisition buffer is limited to 4 frames, because it lives in GPU memory exposed through the PCIe BAR, which is often only a few hundred MB.
 - **GPU selection:** the sample always uses CUDA device 0.
 - **Timing** uses the host clock around synchronized CUDA calls, so it includes launch overhead.
-- The sample was ported from the internal `xiCUDASample`, whose build variants (pageable, bounce, unified, zero-copy, RDMA) became the `--target` option. The NVIDIA histogram kernel and helper headers were replaced by a short shared-memory `atomicAdd` kernel.
+- The `--target` option selects how frames reach the GPU (pageable, bounce, unified, zero-copy, RDMA). The histogram is computed by a short shared-memory `atomicAdd` kernel.
 
 ---
 

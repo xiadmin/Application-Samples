@@ -112,7 +112,7 @@ Done
 - `xiAPIplus_ImageProcessing::GetImage()` returns a `malloc`'d copy that is not marked as one; the sample calls `SetCopy(true)` so the `xiAPIplus_Image` destructor frees it.
 - The sample always opens camera index 0 and uses a fixed 10 ms exposure.
 - Existing `image000.tif` through `image009.tif` files in the current directory are overwritten.
-- The white balance coefficients (1.05 / 1.0 / 2.10) are example values from the original sample; adjust them for your light source.
+- The white balance coefficients (1.05 / 1.0 / 2.10) are example values; adjust them for your light source.
 
 ---
 

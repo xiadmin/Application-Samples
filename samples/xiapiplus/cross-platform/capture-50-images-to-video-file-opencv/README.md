@@ -90,7 +90,7 @@ Without a camera the sample prints `Error: no XIMEA cameras detected` and exits 
 ## Known limitations / caveats
 
 - The camera is switched to `XI_MONO8`, so the video is grayscale even on color cameras.
-- The video uses Motion JPEG (`MJPG`) in an AVI container at a nominal 25 fps. OpenCV encodes this format itself, so no FFmpeg or system codec is needed. The legacy sample used Microsoft RLE (`MRLE`), which OpenCV cannot write on every platform.
+- The video uses Motion JPEG (`MJPG`) in an AVI container at a nominal 25 fps. OpenCV encodes this format itself, so no FFmpeg or system codec is needed. Microsoft RLE (`MRLE`) is not used because OpenCV cannot write it on every platform.
 - The nominal frame rate is stored in the file; capture timing is not, so playback speed does not match the real exposure rate.
 - `xiApiPlusOcv.hpp` contains its own copy of the xiAPIplus classes, so `XIMEA::xiAPIplusOpenCV` must not be combined with `XIMEA::xiAPIplus` in one target.
 - `cv::imshow()` needs a display; the sample does not run in a headless session.

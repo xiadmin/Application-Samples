@@ -108,7 +108,7 @@ Done
 - Each pulled image is owned by the processing until the next pull; the sample writes it to disk before pushing the next frame.
 - The sample always opens camera index 0 and uses a fixed 10 ms exposure.
 - Existing `image000.tif` through `image009.tif` files in the current directory are overwritten.
-- The white balance coefficients (1.05 / 1.0 / 2.10) are example values from the original sample; adjust them for your light source.
+- The white balance coefficients (1.05 / 1.0 / 2.10) are example values; adjust them for your light source.
 
 ---
 
