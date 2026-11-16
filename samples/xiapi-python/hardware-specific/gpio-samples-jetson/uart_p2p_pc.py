@@ -4,9 +4,21 @@ The PC sends a PING message to the Jetson, and the Jetson replies with PONG.
 UART0 is used to demonstrate RTS#/CTS# flow control.
 """
 
+import sys
 import time
 
-import serial
+try:
+    import serial
+except ImportError:
+    print(
+        "Error: pyserial is not installed. This sample installs nothing itself;\n"
+        "choose how to provide it. Download the hash-checked version\n"
+        "(pip 26.3 or newer):\n"
+        "  python3 -m pip install --require-hashes -r requirements.txt\n"
+        "or install it yourself; see \"Third-party libraries\" in README.md.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 PORT = "/dev/ttyUSB0"
 BAUDRATE = 115_200

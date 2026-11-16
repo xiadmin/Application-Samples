@@ -20,25 +20,34 @@ Code samples for XIMEA cameras, showing how to control your camera using the XIM
 ### Optional: OpenCV (Windows)
 
 The `*-opencv` C++ samples skip themselves when OpenCV is not found. On Windows,
-`scripts/install-opencv-windows.ps1` installs the pinned OpenCV version with
-[Chocolatey](https://chocolatey.org) and installs Chocolatey first if it is missing.
+`scripts/install-opencv-windows.ps1` downloads the official OpenCV release
+installer (`opencv-<version>-windows.exe` from
+[github.com/opencv/opencv/releases](https://github.com/opencv/opencv/releases))
+at the version pinned in the script, and runs it only if its SHA-256 matches the
+hash pinned next to the version. The installer is cached in `.deps/downloads/`;
+a cached copy is checked the same way. No Chocolatey and no Administrator rights
+are needed by default.
 OpenCV goes to `C:\tools\opencv`; the script sets `OpenCV_DIR` and adds the OpenCV
-DLL folder to the user `PATH` (`-Scope Machine` for all users). Either:
+DLL folder to the user `PATH` (`-Scope Machine` for all users, which needs
+Administrator rights). Either:
 
-- run it from an elevated PowerShell (**Run as Administrator**) in the repository root:
+- run it from PowerShell in the repository root:
 
   ```powershell
   powershell -ExecutionPolicy Bypass -File scripts\install-opencv-windows.ps1
   ```
 
-- or let CMake run it when a sample's configure finds no OpenCV; Windows asks
-  for Administrator rights:
+- or let CMake run it when a sample's configure finds no OpenCV. This downloads
+  OpenCV, so it also needs the `download` choice (see
+  [Third-party libraries](#third-party-libraries-your-choice-checked-by-hash)):
 
   ```powershell
-  cmake -S samples\xiapiplus\cross-platform\capture-50-images-and-display-opencv -B build -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON
+  cmake -S samples\xiapiplus\cross-platform\capture-50-images-and-display-opencv -B build -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON -DAPPLICATION_SAMPLES_DEPENDENCIES=download
   ```
 
-Restart open terminals and IDEs afterwards so that they see the new `PATH`.
+To use an OpenCV you unpacked yourself instead, pass its build folder:
+`-DOpenCV_DIR=C:/opencv/build`. Restart open terminals and IDEs after running the
+script so that they see the new `PATH`.
 On Linux use `apt install libopencv-dev`, on macOS `brew install opencv`, and on
 Jetson the OpenCV that comes with JetPack.
 
@@ -140,6 +149,37 @@ LabVIEW examples are not part of this repository. They ship with the XIMEA Softw
 
 Build each sample separately by following the instructions in its own README.md file.
 
+### Third-party libraries: your choice, checked by hash
+
+Some samples use an external library (libtiff, LibTiff.NET, numpy, OpenCV, ...). None is
+downloaded until you choose how to provide it, and a sample never installs
+anything on its own. Choose once per machine with an environment variable, or
+per build:
+
+| Choice | Meaning |
+|--------|---------|
+| `download` | Fetch the library from its upstream source and accept it only if it matches the hash pinned in this repository. |
+| `system` | Use a copy you installed or placed yourself; nothing is downloaded. |
+
+| Track | Per build | Pinned hash |
+|-------|-----------|-------------|
+| C / C++ | `cmake -DAPPLICATION_SAMPLES_DEPENDENCIES=download` (or `system`, which uses `find_package`) | `SHA256` of each archive in `dependencies/Dependencies.cmake` |
+| C# | `dotnet build -p:ApplicationSamplesDependencies=download` (or `system`, which restores only from `.deps/nuget/`) | content hash per package in each sample's `packages.lock.json`, plus nuget.org's repository signature (`nuget.config`) |
+| Python | `python -m pip install --require-hashes -r requirements.txt` (pip 26.3 or newer), or install the packages yourself | `--hash=sha256:` per file in `dependencies/python-constraints.txt` |
+| OpenCV, Windows C/C++ | `cmake -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON -DAPPLICATION_SAMPLES_DEPENDENCIES=download`, or run `scripts\install-opencv-windows.ps1`; `system`: set `OpenCV_DIR` to your copy | `OpenCvSha256` of the release installer in `scripts/install-opencv-windows.ps1`, next to its version, which matches `opencv-python` |
+
+```bash
+export APPLICATION_SAMPLES_DEPENDENCIES=download   # Linux/macOS; or system
+```
+
+```powershell
+$env:APPLICATION_SAMPLES_DEPENDENCIES = "download"   # Windows PowerShell; or "system"
+```
+
+Without a choice, a C/C++ configure or C# build that needs a library stops and
+explains both options. The environment variable answers for CMake and MSBuild;
+pip does not read it.
+
 ### Dependency cache and offline builds
 
 An external package is downloaded once per machine and reused by every sample.
@@ -154,11 +194,11 @@ and none of them lets a sample pick its own version.
 
 #### C / C++
 
-A cached archive is reused as it is; its contents are not verified. A version
-change in `dependencies/Dependencies.cmake` changes the URL and therefore the
-archive name, so the new version is downloaded. If an upstream project ever
-republishes a different archive under the same URL, delete the cached file to
-pick it up. Warm the cache once with network access, then build offline:
+A cached archive is reused only if its SHA-256 matches the `SHA256` recorded in
+`dependencies/Dependencies.cmake`; a mismatching file stops the configure with
+both hashes, and deleting it downloads it again. A version change in that file
+changes the URL and the hash, so the new version is downloaded and checked.
+Warm the cache once with network access, then build offline:
 
 ```bash
 cmake -B <build-dir> -DAPPLICATION_SAMPLES_OFFLINE=ON
@@ -181,8 +221,16 @@ repository-root `Directory.Build.props` feeds to MSBuild through
 `DirectoryPackagesPropsPath`; a sample writes a `PackageReference` with no
 `Version` and never imports that file itself.
 
-Drop `.nupkg` files into `.deps/nuget-packages/` ahead of time, or restore once
-with network access, then build offline:
+Each sample commits a `packages.lock.json` with the content hash of every
+package it restores, and restore runs in locked mode, so a package that differs
+from the lock file is rejected (NU1403). `nuget.config` also requires nuget.org's
+repository signature on every package. After changing a version in
+`dependencies/Directory.Packages.props`, update the lock files with
+`dotnet restore <project> -p:RestoreLockedMode=false`.
+
+With `ApplicationSamplesDependencies=system`, restore reads only `.nupkg` files
+you put into `.deps/nuget/`; the same hash and signature checks apply. Or
+restore once with network access, then build offline:
 
 ```bash
 dotnet build --no-restore
@@ -192,15 +240,17 @@ dotnet build --no-restore
 
 `requirements.txt` points at the wheelhouse with `--find-links`, resolved
 relative to the requirements file, and pip ignores it when the directory is
-absent. Versions come from `dependencies/python-constraints.txt` via the `-c`
-line in the same file.
+absent. Versions and the SHA-256 of every file pip may install come from
+`dependencies/python-constraints.txt` via the `-c` line in the same file; with
+pip 26.3 or newer, a wheel or sdist whose hash is not listed there is rejected,
+whether it comes from PyPI or from the wheelhouse.
 
 Fill the wheelhouse on the machine that will run the sample, because wheels are
 specific to platform and Python version:
 
 ```bash
-python3 -m pip download -r requirements.txt -d <repo>/.deps/wheels   # once, online
-python3 -m pip install --no-index -r requirements.txt                # offline
+python3 -m pip download -r requirements.txt -d <repo>/.deps/wheels       # once, online
+python3 -m pip install --no-index --require-hashes -r requirements.txt   # offline
 ```
 
 pip keeps its own download cache outside the repository. Point it at `.deps/`

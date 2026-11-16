@@ -23,7 +23,7 @@ Captures 50 grayscale images with the xiAPIplus OpenCV wrapper, shows them in a 
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
 | Libraries | OpenCV 4 (core, imgproc, highgui, videoio), found with `find_package(OpenCV)` |
 
-Install OpenCV on Debian/Ubuntu with `sudo apt install libopencv-dev`. On Windows, unpack an OpenCV release and pass its CMake package folder: `-DOpenCV_DIR=C:/opencv/build`.
+Install OpenCV on Debian/Ubuntu with `sudo apt install libopencv-dev`. On Windows, run `scripts\install-opencv-windows.ps1` from the repository root: it installs the pinned, SHA-256-checked OpenCV release into `C:\tools\opencv` and sets `OpenCV_DIR` (see [Optional: OpenCV (Windows)](../../../../README.md#optional-opencv-windows)). Or unpack an OpenCV release yourself and pass its CMake package folder: `-DOpenCV_DIR=C:/opencv/build`.
 
 ---
 

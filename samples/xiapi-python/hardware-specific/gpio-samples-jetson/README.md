@@ -20,7 +20,29 @@ GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 | Hardware | XEC-NX-3P-X2G3 carrier board and supported peripherals |
 | XIMEA SDK | Not required unless a script is extended to access a XIMEA camera |
 | Python | 3.11+ |
-| Libraries | gpiod, smbus2, spidev, pyserial (versions pinned in `dependencies/python-constraints.txt`) |
+| Libraries | gpiod, smbus2, spidev, pyserial (versions and SHA-256 hashes pinned in `dependencies/python-constraints.txt`) |
+
+---
+
+## Third-party libraries
+
+This sample uses the pip package(s) **gpiod**, **smbus2**, **spidev**, **pyserial**. It never installs anything itself; without them it stops and points here. Provide them one of these ways.
+
+**Download them, checked against pinned hashes.** `dependencies/python-constraints.txt` records the SHA-256 of every file PyPI publishes for each pinned version, and pip installs only files that match. Applying those hashes to the bare names in `requirements.txt` needs pip 26.3 or newer, so update pip first, preferably inside a virtual environment:
+
+```bash
+cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
+python3 -m pip install --upgrade "pip>=26.3"
+python3 -m pip install --require-hashes -r requirements.txt
+```
+
+**Provide them yourself.** Put the wheel files into `.deps/wheels/` at the repository root and install from there without network access; the same hash check applies:
+
+```bash
+python3 -m pip install --no-index --require-hashes -r requirements.txt
+```
+
+Or install the packages with your system package manager and skip `requirements.txt`; the versions then come from your distribution and may differ from the tested ones.
 
 ---
 
@@ -32,16 +54,16 @@ Install the documented Python dependencies before running a script:
 
 ```bash
 cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
-python3 -m pip install -r requirements.txt
+python3 -m pip install --require-hashes -r requirements.txt
 ```
 
-`requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions (`gpiod`, `smbus2`, `spidev`, `pyserial`); update it there to change versions across all samples.
+`requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions and the SHA-256 hashes of their files (`gpiod`, `smbus2`, `spidev`, `pyserial`); update it there to change versions across all samples.
 
 The same file also points at the shared wheelhouse, `.deps/wheels/` at the repository root, which pip ignores while it is empty. To install without network access, fill it on the Jetson itself once — wheels are specific to platform and Python version:
 
 ```bash
-python3 -m pip download -r requirements.txt -d ../../../../.deps/wheels   # once, online
-python3 -m pip install --no-index -r requirements.txt                     # offline
+python3 -m pip download -r requirements.txt -d ../../../../.deps/wheels       # once, online
+python3 -m pip install --no-index --require-hashes -r requirements.txt   # offline
 ```
 
 ---
@@ -57,7 +79,7 @@ Run the script that matches the hardware interface you want to test. Each script
 | `uart_loopback.py`, `uart_p2p_jetson.py`, `uart_p2p_pc.py` | UART | pyserial |
 | `bmp280_i2c.py` | I2C | smbus2 |
 
-`uart_p2p_pc.py` is the PC side of the PING/PONG pair: run it on the PC connected to the Jetson UART0, not on the Jetson, while `uart_p2p_jetson.py` runs on the Jetson. The PC needs pyserial too (`python -m pip install -r requirements.txt` from this folder installs it there), and `PORT` at the top of the script (default `/dev/ttyUSB0`) must name the PC's serial adapter.
+`uart_p2p_pc.py` is the PC side of the PING/PONG pair: run it on the PC connected to the Jetson UART0, not on the Jetson, while `uart_p2p_jetson.py` runs on the Jetson. The PC needs pyserial too (`python -m pip install --require-hashes -r requirements.txt` from this folder installs it there), and `PORT` at the top of the script (default `/dev/ttyUSB0`) must name the PC's serial adapter.
 
 ```bash
 cd samples/xiapi-python/hardware-specific/gpio-samples-jetson

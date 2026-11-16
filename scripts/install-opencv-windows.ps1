@@ -1,46 +1,66 @@
 <#
 .SYNOPSIS
-    Installs a pinned OpenCV version on Windows with Chocolatey and configures
+    Installs a pinned, SHA-256-checked OpenCV release on Windows and configures
     OpenCV_DIR and PATH so that the OpenCV samples can be built and run.
 
 .DESCRIPTION
-    - Installs Chocolatey first when it is missing (official chocolatey.org method).
-    - Installs exactly the OpenCV version given by -OpenCvVersion. A different
-      installed version is upgraded or downgraded to it.
+    - Downloads the official OpenCV release installer
+      https://github.com/opencv/opencv/releases/download/<version>/opencv-<version>-windows.exe
+      into <repository>\.deps\downloads (shared with the CMake archive cache) and
+      accepts it only if its SHA256 equals -OpenCvSha256. A cached copy is reused
+      only when it matches as well. Nothing is run before the hash matches.
+    - Unpacks it (a 7-Zip self-extracting archive) into <InstallRoot>\opencv. An
+      OpenCV of another version found there is replaced by the pinned one.
     - Sets OpenCV_DIR to the OpenCV build tree and puts the OpenCV DLL folder on PATH.
       In GitHub Actions the values go to GITHUB_ENV and GITHUB_PATH; otherwise they
       are persisted for the chosen -Scope and set in the current session.
 
-    Run it from an elevated (Administrator) PowerShell:
+    No Chocolatey and, by default, no Administrator rights are needed:
         powershell -ExecutionPolicy Bypass -File scripts\install-opencv-windows.ps1
-    or from a normal one with -SelfElevate, which asks for Administrator rights
-    through UAC. CMake does that when configured with
-    -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON and OpenCV is missing.
+    Administrator rights are needed only for -Scope Machine or an -InstallRoot
+    the current user cannot write to; add -SelfElevate to have the script ask for
+    them through UAC in that case. CMake runs this script when configured with
+    -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON -DAPPLICATION_SAMPLES_DEPENDENCIES=download
+    and OpenCV is missing.
 
 .PARAMETER OpenCvVersion
-    Chocolatey 'opencv' package version. This default is the single place where
-    the Windows OpenCV version is pinned; CI uses this script as well.
+    OpenCV release to install. This default is the single place where the Windows
+    OpenCV version is pinned; CI uses this script as well. It must match the
+    OpenCV version of the opencv-python pin in dependencies/python-constraints.txt.
+
+.PARAMETER OpenCvSha256
+    SHA-256 of opencv-<OpenCvVersion>-windows.exe. OpenCV publishes no signature
+    or checksum file for it; this value was compared against the digest GitHub
+    reports for the release asset (API: repos/opencv/opencv/releases/tags/<version>)
+    and against a fresh download. Change it together with -OpenCvVersion.
 
 .PARAMETER Scope
     Where OpenCV_DIR and PATH are persisted: User (default) or Machine.
+    Machine needs Administrator rights.
 
 .PARAMETER InstallRoot
-    Folder the Chocolatey package unzips into. OpenCV lands in <InstallRoot>\opencv.
+    Folder the installer unpacks into. OpenCV lands in <InstallRoot>\opencv.
     cmake/CMakeLists.txt looks for OpenCV under the default C:\tools.
 
+.PARAMETER DownloadDir
+    Where the installer is cached. Default: <repository>\.deps\downloads.
+
 .PARAMETER SelfElevate
-    When not elevated, start this script again as Administrator (UAC prompt),
-    wait for it and show its output, instead of stopping with an error.
+    When Administrator rights are needed but missing, start this script again as
+    Administrator (UAC prompt), wait for it and show its output, instead of
+    stopping with an error. Has no effect when no elevation is needed.
 
 .PARAMETER TranscriptPath
     Internal: where the elevated copy started by -SelfElevate writes its output.
 #>
 [CmdletBinding()]
 param(
-    [string] $OpenCvVersion = '4.13.0',
+    [string] $OpenCvVersion = '4.14.0',
+    [string] $OpenCvSha256 = '5f266a8b73bed535962d7e861a6457e32a0dd5f463ad0a7cf8707a135469be63',
     [ValidateSet('User', 'Machine')]
     [string] $Scope = 'User',
     [string] $InstallRoot = 'C:\tools',
+    [string] $DownloadDir,
     [switch] $SelfElevate,
     [string] $TranscriptPath
 )
@@ -57,14 +77,6 @@ trap {
     break
 }
 
-function Invoke-Native {
-    param([string] $Description, [scriptblock] $Command)
-    & $Command
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Description failed with exit code $LASTEXITCODE."
-    }
-}
-
 function Test-PathListContains {
     param([string] $PathList, [string] $Directory)
     $wanted = $Directory.TrimEnd('\')
@@ -76,22 +88,80 @@ function Test-PathListContains {
     return $false
 }
 
-# 1. Elevation: Chocolatey installs into Program Data and needs Administrator rights.
+# Creates the folder if needed and reports whether the current user can write to it.
+function Test-DirectoryWritable {
+    param([string] $Directory)
+    try {
+        New-Item -ItemType Directory -Force -Path $Directory | Out-Null
+        $probe = Join-Path $Directory ".write-test-$PID"
+        [IO.File]::WriteAllText($probe, '')
+        Remove-Item -LiteralPath $probe
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+# OpenCV_VERSION from the OpenCV CMake package under $BuildDir, or $null.
+function Get-InstalledOpenCvVersion {
+    param([string] $BuildDir)
+    $versionFile = Join-Path $BuildDir 'OpenCVConfig-version.cmake'
+    if (-not (Test-Path -LiteralPath $versionFile)) { return $null }
+    foreach ($line in (Get-Content -LiteralPath $versionFile)) {
+        if ($line -match '^\s*set\(\s*OpenCV_VERSION\s+"?([0-9][0-9.]*)"?\s*\)') {
+            return $Matches[1]
+        }
+    }
+    return $null
+}
+
+function Get-Sha256 {
+    param([string] $Path)
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+if ($OpenCvSha256 -notmatch '^[0-9a-fA-F]{64}$') {
+    throw "-OpenCvSha256 must be the 64 hexadecimal digits of the installer's SHA-256 hash."
+}
+$OpenCvSha256 = $OpenCvSha256.ToLowerInvariant()
+if (-not $DownloadDir) {
+    $DownloadDir = Join-Path (Split-Path -Parent $PSScriptRoot) '.deps\downloads'
+}
+$DownloadDir = [IO.Path]::GetFullPath($DownloadDir)
+$InstallRoot = [IO.Path]::GetFullPath($InstallRoot)
+$installerName = "opencv-$OpenCvVersion-windows.exe"
+$installerUrl = "https://github.com/opencv/opencv/releases/download/$OpenCvVersion/$installerName"
+$openCvRoot = Join-Path $InstallRoot 'opencv'
+$openCvBuild = Join-Path $openCvRoot 'build'
+
+# 1. Elevation, only when it is actually required: a Machine-scope variable, or
+#    a folder the current user cannot write to. GitHub Actions takes the variables
+#    through GITHUB_ENV, so -Scope does not matter there.
+$elevationReasons = @()
+if ($Scope -eq 'Machine' -and -not $env:GITHUB_ENV) { $elevationReasons += '-Scope Machine' }
+if (-not (Test-DirectoryWritable $InstallRoot)) { $elevationReasons += "writing to $InstallRoot" }
+if (-not (Test-DirectoryWritable $DownloadDir)) { $elevationReasons += "writing to $DownloadDir" }
+
 $principal = New-Object Security.Principal.WindowsPrincipal(
     [Security.Principal.WindowsIdentity]::GetCurrent())
-if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+$isAdministrator = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if ($elevationReasons.Count -gt 0 -and -not $isAdministrator) {
+    $reason = $elevationReasons -join ' and '
     if (-not $SelfElevate) {
-        throw 'This script needs Administrator rights. Run PowerShell as Administrator and start it again, or add -SelfElevate.'
+        throw "$reason needs Administrator rights. Run PowerShell as Administrator and start the script again, add -SelfElevate, or choose -Scope User and an -InstallRoot you can write to."
     }
 
     # The elevated copy runs in its own window, so it writes a transcript that
-    # is shown here once it ends.
+    # is shown here once it ends. With a separate administrator account, User
+    # scope variables land in that account; hence elevation only when required.
     $log = Join-Path ([IO.Path]::GetTempPath()) "install-opencv-windows-$PID.log"
     $childArgs = @(
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"",
-        '-OpenCvVersion', $OpenCvVersion, '-Scope', $Scope,
-        '-InstallRoot', "`"$InstallRoot`"", '-TranscriptPath', "`"$log`"")
-    Write-Host 'Asking for Administrator rights to install OpenCV...'
+        '-OpenCvVersion', $OpenCvVersion, '-OpenCvSha256', $OpenCvSha256, '-Scope', $Scope,
+        '-InstallRoot', "`"$InstallRoot`"", '-DownloadDir', "`"$DownloadDir`"",
+        '-TranscriptPath', "`"$log`"")
+    Write-Host "Asking for Administrator rights ($reason)..."
     try {
         $child = Start-Process powershell -Verb RunAs -Wait -PassThru -ArgumentList $childArgs
     }
@@ -116,73 +186,93 @@ if ($TranscriptPath) {
     Start-Transcript -Path $TranscriptPath -Force | Out-Null
 }
 
-# 2. Chocolatey bootstrap (https://chocolatey.org/install).
-if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-    Write-Host 'Chocolatey not found; installing it.'
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    [Net.ServicePointManager]::SecurityProtocol =
-        [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-    Invoke-Expression ((New-Object Net.WebClient).DownloadString(
-        'https://community.chocolatey.org/install.ps1'))
-
-    if (-not $env:ChocolateyInstall) {
-        $env:ChocolateyInstall = [Environment]::GetEnvironmentVariable('ChocolateyInstall', 'Machine')
-    }
-    if (-not $env:ChocolateyInstall) {
-        $env:ChocolateyInstall = Join-Path $env:ProgramData 'chocolatey'
-    }
-    $env:Path = "$env:ChocolateyInstall\bin;$env:Path"
-    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-        throw "Chocolatey was installed but choco is not in $env:ChocolateyInstall\bin."
-    }
-}
-
-# Collect the whole output first: piping into Select-Object -First stops choco
-# early, and PowerShell 7 then leaves $LASTEXITCODE unset, which strict mode rejects.
-$chocoOutput = @(& choco --version)
-if ($LASTEXITCODE -ne 0) { throw "choco --version failed with exit code $LASTEXITCODE." }
-$chocoVersion = "$($chocoOutput | Select-Object -First 1)".Trim()
-if ([int]($chocoVersion -split '[.-]')[0] -lt 2) {
-    throw "Chocolatey $chocoVersion is too old; version 2 or newer is required. Run 'choco upgrade chocolatey -y'."
-}
-
-# 3. OpenCV at exactly the pinned version.
-$listed = & choco list opencv --exact --limit-output
-if ($LASTEXITCODE -ne 0) { throw "choco list failed with exit code $LASTEXITCODE." }
-$installedVersion = $null
-foreach ($line in @($listed)) {
-    $parts = "$line" -split '\|'
-    if ($parts.Count -ge 2 -and $parts[0] -ieq 'opencv') { $installedVersion = $parts[1].Trim() }
-}
-
-$packageParams = "/InstallationPath:$InstallRoot"
+# 2. Installed version: keep the pinned one, replace any other.
+$installedVersion = Get-InstalledOpenCvVersion $openCvBuild
+$needsInstall = $true
 if ($installedVersion -eq $OpenCvVersion) {
-    Write-Host "OpenCV $OpenCvVersion is already installed."
+    Write-Host "OpenCV $OpenCvVersion is already installed in $openCvRoot."
+    $needsInstall = $false
 }
 elseif ($installedVersion) {
-    Write-Warning "OpenCV $installedVersion is installed; changing it to the pinned version $OpenCvVersion."
-    Invoke-Native 'choco upgrade opencv' {
-        choco upgrade opencv --version $OpenCvVersion --allow-downgrade `
-            --params $packageParams --no-progress -y
-    }
+    Write-Warning "OpenCV $installedVersion is installed in $openCvRoot; replacing it with the pinned version $OpenCvVersion."
 }
-else {
-    Write-Host "Installing OpenCV $OpenCvVersion."
-    Invoke-Native 'choco install opencv' {
-        choco install opencv --version $OpenCvVersion --params $packageParams --no-progress -y
+elseif (Test-Path -LiteralPath $openCvRoot) {
+    # Not an OpenCV build tree this script can identify; do not delete it.
+    throw "$openCvRoot exists but holds no OpenCV CMake package (build\OpenCVConfig-version.cmake). Remove it, or choose another -InstallRoot."
+}
+
+# An earlier version of this script installed OpenCV through Chocolatey. Only
+# point that out; this script never runs choco.
+$chocolateyRoot = if ($env:ChocolateyInstall) { $env:ChocolateyInstall } else { Join-Path $env:ProgramData 'chocolatey' }
+if (Test-Path -LiteralPath (Join-Path $chocolateyRoot 'lib\opencv')) {
+    Write-Host "Note: a Chocolatey 'opencv' package is also registered. To remove it, run 'choco uninstall opencv' from an Administrator PowerShell."
+}
+
+if ($needsInstall) {
+    # 3. Installer: cached or downloaded, accepted only with the pinned SHA256.
+    $installer = Join-Path $DownloadDir $installerName
+    if (Test-Path -LiteralPath $installer) {
+        $cachedSha256 = Get-Sha256 $installer
+        if ($cachedSha256 -ne $OpenCvSha256) {
+            throw "The cached installer $installer has SHA256 $cachedSha256, but the script expects $OpenCvSha256. The file is damaged or was tampered with. Delete it to download it again."
+        }
+        Write-Host "Reusing verified cached $installerName."
+    }
+    else {
+        $partial = "$installer.partial"
+        Write-Host "Downloading $installerUrl"
+        [Net.ServicePointManager]::SecurityProtocol =
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        # The progress bar slows Invoke-WebRequest down many times in Windows PowerShell.
+        $savedProgress = $ProgressPreference
+        $ProgressPreference = 'SilentlyContinue'
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri $installerUrl -OutFile $partial
+        }
+        finally {
+            $ProgressPreference = $savedProgress
+        }
+        $downloadedSha256 = Get-Sha256 $partial
+        if ($downloadedSha256 -ne $OpenCvSha256) {
+            Remove-Item -LiteralPath $partial -ErrorAction SilentlyContinue
+            throw "The downloaded $installerName has SHA256 $downloadedSha256, but the script expects $OpenCvSha256. It was deleted and not run."
+        }
+        Move-Item -LiteralPath $partial -Destination $installer -Force
+        Write-Host "Downloaded and verified $installerName."
+    }
+
+    # 4. Unpack. The installer is a 7-Zip self-extracting archive: -o sets the
+    #    target folder, -y answers every prompt. It is a GUI program, so
+    #    Start-Process -Wait is needed to wait for it and read its exit code.
+    if ($installedVersion) {
+        Remove-Item -LiteralPath $openCvRoot -Recurse -Force
+    }
+    Write-Host "Unpacking OpenCV $OpenCvVersion into $openCvRoot."
+    $extract = Start-Process -FilePath $installer -ArgumentList "-o`"$InstallRoot`"", '-y' -Wait -PassThru
+    if ($extract.ExitCode -ne 0) {
+        # $openCvRoot did not exist before this step (see step 2), so the
+        # partial tree is this script's own and can go.
+        Remove-Item -LiteralPath $openCvRoot -Recurse -Force -ErrorAction SilentlyContinue
+        throw "Unpacking $installerName into $InstallRoot failed with exit code $($extract.ExitCode). The archive holds paths of about 155 characters below <InstallRoot>, so a long -InstallRoot exceeds the Windows 260-character path limit; choose a short one such as C:\tools."
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $openCvBuild 'OpenCVConfig.cmake'))) {
+        throw "Unpacking finished, but $openCvBuild\OpenCVConfig.cmake is missing."
+    }
+    $unpackedVersion = Get-InstalledOpenCvVersion $openCvBuild
+    if ($unpackedVersion -ne $OpenCvVersion) {
+        throw "The unpacked OpenCV reports version '$unpackedVersion', expected $OpenCvVersion."
     }
 }
 
-# 4. OpenCV build tree and the newest Visual C++ DLL folder in it.
-$openCvBuild = Join-Path $InstallRoot 'opencv\build'
+# 5. Newest Visual C++ DLL folder in the build tree.
 $openCvBin = Get-ChildItem (Join-Path $openCvBuild 'x64\vc*\bin') -Directory -ErrorAction SilentlyContinue |
     Sort-Object Name -Descending | Select-Object -First 1
 if (-not $openCvBin) {
-    throw "OpenCV binaries not found under $openCvBuild\x64. Was OpenCV installed into a different folder?"
+    throw "OpenCV binaries not found under $openCvBuild\x64."
 }
 $openCvBinDir = $openCvBin.FullName
 
-# 5. Environment.
+# 6. Environment.
 if ($env:GITHUB_ENV) {
     "OpenCV_DIR=$openCvBuild" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
     $openCvBinDir | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
@@ -224,9 +314,11 @@ else {
     Write-Host 'Restart open terminals and IDEs so that they see the new OpenCV_DIR and PATH.'
 }
 
-# 6. Summary.
+# 7. Summary.
 Write-Host ''
 Write-Host "OpenCV version : $OpenCvVersion"
+Write-Host "Installer      : $installerUrl"
+Write-Host "SHA256         : $OpenCvSha256"
 Write-Host "OpenCV_DIR     : $openCvBuild"
 Write-Host "OpenCV bin     : $openCvBinDir"
 

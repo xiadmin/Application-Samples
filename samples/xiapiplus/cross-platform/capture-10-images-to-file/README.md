@@ -21,8 +21,31 @@ Captures 10 images and saves them as TIFF files using libtiff.
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, fetched and built at configure time) |
-| Network | Required only until `.deps/downloads/` at the repository root holds the libtiff archive; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
+| Network | With `download`, required only until `.deps/downloads/` at the repository root holds the libtiff archive; later builds reuse the cached archive. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
+
+---
+
+## Third-party libraries
+
+This sample uses **libtiff**. Nothing is downloaded until you choose how to provide it; a configure without a choice stops and explains both options.
+
+| Choice | What happens | Configure with |
+|--------|--------------|----------------|
+| `download` | CMake downloads the archive named in `dependencies/Dependencies.cmake` into `.deps/downloads/` and builds it with the sample. The archive, new or cached, is used only if its SHA-256 matches the hash recorded there. | `cmake -B .cmake-tmp -DAPPLICATION_SAMPLES_DEPENDENCIES=download` |
+| `system` | CMake uses a copy you installed yourself (`sudo apt install libtiff-dev`, `brew install libtiff`, or `vcpkg install tiff`) through `find_package(TIFF)`; nothing is downloaded. Point `CMAKE_PREFIX_PATH` at an install outside the default locations. | `cmake -B .cmake-tmp -DAPPLICATION_SAMPLES_DEPENDENCIES=system` |
+
+On Windows, add `-A x64` as in the build commands below.
+
+To answer once for every C/C++ and C# sample, set the environment variable instead; the commands below then work unchanged:
+
+```bash
+export APPLICATION_SAMPLES_DEPENDENCIES=download   # Linux/macOS; or system
+```
+
+```powershell
+$env:APPLICATION_SAMPLES_DEPENDENCIES = "download"   # Windows PowerShell; or "system"
+```
 
 ---
 

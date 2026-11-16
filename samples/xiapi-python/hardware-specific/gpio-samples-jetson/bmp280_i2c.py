@@ -7,7 +7,18 @@ smbus2 is used for I2C communication. Abort the program with Ctrl+C.
 import sys
 import time
 
-from smbus2 import SMBus
+try:
+    from smbus2 import SMBus
+except ImportError:
+    print(
+        "Error: smbus2 is not installed. This sample installs nothing itself;\n"
+        "choose how to provide it. Download the hash-checked version\n"
+        "(pip 26.3 or newer):\n"
+        "  python3 -m pip install --require-hashes -r requirements.txt\n"
+        "or install it yourself; see \"Third-party libraries\" in README.md.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 # Device i2c-7 is mapped to I2C1 on Orin NX GPIO header pins 27 (SCL) and 28 (SDA).
 I2C_BUS = "/dev/i2c-7"

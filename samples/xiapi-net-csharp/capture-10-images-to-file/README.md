@@ -21,9 +21,32 @@ Captures 10 images and saves them as TIFF files using LibTiff.NET.
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | .NET SDK | 8.0 or newer |
 | Libraries | BitMiracle.LibTiff.NET (version pinned in `dependencies/Directory.Packages.props`) |
-| Network | Required for the first NuGet restore into `.deps/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. |
+| Network | With `download`, required for the first NuGet restore into `.deps/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
+
+---
+
+## Third-party libraries
+
+This sample uses the NuGet package(s) **BitMiracle.LibTiff.NET**. Nothing is restored until you choose how to provide them; a build without a choice stops and explains both options.
+
+| Choice | What happens | Build with |
+|--------|--------------|------------|
+| `download` | NuGet restores the packages from nuget.org. | `dotnet build Capture10ImagesToFileCsharp.csproj -c Release --output .dotnet-tmp -p:ApplicationSamplesDependencies=download` |
+| `system` | NuGet restores only from `.deps\nuget\` at the repository root, where you put the `.nupkg` files yourself, at the versions in `dependencies\Directory.Packages.props`; nothing is downloaded. | `dotnet build Capture10ImagesToFileCsharp.csproj -c Release --output .dotnet-tmp -p:ApplicationSamplesDependencies=system` |
+
+Either way, a package is used only if it carries nuget.org's repository signature (see `nuget.config`) and matches the content hash in this sample's `packages.lock.json`.
+
+To answer once for every C/C++ and C# sample, set the environment variable instead; the commands below then work unchanged:
+
+```bash
+export APPLICATION_SAMPLES_DEPENDENCIES=download   # Linux/macOS; or system
+```
+
+```powershell
+$env:APPLICATION_SAMPLES_DEPENDENCIES = "download"   # Windows PowerShell; or "system"
+```
 
 ---
 
@@ -36,7 +59,7 @@ dotnet build Capture10ImagesToFileCsharp.csproj -c Release --output .dotnet-tmp
 
 The binary lands in `.dotnet-tmp\` inside the sample folder.
 
-NuGet packages restore into `.deps\nuget-packages\` at the repository root, shared by every C# sample, from the sources listed in `nuget.config`. Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`.
+NuGet packages restore into `.deps\nuget-packages\` at the repository root, shared by every C# sample, from nuget.org with `download`, or only from `.deps\nuget\` with `system`; see [Third-party libraries](#third-party-libraries). Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`.
 
 ---
 

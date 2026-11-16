@@ -57,7 +57,11 @@ def main() -> int:
             from PIL import Image
         except ImportError:
             print(
-                "Error: pillow is not installed. Run: pip install -r requirements.txt",
+                "Error: pillow is not installed. This sample installs nothing itself;\n"
+                "choose how to provide it. Download the hash-checked version\n"
+                "(pip 26.3 or newer):\n"
+                "  python -m pip install --require-hashes -r requirements.txt\n"
+                "or install it yourself; see \"Third-party libraries\" in README.md.",
                 file=sys.stderr,
             )
             return 1

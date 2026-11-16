@@ -7,10 +7,22 @@ Libgpiod documentation:
 https://libgpiod.readthedocs.io/en/latest/python_api.html
 """
 
+import sys
 import time
 
-import gpiod
-from gpiod.line import Direction
+try:
+    import gpiod
+    from gpiod.line import Direction
+except ImportError:
+    print(
+        "Error: gpiod is not installed. This sample installs nothing itself;\n"
+        "choose how to provide it. Download the hash-checked version\n"
+        "(pip 26.3 or newer):\n"
+        "  python3 -m pip install --require-hashes -r requirements.txt\n"
+        "or install it yourself; see \"Third-party libraries\" in README.md.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 # Outer button, GPIO10/PEE.02 on Orin NX: gpiochip1 line offset 25.
 DEVICE = "/dev/gpiochip1"
