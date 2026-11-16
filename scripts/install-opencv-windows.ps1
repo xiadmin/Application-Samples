@@ -118,7 +118,24 @@ function Get-InstalledOpenCvVersion {
 
 function Get-Sha256 {
     param([string] $Path)
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    # Not Get-FileHash: in Windows PowerShell 5.1 it lives in a script module
+    # that is auto-loaded through PSModulePath. Started from PowerShell 7 (for
+    # example by CMake inside a pwsh CI step), powershell.exe inherits pwsh's
+    # PSModulePath, finds the PowerShell 7 copy of that module, and
+    # Get-FileHash is "not recognized". The .NET class works in every host.
+    $fullPath = (Resolve-Path -LiteralPath $Path).ProviderPath
+    $stream = [System.IO.File]::OpenRead($fullPath)
+    try {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $hash = $sha256.ComputeHash($stream)
+        } finally {
+            $sha256.Dispose()
+        }
+    } finally {
+        $stream.Dispose()
+    }
+    return ([System.BitConverter]::ToString($hash) -replace '-', '').ToLowerInvariant()
 }
 
 if ($OpenCvSha256 -notmatch '^[0-9a-fA-F]{64}$') {
