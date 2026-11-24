@@ -1,0 +1,90 @@
+<!-- Dependency handling for every C# sample. The root Directory.Build.props
+     imports this file; MSBuild finds only that one by walking up from a
+     project, so the logic lives here with the other dependency files. -->
+<Project>
+  <PropertyGroup>
+    <!-- Point MSBuild's automatic Central Package Management import at the
+         central list. Without this the file is only found next to a project or
+         above it, and an explicit <Import> in a sample does not enable CPM. -->
+    <DirectoryPackagesPropsPath>$(MSBuildThisFileDirectory)Directory.Packages.props</DirectoryPackagesPropsPath>
+
+    <!-- How NuGet packages reach a sample. Nothing is downloaded unless the
+         user sets the environment variable AUTOMATICALLY_DOWNLOAD_DEPENDENCIES
+         to 1, ON, TRUE or YES (MSBuild sees environment variables as
+         properties; the same variable governs the C/C++ and Python samples):
+           not set  restore only from dependencies/local/nuget, a folder of
+                    .nupkg files the user provides, used as they are (no
+                    signature or lock-file check); stop and explain both ways
+                    if it is missing
+           set      restore from nuget.org into dependencies/cache/nuget-packages;
+                    a package must carry nuget.org's signature and match the
+                    hashes in packages.lock.json -->
+    <_ApplicationSamplesDownloadValue>$([System.String]::Copy('$(AUTOMATICALLY_DOWNLOAD_DEPENDENCIES)').Trim().ToLowerInvariant())</_ApplicationSamplesDownloadValue>
+    <_ApplicationSamplesShouldDownload>false</_ApplicationSamplesShouldDownload>
+    <_ApplicationSamplesShouldDownload Condition="'$(_ApplicationSamplesDownloadValue)' == '1' Or '$(_ApplicationSamplesDownloadValue)' == 'on' Or '$(_ApplicationSamplesDownloadValue)' == 'true' Or '$(_ApplicationSamplesDownloadValue)' == 'yes'">true</_ApplicationSamplesShouldDownload>
+    <ApplicationSamplesLocalPackages>$(MSBuildThisFileDirectory)local/nuget</ApplicationSamplesLocalPackages>
+  </PropertyGroup>
+
+  <!-- Downloads are checked. The NuGet config files live in this folder, not
+       on the path from a project up to the repository root, so NuGet would
+       not find them by itself. -->
+  <PropertyGroup Condition="'$(_ApplicationSamplesShouldDownload)' == 'true'">
+    <!-- nuget.org only, its repository signature required. -->
+    <RestoreConfigFile>$(MSBuildThisFileDirectory)nuget.config</RestoreConfigFile>
+
+    <!-- packages.lock.json beside each project records the content hash of
+         every package, direct and transitive. Locked mode makes restore fail
+         when a package or the lock file does not match, either way. After
+         changing a version in dependencies/Directory.Packages.props, update
+         the lock files with:
+           AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1 dotnet restore -p:RestoreLockedMode=false -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(RestoreLockedMode)' == ''">true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <!-- The user's own packages are used as they are: no signature check (see
+       nuget-local.config) and no check against packages.lock.json, so a
+       package built or obtained elsewhere still restores. NuGet refuses to
+       switch lock files off while one exists (NU1005), so restore looks for
+       one in obj/ instead, where there is none; the committed one is neither
+       read nor rewritten. -->
+  <PropertyGroup Condition="'$(_ApplicationSamplesShouldDownload)' != 'true'">
+    <RestoreConfigFile>$(MSBuildThisFileDirectory)nuget-local.config</RestoreConfigFile>
+    <RestoreSources>$(ApplicationSamplesLocalPackages)</RestoreSources>
+    <NuGetLockFilePath>$(MSBuildProjectDirectory)/obj/packages.local.lock.json</NuGetLockFilePath>
+    <RestoreLockedMode>false</RestoreLockedMode>
+    <!-- Any version of the user's own package is accepted (see the target
+         below); NU1603 would only report that it differs from the pin. -->
+    <NoWarn>$(NoWarn);NU1603</NoWarn>
+  </PropertyGroup>
+
+  <!-- Only automatic downloads must use the versions pinned in
+       Directory.Packages.props. For the user's own packages the pins become
+       lower bounds of 0.0.0, so NuGet takes whatever version is in
+       dependencies/local/nuget (the lowest one, if there are several). -->
+  <Target Name="ApplicationSamplesAnyLocalVersion"
+          BeforeTargets="CollectCentralPackageVersions"
+          Condition="'$(_ApplicationSamplesShouldDownload)' != 'true'">
+    <ItemGroup>
+      <PackageVersion Version="0.0.0" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Runs before the restore that dotnet build starts on its own. Projects
+       without a PackageReference need nothing. -->
+  <Target Name="ApplicationSamplesDependencyChoice"
+          BeforeTargets="_GenerateRestoreGraph;Restore;Build">
+    <ItemGroup>
+      <_ApplicationSamplesPackage Include="@(PackageReference)"
+                                  Condition="'%(PackageReference.IsImplicitlyDefined)' != 'true'" />
+      <!-- The folder is kept in git (empty), so check for packages, not the folder. -->
+      <_ApplicationSamplesLocalPackage Include="$(ApplicationSamplesLocalPackages)/*.nupkg" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_ApplicationSamplesPackageList>@(_ApplicationSamplesPackage->'%(Identity)', ', ')</_ApplicationSamplesPackageList>
+    </PropertyGroup>
+
+    <Error Condition="'$(_ApplicationSamplesPackageList)' != '' And '$(_ApplicationSamplesShouldDownload)' != 'true' And '@(_ApplicationSamplesLocalPackage)' == ''"
+           Text="This sample needs the NuGet package(s) $(_ApplicationSamplesPackageList), and nothing is downloaded unless you ask for it. Either: (1) provide them yourself: put their .nupkg files, at any version, into $(ApplicationSamplesLocalPackages) and build again (they are used as they are); or (2) let the build download them: set the environment variable AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1 (bash: export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1; PowerShell: $env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1') and build again. They are then restored from nuget.org and accepted only if they carry nuget.org's signature and match the hashes in packages.lock.json." />
+  </Target>
+</Project>

@@ -1,52 +1,13 @@
 <Project>
+  <!-- MSBuild finds this file by walking up from each C# sample. -->
+  <Import Project="$(MSBuildThisFileDirectory)dependencies/Dependencies.props" />
+
+  <!-- A sample can be built two ways: plain dotnet build (output in bin/ and
+       obj/) and samples_cli.py (output in build/). Each leaves generated .cs
+       files behind, so keep all three folders out of the compile globs, or a
+       build after the other one compiles AssemblyInfo.cs twice. This file is
+       imported before the SDK adds its own excludes, which it appends. -->
   <PropertyGroup>
-    <!-- Point MSBuild's automatic Central Package Management import at the
-         central list. Without this the file is only found next to a project or
-         above it, and an explicit <Import> in a sample does not enable CPM. -->
-    <DirectoryPackagesPropsPath>$(MSBuildThisFileDirectory)dependencies/Directory.Packages.props</DirectoryPackagesPropsPath>
-
-    <!-- How NuGet packages reach a sample; the user chooses, nothing is
-         restored before they do:
-           download  restore from nuget.org (see nuget.config)
-           system    restore only from .deps/nuget, a folder of .nupkg files
-                     the user provides; nothing is downloaded
-         -p:ApplicationSamplesDependencies=... wins over the environment
-         variable APPLICATION_SAMPLES_DEPENDENCIES, which also answers the
-         question for the C/C++ samples. -->
-    <ApplicationSamplesDependencies Condition="'$(ApplicationSamplesDependencies)' == ''">$(APPLICATION_SAMPLES_DEPENDENCIES)</ApplicationSamplesDependencies>
-    <ApplicationSamplesDependencies>$(ApplicationSamplesDependencies.ToLowerInvariant())</ApplicationSamplesDependencies>
-    <ApplicationSamplesLocalPackages>$(MSBuildThisFileDirectory).deps/nuget</ApplicationSamplesLocalPackages>
-
-    <!-- packages.lock.json beside each project records the content hash of
-         every package, direct and transitive. Locked mode makes restore fail
-         when a package or the lock file does not match, either way. After
-         changing a version in dependencies/Directory.Packages.props, update
-         the lock files with: dotnet restore -p:RestoreLockedMode=false -->
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode Condition="'$(RestoreLockedMode)' == ''">true</RestoreLockedMode>
+    <DefaultItemExcludes>$(DefaultItemExcludes);build/**;bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(ApplicationSamplesDependencies)' == 'system'">
-    <RestoreSources>$(ApplicationSamplesLocalPackages)</RestoreSources>
-  </PropertyGroup>
-
-  <!-- Runs before the restore that dotnet build starts on its own. Projects
-       without a PackageReference need no choice. -->
-  <Target Name="ApplicationSamplesDependencyChoice"
-          BeforeTargets="_GenerateRestoreGraph;Restore;Build">
-    <ItemGroup>
-      <_ApplicationSamplesPackage Include="@(PackageReference)"
-                                  Condition="'%(PackageReference.IsImplicitlyDefined)' != 'true'" />
-    </ItemGroup>
-    <PropertyGroup>
-      <_ApplicationSamplesPackageList>@(_ApplicationSamplesPackage->'%(Identity)', ', ')</_ApplicationSamplesPackageList>
-    </PropertyGroup>
-
-    <Error Condition="'$(_ApplicationSamplesPackageList)' != '' And '$(ApplicationSamplesDependencies)' == ''"
-           Text="This sample needs the NuGet package(s) $(_ApplicationSamplesPackageList). Choose how to provide them, then build again. download: restore them from nuget.org, accepted only if they match the hashes in packages.lock.json: dotnet build -p:ApplicationSamplesDependencies=download. system: restore only from .nupkg files you put in $(ApplicationSamplesLocalPackages), at the versions in dependencies/Directory.Packages.props; nothing is downloaded: dotnet build -p:ApplicationSamplesDependencies=system. Setting the environment variable APPLICATION_SAMPLES_DEPENDENCIES to download or system answers this once for every sample." />
-    <Error Condition="'$(_ApplicationSamplesPackageList)' != '' And '$(ApplicationSamplesDependencies)' != '' And '$(ApplicationSamplesDependencies)' != 'download' And '$(ApplicationSamplesDependencies)' != 'system'"
-           Text="ApplicationSamplesDependencies is '$(ApplicationSamplesDependencies)'; use download or system." />
-    <Error Condition="'$(_ApplicationSamplesPackageList)' != '' And '$(ApplicationSamplesDependencies)' == 'system' And !Exists('$(ApplicationSamplesLocalPackages)')"
-           Text="ApplicationSamplesDependencies is system, but $(ApplicationSamplesLocalPackages) does not exist. Put the .nupkg files of $(_ApplicationSamplesPackageList), at the versions in dependencies/Directory.Packages.props, into that folder, or build with -p:ApplicationSamplesDependencies=download." />
-  </Target>
 </Project>

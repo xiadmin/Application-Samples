@@ -9,25 +9,23 @@ include(FetchContent)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL
     "Skip network update checks for already-downloaded FetchContent dependencies")
 
-# How external libraries reach a sample. The user chooses; nothing is fetched
-# until they do:
-#   download  fetch the archive named in dependencies/Dependencies.cmake, check
-#             it against the SHA256 recorded there, and build it with the sample
-#   system    use a copy the user installed (apt, Homebrew, vcpkg, ...) through
-#             find_package(); nothing is downloaded
-# The cache entry (-DAPPLICATION_SAMPLES_DEPENDENCIES=...) wins over the
-# environment variable of the same name, which also answers the question for
-# the C# samples. Left empty here so that an environment variable set after the
-# first configure still takes effect.
-set(APPLICATION_SAMPLES_DEPENDENCIES "" CACHE STRING
-    "How to provide external libraries: download (verified by SHA256) or system")
-set_property(CACHE APPLICATION_SAMPLES_DEPENDENCIES PROPERTY STRINGS download system)
+# How external libraries reach a sample. Nothing is fetched from the internet
+# unless the user sets the environment variable AUTOMATICALLY_DOWNLOAD_DEPENDENCIES
+# to 1, ON, TRUE or YES (the same variable governs the C# and Python samples):
+#   not set  use a copy the user installed (apt, Homebrew, vcpkg, ...,
+#            or their own build under dependencies/local/cmake/<library>)
+#            through find_package(); if there is none, stop and explain both ways
+#   set      fetch the archive named in dependencies/Dependencies.cmake, check
+#            it against the SHA256 recorded there, and build it with the sample
+# It is read on every configure, not cached, so setting or clearing it later
+# takes effect without a fresh build tree.
 
 # Archive cache shared by every sample build tree, so a library is downloaded
-# once per machine instead of once per sample. Each archive, cached or fresh,
-# must match the SHA256 recorded for it in the central list.
+# once per machine instead of once per sample. Archives land in
+# <cache>/downloads; each one, cached or fresh, must match the SHA256 recorded
+# for it in the central list.
 get_filename_component(_application_samples_cache_default
-    "${CMAKE_CURRENT_LIST_DIR}/../.deps" ABSOLUTE)
+    "${CMAKE_CURRENT_LIST_DIR}/../dependencies/cache" ABSOLUTE)
 set(APPLICATION_SAMPLES_CACHE_DIR "${_application_samples_cache_default}" CACHE PATH
     "Shared directory holding downloaded dependency archives")
 unset(_application_samples_cache_default)
@@ -67,60 +65,57 @@ function(application_samples_dependency)
     endif()
     string(TOLOWER "${ARG_SHA256}" ARG_SHA256)
 
-    get_property(_known GLOBAL PROPERTY APPLICATION_SAMPLES_DEPENDENCIES)
+    get_property(_known GLOBAL PROPERTY APPLICATION_SAMPLES_DEPENDENCY_NAMES)
     if("${ARG_NAME}" IN_LIST _known)
         message(FATAL_ERROR
             "application_samples_dependency(${ARG_NAME}): declared twice. One "
             "library must have exactly one central version.")
     endif()
 
-    set_property(GLOBAL APPEND PROPERTY APPLICATION_SAMPLES_DEPENDENCIES "${ARG_NAME}")
+    set_property(GLOBAL APPEND PROPERTY APPLICATION_SAMPLES_DEPENDENCY_NAMES "${ARG_NAME}")
     foreach(field IN ITEMS URL SHA256 TARGET PACKAGE SYSTEM_TARGET OPTIONS)
         set_property(GLOBAL PROPERTY
             APPLICATION_SAMPLES_DEPENDENCY_${ARG_NAME}_${field} "${ARG_${field}}")
     endforeach()
 endfunction()
 
-# Returns the user's download/system choice in out_var, or stops with an
-# explanation of both choices when there is none. The library is named so the
-# user knows what they are agreeing to download. An optional fourth argument
-# names the file holding the pinned SHA256 (default: the central list).
-function(_application_samples_dependency_mode out_var name url)
-    set(_hash_file "dependencies/Dependencies.cmake")
-    if(ARGC GREATER 3)
-        set(_hash_file "${ARGV3}")
+# Sets out_var to TRUE when the user consented to downloads by setting the
+# environment variable AUTOMATICALLY_DOWNLOAD_DEPENDENCIES to 1, ON, TRUE or YES
+# (any case), else FALSE.
+function(_application_samples_should_download out_var)
+    string(TOUPPER "$ENV{AUTOMATICALLY_DOWNLOAD_DEPENDENCIES}" _value)
+    string(STRIP "${_value}" _value)
+    if(_value MATCHES "^(1|ON|TRUE|YES)$")
+        set(${out_var} TRUE PARENT_SCOPE)
+    else()
+        set(${out_var} FALSE PARENT_SCOPE)
     endif()
-    set(_mode "${APPLICATION_SAMPLES_DEPENDENCIES}")
-    if(_mode STREQUAL "")
-        set(_mode "$ENV{APPLICATION_SAMPLES_DEPENDENCIES}")
-    endif()
-    string(TOLOWER "${_mode}" _mode)
-
-    if(_mode STREQUAL "")
-        message(FATAL_ERROR
-            "This sample needs the external library '${name}'. Choose how to "
-            "provide it, then configure again:\n"
-            "  download  fetch ${url}\n"
-            "            and accept it only if it matches the SHA256 in "
-            "${_hash_file}:\n"
-            "              cmake -DAPPLICATION_SAMPLES_DEPENDENCIES=download ...\n"
-            "  system    use a copy you installed yourself (apt, Homebrew, "
-            "vcpkg, ...); nothing is downloaded:\n"
-            "              cmake -DAPPLICATION_SAMPLES_DEPENDENCIES=system ...\n"
-            "Setting the environment variable APPLICATION_SAMPLES_DEPENDENCIES "
-            "to download or system answers this once for every sample.")
-    endif()
-    if(NOT _mode MATCHES "^(download|system)$")
-        message(FATAL_ERROR
-            "APPLICATION_SAMPLES_DEPENDENCIES is '${_mode}'; use download or system.")
-    endif()
-    set(${out_var} "${_mode}" PARENT_SCOPE)
 endfunction()
 
-# Makes a recorded dependency's TARGET available, either from the verified
-# download or from an installed copy, as the user chose.
+# Returns in out_var the text that explains both ways to provide a missing
+# library: install it, or let the build download the pinned archive. The
+# library is named so the user knows what they would agree to download.
+function(_application_samples_missing_text out_var name url hash_file install_hint)
+    string(CONCAT _text
+        "This sample needs the external library '${name}', and no installed "
+        "copy was found. Nothing is downloaded unless you ask for it. Either:\n"
+        "  1. Install it yourself, ${install_hint}, then configure again.\n"
+        "     A copy installed into dependencies/local/cmake/${name} (for example\n"
+        "     cmake --install <its build> --prefix dependencies/local/cmake/${name})\n"
+        "     is found there with no extra options.\n"
+        "  2. Let the build download it: set the environment variable\n"
+        "     AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1 and configure again. It fetches\n"
+        "       ${url}\n"
+        "     and accepts it only if it matches the SHA256 pinned in ${hash_file}.\n"
+        "       bash:       export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1\n"
+        "       PowerShell: $env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'\n")
+    set(${out_var} "${_text}" PARENT_SCOPE)
+endfunction()
+
+# Makes a recorded dependency's TARGET available: from an installed copy, or,
+# when AUTOMATICALLY_DOWNLOAD_DEPENDENCIES is set, from the verified download.
 function(application_samples_use name)
-    get_property(_known GLOBAL PROPERTY APPLICATION_SAMPLES_DEPENDENCIES)
+    get_property(_known GLOBAL PROPERTY APPLICATION_SAMPLES_DEPENDENCY_NAMES)
     if(NOT "${name}" IN_LIST _known)
         message(FATAL_ERROR
             "application_samples_use(${name}): no such central dependency. "
@@ -136,20 +131,18 @@ function(application_samples_use name)
         return()
     endif()
 
-    _application_samples_dependency_mode(_mode "${name}" "${_URL}")
+    _application_samples_should_download(_should_download)
 
-    if(_mode STREQUAL "system")
+    if(NOT _should_download)
         message(STATUS
-            "application_samples_use(${name}): system, find_package(${_PACKAGE})")
+            "application_samples_use(${name}): find_package(${_PACKAGE}); "
+            "AUTOMATICALLY_DOWNLOAD_DEPENDENCIES is not set, nothing is downloaded")
         find_package(${_PACKAGE})
         if(NOT TARGET ${_TARGET} AND NOT TARGET ${_SYSTEM_TARGET})
-            message(FATAL_ERROR
-                "application_samples_use(${name}): APPLICATION_SAMPLES_DEPENDENCIES "
-                "is system, but find_package(${_PACKAGE}) found no installed "
-                "copy. Install it (for example libtiff-dev on Debian/Ubuntu, "
-                "'brew install libtiff', or 'vcpkg install tiff') and point "
-                "CMAKE_PREFIX_PATH at it, or configure with "
-                "-DAPPLICATION_SAMPLES_DEPENDENCIES=download.")
+            _application_samples_missing_text(_text "${name}" "${_URL}"
+                "dependencies/Dependencies.cmake"
+                "for example with apt, Homebrew or vcpkg, and point CMAKE_PREFIX_PATH at it if find_package(${_PACKAGE}) cannot find it")
+            message(FATAL_ERROR "${_text}")
         endif()
         # A package config can define the library's own target; a Find module
         # defines SYSTEM_TARGET instead. Samples link TARGET either way. An
@@ -229,6 +222,25 @@ function(application_samples_use name)
             "not defined. Correct TARGET in dependencies/Dependencies.cmake.")
     endif()
 endfunction()
+
+# Libraries the user built or unpacked themselves under
+# dependencies/local/cmake/<library> are found by find_package() without any
+# -D option: the folder and each subfolder join CMAKE_PREFIX_PATH.
+get_filename_component(_application_samples_local_cmake
+    "${CMAKE_CURRENT_LIST_DIR}/../dependencies/local/cmake" ABSOLUTE)
+if(IS_DIRECTORY "${_application_samples_local_cmake}")
+    file(GLOB _application_samples_local_prefixes LIST_DIRECTORIES true
+        "${_application_samples_local_cmake}/*")
+    foreach(_prefix IN ITEMS "${_application_samples_local_cmake}"
+                             ${_application_samples_local_prefixes})
+        if(IS_DIRECTORY "${_prefix}" AND NOT "${_prefix}" IN_LIST CMAKE_PREFIX_PATH)
+            list(APPEND CMAKE_PREFIX_PATH "${_prefix}")
+        endif()
+    endforeach()
+    unset(_prefix)
+    unset(_application_samples_local_prefixes)
+endif()
+unset(_application_samples_local_cmake)
 
 # The central library list. It calls application_samples_dependency() above,
 # so it is included after these functions exist.
@@ -590,19 +602,15 @@ function(ximea_find_gentl)
     endif()
 endfunction()
 
-# Windows only: scripts/install-opencv-windows.ps1 downloads the pinned,
-# SHA-256-checked OpenCV release installer and unpacks it. With this option ON,
-# a configure that finds no OpenCV runs it; that needs
-# APPLICATION_SAMPLES_DEPENDENCIES=download. OFF by default, as it downloads and
-# installs software.
-option(APPLICATION_SAMPLES_INSTALL_OPENCV
-    "On Windows, download the pinned, SHA-256-checked OpenCV with scripts/install-opencv-windows.ps1 when it is missing; needs APPLICATION_SAMPLES_DEPENDENCIES=download"
-    OFF)
+# Windows only: dependencies/install-opencv-windows.ps1 downloads the pinned,
+# SHA-256-checked OpenCV release installer and unpacks it. A configure that
+# finds no OpenCV runs it only when AUTOMATICALLY_DOWNLOAD_DEPENDENCIES is set,
+# as it downloads and installs software.
 set(APPLICATION_SAMPLES_OPENCV_INSTALL_ROOT "C:/tools" CACHE PATH
-    "Windows: folder scripts/install-opencv-windows.ps1 unpacks OpenCV into (keep it short; the archive is deep)")
+    "Windows: folder dependencies/install-opencv-windows.ps1 unpacks OpenCV into (keep it short; the archive is deep)")
 mark_as_advanced(APPLICATION_SAMPLES_OPENCV_INSTALL_ROOT)
 get_filename_component(_APPLICATION_SAMPLES_OPENCV_INSTALLER
-    "${CMAKE_CURRENT_LIST_DIR}/../scripts/install-opencv-windows.ps1" ABSOLUTE)
+    "${CMAKE_CURRENT_LIST_DIR}/../dependencies/install-opencv-windows.ps1" ABSOLUTE)
 # Where that script puts the OpenCV CMake package, so OpenCV is found right
 # after the install, before a new terminal picks up OpenCV_DIR.
 set(_APPLICATION_SAMPLES_OPENCV_WINDOWS_DIR
@@ -637,25 +645,13 @@ macro(_application_samples_find_opencv)
         find_package(OpenCV QUIET COMPONENTS ${ARGN})
     endif()
 
-    if(WIN32 AND NOT OpenCV_FOUND AND APPLICATION_SAMPLES_INSTALL_OPENCV)
+    _application_samples_should_download(_application_samples_opencv_download)
+    if(WIN32 AND NOT OpenCV_FOUND AND _application_samples_opencv_download)
         if(_APPLICATION_SAMPLES_OPENCV_VERSION STREQUAL ""
            OR _APPLICATION_SAMPLES_OPENCV_SHA256 STREQUAL "")
             message(FATAL_ERROR
                 "Could not read the OpenCvVersion and OpenCvSha256 defaults from "
                 "${_APPLICATION_SAMPLES_OPENCV_INSTALLER}.")
-        endif()
-        # The install downloads OpenCV, so it is subject to the same choice as
-        # every other external library.
-        _application_samples_dependency_mode(_application_samples_opencv_mode
-            "OpenCV ${_APPLICATION_SAMPLES_OPENCV_VERSION}"
-            "${_APPLICATION_SAMPLES_OPENCV_URL}"
-            "scripts/install-opencv-windows.ps1")
-        if(_application_samples_opencv_mode STREQUAL "system")
-            message(FATAL_ERROR
-                "APPLICATION_SAMPLES_INSTALL_OPENCV=ON asks to download OpenCV, but "
-                "APPLICATION_SAMPLES_DEPENDENCIES is system. Install OpenCV and set "
-                "OpenCV_DIR to its build folder (the one holding OpenCVConfig.cmake), "
-                "or choose download.")
         endif()
 
         message(STATUS
@@ -677,13 +673,13 @@ macro(_application_samples_find_opencv)
                 -SelfElevate
             RESULT_VARIABLE _application_samples_opencv_install_result)
         if(NOT _application_samples_opencv_install_result EQUAL 0)
-            # The user asked for the install; a hash mismatch or failed unpack
+            # The user consented to the install; a hash mismatch or failed unpack
             # must stop the configure, not turn into a skipped sample.
             message(FATAL_ERROR
                 "Installing OpenCV failed (${_application_samples_opencv_install_result}); "
-                "see the output above. Run scripts/install-opencv-windows.ps1 "
-                "directly to retry, or configure with "
-                "-DAPPLICATION_SAMPLES_INSTALL_OPENCV=OFF.")
+                "see the output above. Run dependencies/install-opencv-windows.ps1 "
+                "directly to retry, or unset AUTOMATICALLY_DOWNLOAD_DEPENDENCIES "
+                "and install OpenCV yourself.")
         endif()
         # find_package cached OpenCV_DIR as NOTFOUND; point it at the install.
         set(OpenCV_DIR "${_APPLICATION_SAMPLES_OPENCV_WINDOWS_DIR}" CACHE PATH
@@ -730,9 +726,12 @@ function(ximea_find_opencv_wrapper)
             "${PROJECT_NAME}. Install OpenCV 4 (core, imgproc, highgui, videoio) "
             "and point OpenCV_DIR at its CMake package, or install it with the "
             "system package manager (libopencv-dev on Debian/Ubuntu). On Windows, "
-            "run scripts/install-opencv-windows.ps1 (pinned, SHA-256-checked "
-            "release) or configure with -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON "
-            "-DAPPLICATION_SAMPLES_DEPENDENCIES=download. "
+            "either run dependencies/install-opencv-windows.ps1 yourself, or set the "
+            "environment variable AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1 and "
+            "configure again to let the build run it; both download the pinned "
+            "OpenCV ${_APPLICATION_SAMPLES_OPENCV_VERSION} installer from "
+            "${_APPLICATION_SAMPLES_OPENCV_URL} and accept it only if it matches "
+            "the SHA256 pinned in that script. "
             "xiApiPlusOcv.hpp is expected at "
             "<XIMEA_SP_PATH>/Examples/Sources/_libs/xiAPIplusOpenCV on Windows or "
             "/opt/XIMEA/samples/_libs/xiAPIplusOpenCV on Linux.")

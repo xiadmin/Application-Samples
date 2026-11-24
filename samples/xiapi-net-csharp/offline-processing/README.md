@@ -21,7 +21,7 @@ Captures 10 RAW8 images, converts them to RGB24 with xiAPI offline processing af
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | .NET SDK | 8.0 or newer |
 | Libraries | BitMiracle.LibTiff.NET (version pinned in `dependencies/Directory.Packages.props`) |
-| Network | With `download`, required for the first NuGet restore into `.deps/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. |
+| Network | With `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` set, required for the first NuGet restore into `dependencies/cache/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. Not set, no network is used. |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
 
@@ -29,23 +29,21 @@ Captures 10 RAW8 images, converts them to RGB24 with xiAPI offline processing af
 
 ## Third-party libraries
 
-This sample uses the NuGet package(s) **BitMiracle.LibTiff.NET**. Nothing is restored until you choose how to provide them; a build without a choice stops and explains both options.
+This sample uses the NuGet package(s) **BitMiracle.LibTiff.NET**. Nothing is downloaded unless you ask for it; a build that cannot find them stops and explains both ways.
 
-| Choice | What happens | Build with |
-|--------|--------------|------------|
-| `download` | NuGet restores the packages from nuget.org. | `dotnet build OfflineProcessingCsharp.csproj -c Release --output .dotnet-tmp -p:ApplicationSamplesDependencies=download` |
-| `system` | NuGet restores only from `.deps\nuget\` at the repository root, where you put the `.nupkg` files yourself, at the versions in `dependencies\Directory.Packages.props`; nothing is downloaded. | `dotnet build OfflineProcessingCsharp.csproj -c Release --output .dotnet-tmp -p:ApplicationSamplesDependencies=system` |
+| `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` | What happens |
+|---|---|
+| not set (default) | NuGet restores only from `dependencies\local\nuget\` at the repository root, where you put the `.nupkg` files yourself, at any version; nothing is downloaded. Your packages are used as they are, without a signature or lock-file check. |
+| `1` | NuGet restores the packages from nuget.org into `dependencies\cache\nuget-packages\`, shared by every C# sample, at the versions in `dependencies\Directory.Packages.props`. A package is used only if it carries nuget.org's repository signature (see `dependencies\nuget.config`) and matches the content hash in this sample's `packages.lock.json`. |
 
-Either way, a package is used only if it carries nuget.org's repository signature (see `nuget.config`) and matches the content hash in this sample's `packages.lock.json`.
-
-To answer once for every C/C++ and C# sample, set the environment variable instead; the commands below then work unchanged:
+To let this and every other sample download what it needs, set `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` to `1` (`ON`, `TRUE` and `YES` work too) before you build or run; the commands below then work unchanged. Unset it to go back to your own copies.
 
 ```bash
-export APPLICATION_SAMPLES_DEPENDENCIES=download   # Linux/macOS; or system
+export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1   # Linux/macOS
 ```
 
 ```powershell
-$env:APPLICATION_SAMPLES_DEPENDENCIES = "download"   # Windows PowerShell; or "system"
+$env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'   # Windows PowerShell
 ```
 
 ---
@@ -59,7 +57,7 @@ dotnet build OfflineProcessingCsharp.csproj -c Release --output .dotnet-tmp
 
 The binary lands in `.dotnet-tmp\` inside the sample folder.
 
-NuGet packages restore into `.deps\nuget-packages\` at the repository root, shared by every C# sample, from nuget.org with `download`, or only from `.deps\nuget\` with `system`; see [Third-party libraries](#third-party-libraries). Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`.
+NuGet packages restore into `dependencies\cache\nuget-packages\` at the repository root, shared by every C# sample: from nuget.org when `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` is set, otherwise only from `dependencies\local\nuget\`, where you put the `.nupkg` files yourself; see [Third-party libraries](#third-party-libraries). Package versions come from `dependencies\Directory.Packages.props`, so a `PackageReference` in this project carries no `Version`.
 
 ---
 

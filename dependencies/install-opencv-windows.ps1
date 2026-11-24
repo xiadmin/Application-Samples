@@ -6,7 +6,7 @@
 .DESCRIPTION
     - Downloads the official OpenCV release installer
       https://github.com/opencv/opencv/releases/download/<version>/opencv-<version>-windows.exe
-      into <repository>\.deps\downloads (shared with the CMake archive cache) and
+      into <repository>\dependencies\cache\downloads (shared with the CMake archive cache) and
       accepts it only if its SHA256 equals -OpenCvSha256. A cached copy is reused
       only when it matches as well. Nothing is run before the hash matches.
     - Unpacks it (a 7-Zip self-extracting archive) into <InstallRoot>\opencv. An
@@ -16,12 +16,12 @@
       are persisted for the chosen -Scope and set in the current session.
 
     No Chocolatey and, by default, no Administrator rights are needed:
-        powershell -ExecutionPolicy Bypass -File scripts\install-opencv-windows.ps1
+        powershell -ExecutionPolicy Bypass -File dependencies\install-opencv-windows.ps1
     Administrator rights are needed only for -Scope Machine or an -InstallRoot
     the current user cannot write to; add -SelfElevate to have the script ask for
-    them through UAC in that case. CMake runs this script when configured with
-    -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON -DAPPLICATION_SAMPLES_DEPENDENCIES=download
-    and OpenCV is missing.
+    them through UAC in that case. CMake runs this script only when OpenCV is
+    missing and the environment variable AUTOMATICALLY_DOWNLOAD_DEPENDENCIES is
+    set to 1, ON, TRUE or YES.
 
 .PARAMETER OpenCvVersion
     OpenCV release to install. This default is the single place where the Windows
@@ -43,7 +43,7 @@
     cmake/CMakeLists.txt looks for OpenCV under the default C:\tools.
 
 .PARAMETER DownloadDir
-    Where the installer is cached. Default: <repository>\.deps\downloads.
+    Where the installer is cached. Default: <repository>\dependencies\cache\downloads.
 
 .PARAMETER SelfElevate
     When Administrator rights are needed but missing, start this script again as
@@ -143,7 +143,7 @@ if ($OpenCvSha256 -notmatch '^[0-9a-fA-F]{64}$') {
 }
 $OpenCvSha256 = $OpenCvSha256.ToLowerInvariant()
 if (-not $DownloadDir) {
-    $DownloadDir = Join-Path (Split-Path -Parent $PSScriptRoot) '.deps\downloads'
+    $DownloadDir = Join-Path $PSScriptRoot 'cache\downloads'
 }
 $DownloadDir = [IO.Path]::GetFullPath($DownloadDir)
 $InstallRoot = [IO.Path]::GetFullPath($InstallRoot)

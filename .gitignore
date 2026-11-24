@@ -1,7 +1,24 @@
 # Build output
 /build/
 
-# Downloaded dependencies
+# Per-sample build output written by samples_cli.py, for samples/<api>/<sample>
+# and samples/<api>/<group>/<sample>. Spelled out rather than /samples/**/build/
+# because git before 1.8.2 does not understand ** in ignore patterns.
+/samples/*/*/build/
+/samples/*/*/*/build/
+
+# Dependencies: what builds download, and the copies a user provides
+# themselves (dependencies/README.md says what goes where). Only the empty
+# local/cmake, local/nuget and local/wheels folders are kept, by a .gitkeep.
+/dependencies/cache/
+/dependencies/local/*
+!/dependencies/local/cmake/
+!/dependencies/local/nuget/
+!/dependencies/local/wheels/
+/dependencies/local/*/*
+!/dependencies/local/*/.gitkeep
+
+# Former dependency folder, kept ignored so a leftover copy stays out of git status
 .deps/
 
 # Temporary CMake build directories

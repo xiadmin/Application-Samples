@@ -1,273 +1,107 @@
 # Application-Samples
 
-Code samples for XIMEA cameras, showing how to control your camera using the XIMEA APIs. Each sample is self-contained and includes its own README.md file with detailed instructions.
+Code samples for XIMEA cameras. Every sample is self-contained and can be used independently.
 
 ---
 
-## Prerequisites
+## Quick start
 
-- [XIMEA Software Package (SP) 4.33](https://www.ximea.com/software-downloads).
-- Python 3.11 or newer for Python samples.
-- CMake 3.16 or newer plus a C/C++ compiler for xiAPI C/C++ samples.
-- OpenCV 4 for the `*-opencv` xiAPIplus samples.
-- The NVIDIA CUDA Toolkit and an NVIDIA GPU for the `*-cuda` sample.
-- An OpenCL SDK at build time and an OpenCL runtime (part of the GPU driver) for the `*-opencl` sample.
-- harvesters and genicam, installed with pip from the sample's `requirements.txt`, for the GenTL Python sample.
-- The SP examples, which include MultiRecorder and its sources, for the `multirecorder/` samples.
-- OpenCV and Pillow, installed with pip from each sample's `requirements.txt`, for the `*-opencv` and `*-pillow` Python samples.
-- .NET SDK 8.0 or newer for xiAPI.NET samples (C# and VB.NET).
+1. Install the latest [XIMEA Software Package](https://www.ximea.com/software-downloads).
+2. Connect a camera.
+3. Pick a sample from [Available samples](#available-samples) and follow its README.
 
-### Optional: OpenCV (Windows)
+### Interactive sample browser
 
-The `*-opencv` C++ samples skip themselves when OpenCV is not found. On Windows,
-`scripts/install-opencv-windows.ps1` downloads the official OpenCV release
-installer (`opencv-<version>-windows.exe` from
-[github.com/opencv/opencv/releases](https://github.com/opencv/opencv/releases))
-at the version pinned in the script, and runs it only if its SHA-256 matches the
-hash pinned next to the version. The installer is cached in `.deps/downloads/`;
-a cached copy is checked the same way. No Chocolatey and no Administrator rights
-are needed by default.
-OpenCV goes to `C:\tools\opencv`; the script sets `OpenCV_DIR` and adds the OpenCV
-DLL folder to the user `PATH` (`-Scope Machine` for all users, which needs
-Administrator rights). Either:
+To find, build and run samples from one terminal window, run this from the repository root (Python 3.11 or newer, no packages needed):
 
-- run it from PowerShell in the repository root:
-
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File scripts\install-opencv-windows.ps1
-  ```
-
-- or let CMake run it when a sample's configure finds no OpenCV. This downloads
-  OpenCV, so it also needs the `download` choice (see
-  [Third-party libraries](#third-party-libraries-your-choice-checked-by-hash)):
-
-  ```powershell
-  cmake -S samples\xiapiplus\cross-platform\capture-50-images-and-display-opencv -B build -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON -DAPPLICATION_SAMPLES_DEPENDENCIES=download
-  ```
-
-To use an OpenCV you unpacked yourself instead, pass its build folder:
-`-DOpenCV_DIR=C:/opencv/build`. Restart open terminals and IDEs after running the
-script so that they see the new `PATH`.
-On Linux use `apt install libopencv-dev`, on macOS `brew install opencv`, and on
-Jetson the OpenCV that comes with JetPack.
-
----
-
-## Repository layout
-
-```text
-samples/
-  xiapi/                    # C samples using xiAPI, plus xiAPI-based hardware-specific samples
-  xiapiplus/                # C++ samples using xiAPIplus
-  gentl/                    # C++ and Python samples using GenTL, alone or alongside xiAPI
-  multirecorder/            # MultiRecorder recording setups and camera server/client samples
-  xiapi-net-csharp/         # C# samples using xiAPI.NET
-  xiapi-net-vb/             # VB.NET samples using xiAPI.NET
-  xiapi-python/             # Python samples using xiAPI Python bindings
-cmake/                      # shared sample CMake support files
-dependencies/
-  Dependencies.cmake       # central C/C++ library list
-  Directory.Packages.props # central NuGet package version control
-  python-constraints.txt   # pinned Python package versions
-scripts/                    # user setup helpers (OpenCV on Windows)
-Directory.Build.props       # points MSBuild at the central NuGet version list
-nuget.config                # NuGet package store and sources
-.deps/                      # shared download cache, not committed
+```bash
+python samples_cli.py
 ```
 
-CI, build orchestration, and the dependency policy tests run in a separate XIMEA
-repository. You do not need it to build or run the samples.
+Type to filter the list, move with the arrow keys and press Enter to **Build**, **Run** or **Open in explorer**. Build output goes to a `build/` folder inside each sample, with the full build log in `build/build.log`. **Run** builds the sample first when it has changed since the last build. Dependencies are downloaded only when `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` is set (see [Third-party libraries](#third-party-libraries)).
 
-Each sample has a README.md explaining what it does and how to use it.
+---
+
+## Requirements
+
+| Language | You need |
+|----------|----------|
+| C / C++ | CMake 3.16 or newer and a C/C++ compiler |
+| C# / VB.NET | .NET SDK 8.0 or newer |
+| Python | Python 3.11 or newer |
+
+Some samples also need OpenCV, CUDA, OpenCL or an NVIDIA Jetson board; their READMEs list what they need.
+
+---
+
+## Third-party libraries
+
+Some samples use an external library (libtiff, LibTiff.NET, OpenCV, numpy, ...). Nothing is downloaded from the internet unless you ask for it. By default a sample uses a copy you installed yourself; if there is none, its build (or the Python sample itself) stops and explains both ways to provide it.
+
+To let every sample download what it needs, set the environment variable `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` to `1`. Each download is still accepted only if it matches the hash pinned in `dependencies/` (for OpenCV on Windows, in `dependencies/install-opencv-windows.ps1`); Python samples then run `pip install --require-hashes -r requirements.txt` themselves.
+
+Everything dependency-related lives in [`dependencies/`](dependencies/README.md): the pinned versions, the NuGet settings, the files builds download (`dependencies/cache/`) and the copies you provide yourself (`dependencies/local/`: `cmake/<library>/` for a C/C++ library you built, `nuget/` for `.nupkg` files, `wheels/` for Python wheels).
+
+```bash
+export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1   # Linux/macOS
+```
+
+```powershell
+$env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'   # Windows PowerShell
+```
 
 ---
 
 ## Available samples
 
-| Sample | API / Language | What it shows |
-|--------|-----------------|---------------|
-| [xiapi/cross-platform/capture-10-images](samples/xiapi/cross-platform/capture-10-images/) | XiAPI (C) | Capture 10 frames and print basic frame information |
-| [xiapi/cross-platform/capture-10-images-to-file](samples/xiapi/cross-platform/capture-10-images-to-file/) | XiAPI (C) | Capture 10 stabilized frames and save them as TIFF files |
-| [xiapi/cross-platform/capture-10-images-to-ram](samples/xiapi/cross-platform/capture-10-images-to-ram/) | XiAPI (C) | Capture 10 frames into application-owned RAM and access them after closing the camera |
-| [xiapi/cross-platform/error-handling](samples/xiapi/cross-platform/error-handling/) | XiAPI (C) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
-| [xiapi/cross-platform/capture-10-images-to-dng](samples/xiapi/cross-platform/capture-10-images-to-dng/) | XiAPI (C) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
-| [xiapi/cross-platform/offline-processing](samples/xiapi/cross-platform/offline-processing/) | XiAPI (C) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
-| [xiapiplus/cross-platform/capture-10-images](samples/xiapiplus/cross-platform/capture-10-images/) | xiAPIplus (C++) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [xiapiplus/cross-platform/capture-10-images-to-file](samples/xiapiplus/cross-platform/capture-10-images-to-file/) | xiAPIplus (C++) | Capture 10 stabilized frames and save them as TIFF files |
-| [xiapiplus/cross-platform/capture-10-images-to-ram](samples/xiapiplus/cross-platform/capture-10-images-to-ram/) | xiAPIplus (C++) | Capture 10 frames into application-owned RAM and access them after closing the camera |
-| [xiapiplus/cross-platform/error-handling](samples/xiapiplus/cross-platform/error-handling/) | xiAPIplus (C++) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
-| [xiapiplus/cross-platform/capture-10-images-to-dng](samples/xiapiplus/cross-platform/capture-10-images-to-dng/) | xiAPIplus (C++) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
-| [xiapiplus/cross-platform/offline-processing](samples/xiapiplus/cross-platform/offline-processing/) | xiAPIplus (C++) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
-| [xiapiplus/cross-platform/capture-25-images-in-parallel](samples/xiapiplus/cross-platform/capture-25-images-in-parallel/) | xiAPIplus (C++) | Open several cameras in parallel, trigger the slaves from the master's GPO1, capture bursts on per-camera threads |
-| [xiapiplus/cross-platform/capture-50-images-and-display-opencv](samples/xiapiplus/cross-platform/capture-50-images-and-display-opencv/) | xiAPIplus + OpenCV (C++) | Capture 50 frames as `cv::Mat` and show them in an OpenCV window |
-| [xiapiplus/cross-platform/capture-50-images-to-video-file-opencv](samples/xiapiplus/cross-platform/capture-50-images-to-video-file-opencv/) | xiAPIplus + OpenCV (C++) | Capture 50 grayscale frames, show them and record them to a Motion JPEG AVI file |
-| [gentl/cross-platform/capture-10-images-to-file](samples/gentl/cross-platform/capture-10-images-to-file/) | GenTL (C++) | Load the GenTL producer (.cti) at run time, capture 10 frames through pure GenTL and save them as TIFF files |
-| [gentl/cross-platform/capture-50-images-zero-copy](samples/gentl/cross-platform/capture-50-images-zero-copy/) | GenTL (C++) | Configure the camera with xiAPI, capture 50 frames through its GenTL data stream into application-allocated buffers |
-| [gentl/cross-platform/capture-10-concatenated-images-to-file](samples/gentl/cross-platform/capture-10-concatenated-images-to-file/) | GenTL (C++) | Capture buffers of 5 concatenated images, split them and save every image as a TIFF file |
-| [gentl/cross-platform/capture-10-images-python](samples/gentl/cross-platform/capture-10-images-python/) | GenTL (Python) | Load the GenTL producer with harvesters, set exposure and pixel format, capture 10 frames |
-| [xiapiplus/cross-platform/compute-histogram-cuda](samples/xiapiplus/cross-platform/compute-histogram-cuda/) | xiAPIplus + CUDA (C++) | Deliver frames to CPU, managed, zero-copy or GPU memory and compute a 64-bin histogram on the GPU |
-| [xiapiplus/cross-platform/demosaic-images-opencl](samples/xiapiplus/cross-platform/demosaic-images-opencl/) | xiAPIplus + OpenCL (C++) | Demosaic RAW8 Bayer frames on the GPU with OpenCL and save them as RGB TIFF files |
-| [multirecorder/cross-platform/averaging-camera-server](samples/multirecorder/cross-platform/averaging-camera-server/) | xiAPI + MultiRecorder (C++) | Camera server that averages every N frames on the camera computer before sending them |
-| [multirecorder/cross-platform/averaging-camera-client](samples/multirecorder/cross-platform/averaging-camera-client/) | xiAPI + MultiRecorder (C++) | Connect to the averaging server, set N and print statistics of the averaged images |
-| [multirecorder/cross-platform/record-10-images](samples/multirecorder/cross-platform/record-10-images/) | MultiRecorder (XML) | Record 10 frames and export them as RGB TIFF files |
-| [multirecorder/cross-platform/record-with-camera-settings-file](samples/multirecorder/cross-platform/record-with-camera-settings-file/) | MultiRecorder (XML) | Apply an xiCamTool `.xicamera` settings file before recording |
-| [multirecorder/cross-platform/record-from-multiple-cameras](samples/multirecorder/cross-platform/record-from-multiple-cameras/) | MultiRecorder (XML) | Record from three cameras with their own settings, storages and export formats |
-| [multirecorder/cross-platform/record-through-local-server](samples/multirecorder/cross-platform/record-through-local-server/) | MultiRecorder (XML) | Record through a camera server process on the same computer |
-| [multirecorder/cross-platform/record-through-remote-server](samples/multirecorder/cross-platform/record-through-remote-server/) | MultiRecorder (XML) | Record from a camera connected to another computer that runs a camera server |
-| [multirecorder/cross-platform/export-recorded-session](samples/multirecorder/cross-platform/export-recorded-session/) | MultiRecorder (XML) | Save a recording session and export it to TIFF files in a later step |
-| [multirecorder/cross-platform/record-concatenated-images](samples/multirecorder/cross-platform/record-concatenated-images/) | MultiRecorder (XML) | Record buffers of 2 concatenated images from a PCIe xiX or xiB camera |
-| [xiapi-net-csharp/capture-10-images](samples/xiapi-net-csharp/capture-10-images/) | XiAPI.NET (C#) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [xiapi-net-csharp/capture-10-images-to-file](samples/xiapi-net-csharp/capture-10-images-to-file/) | XiAPI.NET (C#) | Capture 10 stabilized frames and save them as TIFF files |
-| [xiapi-net-csharp/capture-10-images-to-ram](samples/xiapi-net-csharp/capture-10-images-to-ram/) | XiAPI.NET (C#) | Capture 10 frames into application-owned RAM and access them after closing the camera |
-| [xiapi-net-csharp/error-handling](samples/xiapi-net-csharp/error-handling/) | XiAPI.NET (C#) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
-| [xiapi-net-csharp/capture-10-images-to-dng](samples/xiapi-net-csharp/capture-10-images-to-dng/) | XiAPI.NET (C#) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
-| [xiapi-net-csharp/offline-processing](samples/xiapi-net-csharp/offline-processing/) | XiAPI.NET (C#) | Capture RAW8 frames, close the camera, then convert them with xiAPI offline processing and save as TIFF |
-| [xiapi-net-csharp/display-images-in-window](samples/xiapi-net-csharp/display-images-in-window/) | XiAPI.NET (C#) | Live preview in a Windows Forms window with an exposure slider |
-| [xiapi-net-vb/capture-100-images-to-file](samples/xiapi-net-vb/capture-100-images-to-file/) | XiAPI.NET (VB.NET) | Capture 100 grayscale frames and save them as JPEG files with WPF |
-| [xiapi-python/cross-platform/capture-10-images](samples/xiapi-python/cross-platform/capture-10-images/) | XiApiPython (Python) | Basic xiAPI acquisition: open camera, set exposure, grab 10 frames |
-| [xiapi-python/cross-platform/capture-10-images-to-file](samples/xiapi-python/cross-platform/capture-10-images-to-file/) | XiApiPython (Python) | Capture 10 stabilized frames and save them as TIFF files |
-| [xiapi-python/cross-platform/capture-10-images-to-ram](samples/xiapi-python/cross-platform/capture-10-images-to-ram/) | XiApiPython (Python) | Capture 10 frames into application-owned RAM and access them after closing the camera |
-| [xiapi-python/cross-platform/error-handling](samples/xiapi-python/cross-platform/error-handling/) | XiApiPython (Python) | Detect `XI_INVALID_HANDLE`, and recover from an `XI_TIMEOUT` |
-| [xiapi-python/cross-platform/capture-10-images-to-dng](samples/xiapi-python/cross-platform/capture-10-images-to-dng/) | XiApiPython (Python) | Capture 10 raw frames and save them as DNG files with the SP's DNG Store library |
-| [xiapi-python/cross-platform/capture-from-two-cameras](samples/xiapi-python/cross-platform/capture-from-two-cameras/) | XiApiPython (Python) | Open two cameras, split the interface bandwidth between them and capture one frame from each |
-| [xiapi-python/cross-platform/display-image-opencv](samples/xiapi-python/cross-platform/display-image-opencv/) | XiApiPython (Python) | Capture one MONO8, RGB24 or MONO16 frame and show it in an OpenCV window |
-| [xiapi-python/cross-platform/display-video-opencv](samples/xiapi-python/cross-platform/display-video-opencv/) | XiApiPython (Python) | Live MONO8 or RGB24 video in an OpenCV window with an elapsed-time overlay |
-| [xiapi-python/cross-platform/display-image-pillow](samples/xiapi-python/cross-platform/display-image-pillow/) | XiApiPython (Python) | Capture one MONO8, RGB24 or RGB32 frame and open it with Pillow in the system image viewer |
-| [xiapi-python/cross-platform/save-image-pillow](samples/xiapi-python/cross-platform/save-image-pillow/) | XiApiPython (Python) | Capture one frame and save it with Pillow in the format given by the file extension |
-| [xiapi-python/cross-platform/ffs-parameter-preset](samples/xiapi-python/cross-platform/ffs-parameter-preset/) | XiApiPython (Python) | Save `name=value` parameters into the camera FFS file `User1` and apply them on any PC |
-| [xiapi/hardware-specific/jetson-demosaic-sample](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | XiAPI (C++/CUDA) | GPU demosaicing on Nvidia Jetson, bypassing xiAPI CPU processing |
-| [xiapi-python/hardware-specific/gpio-samples-jetson](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | XiApiPython (Python) | GPIO, I2C, SPI and UART samples for the Jetson kit |
-
-xiFAPI has no samples of its own. It is not a separate SDK: it is built into xiAPI (`xiapi64` / `libm3api`) and exports the same `xi*` functions, and its offline `xiProc` processing is shown by the `offline-processing` samples.
-
-LabVIEW examples are not part of this repository. They ship with the XIMEA Software Package when its optional "NI Labview interface - xiLib" component is installed, under `VisionLibraries\xiLib\xiLIB_64bit\APP_REQUIREMENTS\Examples` (or `xiLIB_32bit`) in the SP installation folder.
+<!-- samples-list:start -->
+| Sample | API | Language | What it shows |
+|--------|-----|----------|---------------|
+| **capture-10-images** | xiAPI | [C](samples/xiapi/cross-platform/capture-10-images/) · [C++](samples/xiapiplus/cross-platform/capture-10-images/) · [C#](samples/xiapi-net-csharp/capture-10-images/) · [Python](samples/xiapi-python/cross-platform/capture-10-images/) | Captures 10 images. |
+| **capture-10-images-to-dng** | xiAPI | [C](samples/xiapi/cross-platform/capture-10-images-to-dng/) · [C++](samples/xiapiplus/cross-platform/capture-10-images-to-dng/) · [C#](samples/xiapi-net-csharp/capture-10-images-to-dng/) · [Python](samples/xiapi-python/cross-platform/capture-10-images-to-dng/) | Captures 10 raw images and saves them as DNG files using the XIMEA DNG Store library. |
+| **capture-10-images-to-file** | xiAPI | [C](samples/xiapi/cross-platform/capture-10-images-to-file/) · [C++](samples/xiapiplus/cross-platform/capture-10-images-to-file/) · [C#](samples/xiapi-net-csharp/capture-10-images-to-file/) · [Python](samples/xiapi-python/cross-platform/capture-10-images-to-file/) | Captures 10 images and saves them to file. |
+| **capture-10-images-to-ram** | xiAPI | [C](samples/xiapi/cross-platform/capture-10-images-to-ram/) · [C++](samples/xiapiplus/cross-platform/capture-10-images-to-ram/) · [C#](samples/xiapi-net-csharp/capture-10-images-to-ram/) · [Python](samples/xiapi-python/cross-platform/capture-10-images-to-ram/) | Captures 10 images into RAM. |
+| **error-handling** | xiAPI | [C](samples/xiapi/cross-platform/error-handling/) · [C++](samples/xiapiplus/cross-platform/error-handling/) · [C#](samples/xiapi-net-csharp/error-handling/) · [Python](samples/xiapi-python/cross-platform/error-handling/) | Shows how to detect and recover from an xiAPI error such as XI_TIMEOUT. |
+| **offline-processing** | xiAPI | [C](samples/xiapi/cross-platform/offline-processing/) · [C++](samples/xiapiplus/cross-platform/offline-processing/) · [C#](samples/xiapi-net-csharp/offline-processing/) | Captures 10 RAW8 images, converts them to RGB24 with xiAPI offline processing after acquisition, and saves them as TIFF files. |
+| **capture-25-images-in-parallel** | xiAPIplus | [C++](samples/xiapiplus/cross-platform/capture-25-images-in-parallel/) | Opens all connected cameras in parallel, triggers a master camera by software and the slaves through its GPO1 exposure pulse, and captures 5 bursts of 5 frames per camera on per-camera acquisition threads with a shared worker pool. |
+| **capture-50-images-and-display-opencv** | xiAPIplus | [C++](samples/xiapiplus/cross-platform/capture-50-images-and-display-opencv/) | Captures 50 images and displays them using OpenCV. |
+| **capture-50-images-to-video-file-opencv** | xiAPIplus | [C++](samples/xiapiplus/cross-platform/capture-50-images-to-video-file-opencv/) | Captures 50 images and writes them to a video file using OpenCV. |
+| **compute-histogram-cuda** | xiAPIplus | [C++](samples/xiapiplus/cross-platform/compute-histogram-cuda/) | Delivers 8-bit frames to CPU, CUDA managed, mapped host or GPU memory with XI_PRM_TRANSPORT_DATA_TARGET, computes a 64-bin histogram of each frame with a CUDA kernel and prints it with the processing time and throughput. |
+| **demosaic-images-opencl** | xiAPIplus | [C++](samples/xiapiplus/cross-platform/demosaic-images-opencl/) | Captures RAW8 Bayer frames from a color camera, demosaics them with a Malvar-He-Cutler OpenCL kernel on the GPU, saves them as RGB TIFF files and prints the kernel and transfer times. |
+| **capture-10-concatenated-images-to-file** | GenTL | [C++](samples/gentl/cross-platform/capture-10-concatenated-images-to-file/) | Captures 10 images, concatenates them and saves the result to a file. |
+| **capture-10-images-python** | GenTL | [Python](samples/gentl/cross-platform/capture-10-images-python/) | Loads the XIMEA GenTL producer with the harvesters GenTL consumer, sets the exposure and pixel format through the GenICam node map, captures 10 images and prints the size, timestamp and first pixels of each one. |
+| **capture-10-images-to-file** | GenTL | [C++](samples/gentl/cross-platform/capture-10-images-to-file/) | Loads the XIMEA GenTL producer (`.cti`) at run time, opens the first camera through the GenTL module hierarchy, captures 10 images into application buffers and saves them as TIFF files. |
+| **capture-50-images-zero-copy** | GenTL | [C++](samples/gentl/cross-platform/capture-50-images-zero-copy/) | Captures 50 images using a GenTL-based interface. |
+| **averaging-camera-client** | xiAPI + MultiRecorder | [C++](samples/multirecorder/cross-platform/averaging-camera-client/) | MultiRecorder sample/application with camera-side processing. |
+| **averaging-camera-server** | xiAPI + MultiRecorder | [C++](samples/multirecorder/cross-platform/averaging-camera-server/) | MultiRecorder sample/application with camera-side processing. |
+| **export-recorded-session** | MultiRecorder | [XML](samples/multirecorder/cross-platform/export-recorded-session/) | Records 10 images into a saved recording session, then exports the session to TIFF files in a second MultiRecorder run. |
+| **record-10-images** | MultiRecorder | [XML](samples/multirecorder/cross-platform/record-10-images/) | Records 10 images from the first connected camera with a 200 ms exposure and fixed white balance, then exports them as RGB TIFF files. |
+| **record-concatenated-images** | MultiRecorder | [XML](samples/multirecorder/cross-platform/record-concatenated-images/) | Records 10 images in buffers of 2 concatenated images each and exports them as RGB TIFF files. |
+| **record-from-multiple-cameras** | MultiRecorder | [XML](samples/multirecorder/cross-platform/record-from-multiple-cameras/) | Records 10 images from each of three cameras connected to this computer, with different settings, storages and export formats per camera. |
+| **record-through-local-server** | MultiRecorder | [XML](samples/multirecorder/cross-platform/record-through-local-server/) | Starts a MultiRecorder camera server on this computer, records 10 images from its camera through the server, then stops the server. |
+| **record-through-remote-server** | MultiRecorder | [XML](samples/multirecorder/cross-platform/record-through-remote-server/) | Records 10 images from a camera connected to another computer, which runs a MultiRecorder camera server. |
+| **record-with-camera-settings-file** | MultiRecorder | [XML](samples/multirecorder/cross-platform/record-with-camera-settings-file/) | Applies camera settings saved by xiCamTool from `camera-settings.xicamera`, overrides the exposure, records 10 images and exports them as RGB TIFF files. |
+| **display-images-in-window** | xiAPI.NET | [C#](samples/xiapi-net-csharp/display-images-in-window/) | Displays captured images in a window. |
+| **capture-100-images-to-file** | xiAPI.NET | [VB.NET](samples/xiapi-net-vb/capture-100-images-to-file/) | Captures 100 images and saves them to file. |
+| **capture-from-two-cameras** | xiAPI Python | [Python](samples/xiapi-python/cross-platform/capture-from-two-cameras/) | This code captures images simultaneously from two Ximea cameras and prints their first 10 pixel values. |
+| **display-image-opencv** | xiAPI Python | [Python](samples/xiapi-python/cross-platform/display-image-opencv/) | Captures one MONO8, RGB24 or MONO16 image and shows it in an OpenCV window scaled to fit the screen. |
+| **display-image-pillow** | xiAPI Python | [Python](samples/xiapi-python/cross-platform/display-image-pillow/) | Captures one MONO8, RGB24 or RGB32 image, converts it to a Pillow image and opens it in the system image viewer. |
+| **display-video-opencv** | xiAPI Python | [Python](samples/xiapi-python/cross-platform/display-video-opencv/) | Captures video from a XIMEA camera, displays it with elapsed time overlay, and handles keyboard interrupt. |
+| **ffs-parameter-preset** | xiAPI Python | [Python](samples/xiapi-python/cross-platform/ffs-parameter-preset/) | Saves a name=value parameter preset into the camera Flash File System (FFS) file User1, shows it, and applies it back to the camera. |
+| **save-image-pillow** | xiAPI Python | [Python](samples/xiapi-python/cross-platform/save-image-pillow/) | Captures one image (RGB24 on color cameras, MONO8 on monochrome cameras) and saves it with Pillow, which picks the file format from the extension. |
+| **jetson-demosaic-sample** | xiAPI, NVIDIA Jetson | [C++](samples/xiapi/hardware-specific/jetson-demosaic-sample/) | Depacking and demosaicing image from a color camera using CUDA. Render the image to screen and save to .tif |
+| **gpio-samples-jetson** | xiAPI Python, NVIDIA Jetson | [Python](samples/xiapi-python/hardware-specific/gpio-samples-jetson/) | Blinks LED on XEC-NX-3P-X2G3 carrier board |
+<!-- samples-list:end -->
 
 ---
 
-## Building samples
-
-Build each sample separately by following the instructions in its own README.md file.
-
-### Third-party libraries: your choice, checked by hash
-
-Some samples use an external library (libtiff, LibTiff.NET, numpy, OpenCV, ...). None is
-downloaded until you choose how to provide it, and a sample never installs
-anything on its own. Choose once per machine with an environment variable, or
-per build:
-
-| Choice | Meaning |
-|--------|---------|
-| `download` | Fetch the library from its upstream source and accept it only if it matches the hash pinned in this repository. |
-| `system` | Use a copy you installed or placed yourself; nothing is downloaded. |
-
-| Track | Per build | Pinned hash |
-|-------|-----------|-------------|
-| C / C++ | `cmake -DAPPLICATION_SAMPLES_DEPENDENCIES=download` (or `system`, which uses `find_package`) | `SHA256` of each archive in `dependencies/Dependencies.cmake` |
-| C# | `dotnet build -p:ApplicationSamplesDependencies=download` (or `system`, which restores only from `.deps/nuget/`) | content hash per package in each sample's `packages.lock.json`, plus nuget.org's repository signature (`nuget.config`) |
-| Python | `python -m pip install --require-hashes -r requirements.txt` (pip 26.3 or newer), or install the packages yourself | `--hash=sha256:` per file in `dependencies/python-constraints.txt` |
-| OpenCV, Windows C/C++ | `cmake -DAPPLICATION_SAMPLES_INSTALL_OPENCV=ON -DAPPLICATION_SAMPLES_DEPENDENCIES=download`, or run `scripts\install-opencv-windows.ps1`; `system`: set `OpenCV_DIR` to your copy | `OpenCvSha256` of the release installer in `scripts/install-opencv-windows.ps1`, next to its version, which matches `opencv-python` |
-
-```bash
-export APPLICATION_SAMPLES_DEPENDENCIES=download   # Linux/macOS; or system
-```
-
-```powershell
-$env:APPLICATION_SAMPLES_DEPENDENCIES = "download"   # Windows PowerShell; or "system"
-```
-
-Without a choice, a C/C++ configure or C# build that needs a library stops and
-explains both options. The environment variable answers for CMake and MSBuild;
-pip does not read it.
-
-### Dependency cache and offline builds
-
-An external package is downloaded once per machine and reused by every sample.
-All three language tracks share one directory, `.deps/` at the repository root,
-and none of them lets a sample pick its own version.
-
-| Track | Shared store | Wired up by |
-|-------|--------------|-------------|
-| C / C++ | `.deps/downloads/` (archives) | `DOWNLOAD_DIR` in `application_samples_use()` |
-| C# | `.deps/nuget-packages/` (extracted packages) | `globalPackagesFolder` in `nuget.config` |
-| Python | `.deps/wheels/` (offline wheelhouse) | `--find-links` in each sample `requirements.txt` |
-
-#### C / C++
-
-A cached archive is reused only if its SHA-256 matches the `SHA256` recorded in
-`dependencies/Dependencies.cmake`; a mismatching file stops the configure with
-both hashes, and deleting it downloads it again. A version change in that file
-changes the URL and the hash, so the new version is downloaded and checked.
-Warm the cache once with network access, then build offline:
-
-```bash
-cmake -B <build-dir> -DAPPLICATION_SAMPLES_OFFLINE=ON
-```
-
-With `APPLICATION_SAMPLES_OFFLINE=ON`, a missing archive fails immediately with
-the URL to fetch by hand, instead of retrying the download for several minutes.
-
-| Option | Meaning |
-|--------|---------|
-| `APPLICATION_SAMPLES_CACHE_DIR` | Where downloaded archives live. Defaults to `.deps/` at the repository root; point it at a shared drive or a CI cache to reuse it across checkouts. |
-| `APPLICATION_SAMPLES_OFFLINE` | `ON` fails fast on a cache miss instead of reaching for the network. |
-
-#### C\#
-
-`nuget.config` redirects the package store into `.deps/nuget-packages/` and
-clears machine-wide package sources, so a restore only uses the feeds listed
-there. Versions come from `dependencies/Directory.Packages.props`, which the
-repository-root `Directory.Build.props` feeds to MSBuild through
-`DirectoryPackagesPropsPath`; a sample writes a `PackageReference` with no
-`Version` and never imports that file itself.
-
-Each sample commits a `packages.lock.json` with the content hash of every
-package it restores, and restore runs in locked mode, so a package that differs
-from the lock file is rejected (NU1403). `nuget.config` also requires nuget.org's
-repository signature on every package. After changing a version in
-`dependencies/Directory.Packages.props`, update the lock files with
-`dotnet restore <project> -p:RestoreLockedMode=false`.
-
-With `ApplicationSamplesDependencies=system`, restore reads only `.nupkg` files
-you put into `.deps/nuget/`; the same hash and signature checks apply. Or
-restore once with network access, then build offline:
-
-```bash
-dotnet build --no-restore
-```
-
-#### Python
-
-`requirements.txt` points at the wheelhouse with `--find-links`, resolved
-relative to the requirements file, and pip ignores it when the directory is
-absent. Versions and the SHA-256 of every file pip may install come from
-`dependencies/python-constraints.txt` via the `-c` line in the same file; with
-pip 26.3 or newer, a wheel or sdist whose hash is not listed there is rejected,
-whether it comes from PyPI or from the wheelhouse.
-
-Fill the wheelhouse on the machine that will run the sample, because wheels are
-specific to platform and Python version:
-
-```bash
-python3 -m pip download -r requirements.txt -d <repo>/.deps/wheels       # once, online
-python3 -m pip install --no-index --require-hashes -r requirements.txt   # offline
-```
-
-pip keeps its own download cache outside the repository. Point it at `.deps/`
-too when a CI job caches only that directory:
-
-```bash
-export PIP_CACHE_DIR=<repo>/.deps/pip-cache
-```
-
-Repository-wide CI, build orchestration, and integration tests run in a separate
-XIMEA repository. The workflow under `.github/workflows/` starts that CI for the
-exact pushed commit; it is not needed to build or run the samples.
-
----
-
-## Links
+## Documentation
 
 - [XIMEA API Manual](https://www.ximea.com/support/wiki/apis/xiapi_manual)
 - [XIMEA .NET API Manual](https://www.ximea.com/support/wiki/apis/XiAPINET_Manual)
 - [XIMEA Python API Manual](https://www.ximea.com/support/wiki/apis/XiAPI_Python_Manual)
 - [XIMEA Software Packages](https://www.ximea.com/software-downloads)
+
+## License
+
+See [LICENSE](LICENSE).

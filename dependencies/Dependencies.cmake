@@ -3,8 +3,9 @@
 # One application_samples_dependency() record per library: where to get it, the
 # SHA256 of that archive, the target it defines, how to find an installed copy
 # instead, and the options that configure its build. A sample asks for one with
-# application_samples_use(<name>); the user decides with
-# APPLICATION_SAMPLES_DEPENDENCIES whether it is downloaded or found installed.
+# application_samples_use(<name>). An installed copy is used by default; the
+# archive is downloaded only when the user sets the environment variable
+# AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1.
 #
 # SHA256 is checked against every download and every cached archive. Take it
 # from the archive you verified against the project's own signature or

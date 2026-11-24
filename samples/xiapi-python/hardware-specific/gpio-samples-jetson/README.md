@@ -26,23 +26,35 @@ GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 
 ## Third-party libraries
 
-This sample uses the pip package(s) **gpiod**, **smbus2**, **spidev**, **pyserial**. It never installs anything itself; without them it stops and points here. Provide them one of these ways.
+This sample uses the pip package(s) **gpiod**, **smbus2**, **spidev**, **pyserial**. Nothing is downloaded unless you ask for it; without them the sample stops and explains both ways.
 
-**Download them, checked against pinned hashes.** `dependencies/python-constraints.txt` records the SHA-256 of every file PyPI publishes for each pinned version, and pip installs only files that match. Applying those hashes to the bare names in `requirements.txt` needs pip 26.3 or newer, so update pip first, preferably inside a virtual environment:
+**Install them yourself**, any way you like; the sample only imports them. Copies you provide are not checked, and their versions may differ from the tested ones. For example, from your own wheel files in `dependencies/local/wheels/` at the repository root, without network access:
 
 ```bash
 cd samples/xiapi-python/hardware-specific/gpio-samples-jetson
-python3 -m pip install --upgrade "pip>=26.3"
-python3 -m pip install --require-hashes -r requirements.txt
+python -m pip install --no-index --find-links ../../../../dependencies/local/wheels gpiod smbus2 spidev pyserial
 ```
 
-**Provide them yourself.** Put the wheel files into `.deps/wheels/` at the repository root and install from there without network access; the same hash check applies:
+Or install them with your system package manager.
+
+To install the tested versions instead, checked against the SHA-256 of every file PyPI publishes for them (recorded in `dependencies/python-constraints.txt`), use `requirements.txt`. Applying those hashes to its bare names needs pip 26.3 or newer, so update pip first, preferably inside a virtual environment. `requirements.txt` always applies the hashes, also to wheels in `dependencies/local/wheels/`.
 
 ```bash
-python3 -m pip install --no-index --require-hashes -r requirements.txt
+python -m pip install --upgrade "pip>=26.3"
+python -m pip install --require-hashes -r requirements.txt
 ```
 
-Or install the packages with your system package manager and skip `requirements.txt`; the versions then come from your distribution and may differ from the tested ones.
+**Or let the sample install them.** With `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` set, a sample that misses a package runs that same `pip install --require-hashes -r requirements.txt` itself, with the Python that runs the sample, and continues. A hash mismatch, a pip older than 26.3 or an environment pip may not install into stops it with pip's message.
+
+To let this and every other sample download what it needs, set `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` to `1` (`ON`, `TRUE` and `YES` work too) before you build or run; the commands below then work unchanged. Unset it to go back to your own copies.
+
+```bash
+export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1   # Linux/macOS
+```
+
+```powershell
+$env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'   # Windows PowerShell
+```
 
 ---
 
@@ -59,10 +71,10 @@ python3 -m pip install --require-hashes -r requirements.txt
 
 `requirements.txt` references `dependencies/python-constraints.txt` at the repository root via a `-c` directive. That file pins the approved package versions and the SHA-256 hashes of their files (`gpiod`, `smbus2`, `spidev`, `pyserial`); update it there to change versions across all samples.
 
-The same file also points at the shared wheelhouse, `.deps/wheels/` at the repository root, which pip ignores while it is empty. To install without network access, fill it on the Jetson itself once — wheels are specific to platform and Python version:
+The same file also points at your own wheel folder, `dependencies/local/wheels/` at the repository root, which pip ignores while it is empty. To install without network access, fill it on the Jetson itself once — wheels are specific to platform and Python version:
 
 ```bash
-python3 -m pip download -r requirements.txt -d ../../../../.deps/wheels       # once, online
+python3 -m pip download -r requirements.txt -d ../../../../dependencies/local/wheels   # once, online
 python3 -m pip install --no-index --require-hashes -r requirements.txt   # offline
 ```
 

@@ -28,23 +28,35 @@ The `ximea` package comes from the XIMEA Software Package (SP) installer. It is 
 
 ## Third-party libraries
 
-This sample uses the pip package(s) **numpy**, **pillow**. It never installs anything itself; without them it stops and points here. Provide them one of these ways.
+This sample uses the pip package(s) **numpy**, **pillow**. Nothing is downloaded unless you ask for it; without them the sample stops and explains both ways.
 
-**Download them, checked against pinned hashes.** `dependencies/python-constraints.txt` records the SHA-256 of every file PyPI publishes for each pinned version, and pip installs only files that match. Applying those hashes to the bare names in `requirements.txt` needs pip 26.3 or newer, so update pip first, preferably inside a virtual environment:
+**Install them yourself**, any way you like; the sample only imports them. Copies you provide are not checked, and their versions may differ from the tested ones. For example, from your own wheel files in `dependencies/local/wheels/` at the repository root, without network access:
 
 ```bash
 cd samples/xiapi-python/cross-platform/display-image-pillow
+python -m pip install --no-index --find-links ../../../../dependencies/local/wheels numpy pillow
+```
+
+Or install them with your system package manager.
+
+To install the tested versions instead, checked against the SHA-256 of every file PyPI publishes for them (recorded in `dependencies/python-constraints.txt`), use `requirements.txt`. Applying those hashes to its bare names needs pip 26.3 or newer, so update pip first, preferably inside a virtual environment. `requirements.txt` always applies the hashes, also to wheels in `dependencies/local/wheels/`.
+
+```bash
 python -m pip install --upgrade "pip>=26.3"
 python -m pip install --require-hashes -r requirements.txt
 ```
 
-**Provide them yourself.** Put the wheel files into `.deps/wheels/` at the repository root and install from there without network access; the same hash check applies:
+**Or let the sample install them.** With `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` set, a sample that misses a package runs that same `pip install --require-hashes -r requirements.txt` itself, with the Python that runs the sample, and continues. A hash mismatch, a pip older than 26.3 or an environment pip may not install into stops it with pip's message.
+
+To let this and every other sample download what it needs, set `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` to `1` (`ON`, `TRUE` and `YES` work too) before you build or run; the commands below then work unchanged. Unset it to go back to your own copies.
 
 ```bash
-python -m pip install --no-index --require-hashes -r requirements.txt
+export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1   # Linux/macOS
 ```
 
-Or install the packages with your system package manager and skip `requirements.txt`; the versions then come from your distribution and may differ from the tested ones.
+```powershell
+$env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'   # Windows PowerShell
+```
 
 ---
 

@@ -1,7 +1,7 @@
 -c ../../../../dependencies/python-constraints.txt
-# Offline wheelhouse; ignored when the directory is absent. Fill it on the
-# target device with: python3 -m pip download -r requirements.txt -d <path>
---find-links ../../../../.deps/wheels
+# Your own wheels in dependencies/local/wheels; ignored while it is empty.
+# Fill it on the target device with: python3 -m pip download -r requirements.txt -d <path>
+--find-links ../../../../dependencies/local/wheels
 
 # GPIO samples
 gpiod

@@ -27,23 +27,21 @@ Captures 2 GenTL transport buffers that each hold 5 concatenated images, splits 
 
 ## Third-party libraries
 
-This sample uses **libtiff**. Nothing is downloaded until you choose how to provide it; a configure without a choice stops and explains both options.
+This sample uses **libtiff**. Nothing is downloaded unless you ask for it; a configure that finds no installed copy stops and explains both ways.
 
-| Choice | What happens | Configure with |
-|--------|--------------|----------------|
-| `download` | CMake downloads the archive named in `dependencies/Dependencies.cmake` into `.deps/downloads/` and builds it with the sample. The archive, new or cached, is used only if its SHA-256 matches the hash recorded there. | `cmake -B .cmake-tmp -DAPPLICATION_SAMPLES_DEPENDENCIES=download` |
-| `system` | CMake uses a copy you installed yourself (`sudo apt install libtiff-dev`, `brew install libtiff`, or `vcpkg install tiff`) through `find_package(TIFF)`; nothing is downloaded. Point `CMAKE_PREFIX_PATH` at an install outside the default locations. | `cmake -B .cmake-tmp -DAPPLICATION_SAMPLES_DEPENDENCIES=system` |
+| `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` | What happens |
+|---|---|
+| not set (default) | CMake uses a copy you installed yourself (`sudo apt install libtiff-dev`, `brew install libtiff`, or `vcpkg install tiff`) through `find_package(TIFF)`; nothing is downloaded. A copy you build and install into `dependencies/local/cmake/<library>/` at the repository root is found with no extra options; point `CMAKE_PREFIX_PATH` at an install anywhere else outside the default locations. |
+| `1` | CMake downloads the archive named in `dependencies/Dependencies.cmake` into `dependencies/cache/downloads/` and builds it with the sample. The archive, new or cached, is used only if its SHA-256 matches the hash recorded there. |
 
-On Windows, add `-A x64` as in the build commands below.
-
-To answer once for every C/C++ and C# sample, set the environment variable instead; the commands below then work unchanged:
+To let this and every other sample download what it needs, set `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` to `1` (`ON`, `TRUE` and `YES` work too) before you build or run; the commands below then work unchanged. Unset it to go back to your own copies.
 
 ```bash
-export APPLICATION_SAMPLES_DEPENDENCIES=download   # Linux/macOS; or system
+export AUTOMATICALLY_DOWNLOAD_DEPENDENCIES=1   # Linux/macOS
 ```
 
 ```powershell
-$env:APPLICATION_SAMPLES_DEPENDENCIES = "download"   # Windows PowerShell; or "system"
+$env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'   # Windows PowerShell
 ```
 
 ---
