@@ -5,7 +5,7 @@ Captures 10 RAW8 frames into application-owned RAM and accesses them after the c
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI |
 | Language | C |
@@ -16,7 +16,7 @@ Captures 10 RAW8 frames into application-owned RAM and accesses them after the c
 
 | Item | Requirement |
 |------|-------------|
-| OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
+| OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | Libraries | None |
@@ -61,7 +61,7 @@ cd samples\xiapi\cross-platform\capture-10-images-to-ram
 
 ---
 
-## Expected behavior
+## Expected output
 
 The sample allocates one distinct destination for each frame, captures with `XI_BP_SAFE`, stops acquisition, closes the camera, and then reads the retained frame information from application-owned memory.
 
@@ -79,6 +79,7 @@ Done
 ## Known limitations / caveats
 
 - A connected XIMEA camera and installed SDK runtime are required.
+- If `xiGetNumberDevices` reports no cameras, the sample prints a "no XIMEA cameras detected" error to stderr and exits with a failure status before trying to open a device.
 - The sample always opens camera index 0 and uses RAW8 output, a fixed count of 10 frames, a 10 ms exposure, and a 5-second image timeout.
 - RAM usage is approximately 10 times the value reported by `XI_PRM_IMAGE_PAYLOAD_SIZE`.
 - The allocated buffers are released after the retained frame information is printed.
@@ -89,3 +90,4 @@ Done
 
 - [xiAPI documentation](https://www.ximea.com/support/wiki/apis/xiapi_manual)
 - [xiAPI buffer policy](https://www.ximea.com/support/wiki/apis/XiAPI_Manual#XI_PRM_BUFFER_POLICY)
+- [XIMEA Software Packages](https://www.ximea.com/software-downloads)

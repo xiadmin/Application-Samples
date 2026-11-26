@@ -19,8 +19,8 @@ Captures 10 RAW8 images, converts them to RGB24 with xiAPI offline processing af
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| .NET SDK | 8.0 or newer |
 | Libraries | BitMiracle.LibTiff.NET (version pinned in `dependencies/Directory.Packages.props`) |
+| .NET SDK | 10.0 or newer |
 | Network | With `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` set, required for the first NuGet restore into `dependencies/cache/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. Not set, no network is used. |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.

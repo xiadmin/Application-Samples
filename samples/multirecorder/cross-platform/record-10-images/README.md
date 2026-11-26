@@ -21,13 +21,11 @@ Records 10 images from the first connected camera with a 200 ms exposure and fix
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) with its examples, which include MultiRecorder |
 | Libraries | None |
 
-The scripts run MultiRecorder from `%XIMEA_SP_PATH%\Examples\MultiRecorder\MultiRecorder.exe` on Windows and `/opt/XIMEA/examples/MultiRecorder/MultiRecorder` on Linux. Set the `MULTIRECORDER` environment variable to the full path of the executable to use another copy.
-
 ---
 
 ## Build
 
-No build step. `setup.xml` describes the recording; `run.bat` and `run.sh` pass it to MultiRecorder.
+No build step is required. `setup.xml` describes the recording; `run.bat` and `run.sh` pass it to MultiRecorder.
 
 ---
 
@@ -35,15 +33,19 @@ No build step. `setup.xml` describes the recording; `run.bat` and `run.sh` pass 
 
 ```bat
 :: Windows
-samples\multirecorder\cross-platform\record-10-images\run.bat
+cd samples\multirecorder\cross-platform\record-10-images
+.\run.bat
 ```
 
 ```bash
 # Linux
-sh samples/multirecorder/cross-platform/record-10-images/run.sh
+cd samples/multirecorder/cross-platform/record-10-images
+sh run.sh
 ```
 
 The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
+
+On Linux, `run.sh` looks for MultiRecorder in this order: `$MULTIRECORDER` if set; otherwise `$XIMEA_SP_PATH/examples/MultiRecorder/MultiRecorder` (or `$XIMEA_SP_PATH/Examples/MultiRecorder/MultiRecorder`) when `XIMEA_SP_PATH` is set; otherwise `/opt/XIMEA/examples/MultiRecorder/MultiRecorder`. On Windows, `run.bat` uses `%MULTIRECORDER%` if set, otherwise `%XIMEA_SP_PATH%\Examples\MultiRecorder\MultiRecorder.exe`. Set `MULTIRECORDER` to the full path of the executable to use another copy.
 
 ---
 

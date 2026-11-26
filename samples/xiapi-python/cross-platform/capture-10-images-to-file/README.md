@@ -5,7 +5,7 @@ Captures 10 images and saves them as TIFF files using tifffile.
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -19,8 +19,8 @@ Captures 10 images and saves them as TIFF files using tifffile.
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| Python | 3.11+ |
 | Libraries | numpy, tifffile (versions and SHA-256 hashes pinned in `dependencies/python-constraints.txt`) |
+| Python | 3.11+ |
 
 The `ximea` package comes from the XIMEA Software Package (SP) installer. It is not a pip package and does not appear in `dependencies/python-constraints.txt`.
 

@@ -5,7 +5,7 @@ Captures 10 raw images and saves them as DNG files using the XIMEA DNG Store lib
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -29,7 +29,7 @@ The `ximea` package comes from the XIMEA Software Package (SP) installer. `xiapi
 
 ## Build
 
-No build step is required for this Python sample.
+No build step is required.
 
 ---
 

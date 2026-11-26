@@ -57,10 +57,19 @@ def main() -> int:
         print(f"Error: could not load the XIMEA DNG Store library: {error}", file=sys.stderr)
         ret = 1
     finally:
+        # Close the camera even when stopping acquisition fails.
         if is_acquiring:
-            cam.stop_acquisition()
+            try:
+                cam.stop_acquisition()
+            except xiapi.Xi_error as error:
+                print(f"Error: could not stop acquisition: {error}", file=sys.stderr)
+                ret = 1
         if is_device_open:
-            cam.close_device()
+            try:
+                cam.close_device()
+            except xiapi.Xi_error as error:
+                print(f"Error: could not close camera: {error}", file=sys.stderr)
+                ret = 1
 
     if ret == 0:
         print("Done")

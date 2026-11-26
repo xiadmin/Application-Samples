@@ -18,11 +18,11 @@ Opens all connected cameras in parallel, triggers a master camera by software an
 |------|-------------|
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Two or more XIMEA cameras with GPIO; one acts as master, the others as slaves |
-| Wiring | Master GPO1 connected to GPI1 of every slave (plus a common ground); see the camera's GPIO documentation for pinout and voltage levels |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | None |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | None |
+| Wiring | Master GPO1 connected to GPI1 of every slave (plus a common ground); see the camera's GPIO documentation for pinout and voltage levels |
 
 ---
 
@@ -83,6 +83,8 @@ Optional: choose the master camera explicitly. Replace `<serial>` with the seria
 
 ## Expected output
 
+The sample lists the cameras with their roles, configures them, prints one line per frame for every burst, and ends with a per-camera summary. Lines from different cameras interleave in arrival order. The sample exits with a failure code when any camera grabbed fewer frames than expected or skipped frames on transport. That usually means missing wiring or too little bandwidth.
+
 ```text
   [0] XECAS1930001 (master)
   [1] XECAS1930002 (slave)
@@ -98,8 +100,6 @@ Camera XECAS1930001: grabbed 25 of 25, skipped on transport 0
 Camera XECAS1930002: grabbed 25 of 25, skipped on transport 0
 Done
 ```
-
-Lines from different cameras interleave in arrival order. The sample exits with a failure code when any camera grabbed fewer frames than expected or skipped frames on transport. That usually means missing wiring or too little bandwidth.
 
 ---
 

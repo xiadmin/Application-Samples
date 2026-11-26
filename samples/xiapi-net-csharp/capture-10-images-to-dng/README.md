@@ -19,8 +19,8 @@ Captures 10 raw images and saves them as DNG files using the XIMEA DNG Store lib
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| .NET SDK | 8.0 or newer |
 | Libraries | None |
+| .NET SDK | 10.0 or newer |
 | DNG Store | The "DNG Store" component of the XIMEA SP (installed by default) |
 
 `xiApi.NETX64.dll` and `xiapi_dng_store.dll` come from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. The build copies `xiapi_dng_store.dll` next to the sample and fails if it is missing.
@@ -76,6 +76,7 @@ Done
 - `DngStore.cs` declares the P/Invoke calls. It passes `XI_IMG` and the metadata by reference, as the C API expects, and includes the trailing `additionalPrivateData` fields that the library writes.
 - The sample always opens camera index 0 and uses a fixed 10 ms exposure.
 - Existing `image000.dng` through `image009.dng` files in the current directory are overwritten.
+- The project targets net10.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest version shipped with the SP). Forward compatibility is supported by the .NET runtime.
 
 ---
 

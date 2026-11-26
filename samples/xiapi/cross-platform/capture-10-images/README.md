@@ -5,7 +5,7 @@ Captures 10 frames from the first available XIMEA camera and prints basic inform
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI |
 | Language | C |
@@ -16,7 +16,7 @@ Captures 10 frames from the first available XIMEA camera and prints basic inform
 
 | Item | Requirement |
 |------|-------------|
-| OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
+| OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | Libraries | None |
@@ -63,6 +63,8 @@ cd samples\xiapi\cross-platform\capture-10-images
 
 ## Expected output
 
+The sample prints the size, frame number and first pixel byte of each of the 10 frames.
+
 ```text
 Opening camera index 0
 Frame 1/10: 1280x1024 nframe=1 first_byte=42
@@ -84,3 +86,4 @@ Done
 ## Links
 
 - [xiAPI documentation](https://www.ximea.com/support/wiki/apis/xiapi_manual)
+- [XIMEA Software Packages](https://www.ximea.com/software-downloads)

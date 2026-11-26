@@ -1,11 +1,11 @@
-# ffs-parameter-preset
+# ffs-parameter-preset — Python sample
 
 Saves a name=value parameter preset into the camera Flash File System (FFS) file User1, shows it, and applies it back to the camera.
 
 | Item | Value |
 |------|-------|
 | Category | Firmware / file access / LUT |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -16,16 +16,17 @@ Saves a name=value parameter preset into the camera Flash File System (FFS) file
 
 | Item | Requirement |
 |------|-------------|
-| XIMEA SDK | 4.32+ |
+| OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
+| Hardware | Any XIMEA camera with a flash file system (FFS); see [Tested camera families](#tested-camera-families) |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) (4.32 or newer) |
 | Libraries | None |
 | Python | 3.11+ |
-| Library | None |
 
 ---
 
 ## Build
 
-No build step is required for this Python sample.
+No build step is required.
 
 ---
 

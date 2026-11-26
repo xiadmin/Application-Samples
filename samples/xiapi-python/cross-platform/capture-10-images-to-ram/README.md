@@ -5,7 +5,7 @@ Captures 10 images into application-owned RAM.
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -28,7 +28,7 @@ The `ximea` package comes from the XIMEA Software Package (SP) installer. It is 
 
 ## Build
 
-No build step is required for this Python sample.
+No build step is required.
 
 ---
 

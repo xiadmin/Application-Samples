@@ -1,4 +1,4 @@
-# capture-10-concatenated-images-to-file — GenTL C++ sample
+# capture-10-concatenated-images-to-file — C++ sample
 
 Captures 2 GenTL transport buffers that each hold 5 concatenated images, splits every buffer into its images and saves them as TIFF files.
 
@@ -19,9 +19,9 @@ Captures 2 GenTL transport buffers that each hold 5 concatenated images, splits 
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | A XIMEA camera that supports `XI_PRM_CONCAT_IMG_MODE` and `XI_PRM_GENTL_DATASTREAM_ENABLED` |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads), including the examples |
+| Libraries | XIMEA GenTL helpers (`xiGenTL`), built from the SP sources by `ximea_find_gentl()`; libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | XIMEA GenTL helpers (`xiGenTL`), built from the SP sources by `ximea_find_gentl()`; libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 
 ---
 
@@ -72,9 +72,11 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ```bash
 # Linux
+cd samples/gentl/cross-platform/capture-10-concatenated-images-to-file
 .cmake-tmp/build/gentl-cross-platform-capture-10-concatenated-images-to-file --output-dir images
 
 # Windows PowerShell
+cd samples\gentl\cross-platform\capture-10-concatenated-images-to-file
 .\.cmake-tmp\build\gentl-cross-platform-capture-10-concatenated-images-to-file.exe --output-dir images
 ```
 
@@ -85,6 +87,8 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 ---
 
 ## Expected output
+
+The sample prints its progress and the path of every saved TIFF file:
 
 ```text
 Opening first camera

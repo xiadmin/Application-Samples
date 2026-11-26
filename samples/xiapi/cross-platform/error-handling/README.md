@@ -5,7 +5,7 @@ Shows how to detect and recover from an xiAPI error such as XI_TIMEOUT.
 | Item | Value |
 |------|-------|
 | Category | Error handling |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI |
 | Language | C |

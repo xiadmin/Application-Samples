@@ -19,8 +19,8 @@ Captures 10 images and saves them as TIFF files using LibTiff.NET.
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| .NET SDK | 8.0 or newer |
 | Libraries | BitMiracle.LibTiff.NET (version pinned in `dependencies/Directory.Packages.props`) |
+| .NET SDK | 10.0 or newer |
 | Network | With `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` set, required for the first NuGet restore into `dependencies/cache/nuget-packages/`; `dotnet build --no-restore` works offline afterwards. Not set, no network is used. |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
@@ -99,7 +99,7 @@ Done
 - All cameras deliver MONO8; a color camera saves its luminance. See the C, C++ or Python sample for an RGB24 variant.
 - Existing `image000.tif` through `image009.tif` files in the current directory are overwritten.
 - Frames are read with `xiCam.GetImage(out byte[], timeout)`, which copies the frame and its line padding out of the driver buffer; the TIFF writer drops the padding.
-- The project targets net8.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest version shipped with the SP). Forward compatibility is supported by the .NET runtime.
+- The project targets net10.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest version shipped with the SP). Forward compatibility is supported by the .NET runtime.
 
 ---
 

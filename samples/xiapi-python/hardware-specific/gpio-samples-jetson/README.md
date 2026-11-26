@@ -1,4 +1,4 @@
-# GPIO samples for Jetson — Python samples
+# gpio-samples-jetson — Python sample
 
 GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 
@@ -18,9 +18,9 @@ GPIO, I2C, SPI, and UART examples for the XIMEA Jetson kit carrier board.
 |------|-------------|
 | OS | Linux on Nvidia Jetson |
 | Hardware | XEC-NX-3P-X2G3 carrier board and supported peripherals |
-| XIMEA SDK | Not required unless a script is extended to access a XIMEA camera |
-| Python | 3.11+ |
+| XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads); not required unless a script is extended to access a XIMEA camera |
 | Libraries | gpiod, smbus2, spidev, pyserial (versions and SHA-256 hashes pinned in `dependencies/python-constraints.txt`) |
+| Python | 3.11+ |
 
 ---
 
@@ -60,7 +60,7 @@ $env:AUTOMATICALLY_DOWNLOAD_DEPENDENCIES = '1'   # Windows PowerShell
 
 ## Build
 
-No build step is required for these Python scripts.
+No build step is required.
 
 Install the documented Python dependencies before running a script:
 
@@ -110,6 +110,22 @@ python3 uart_p2p_pc.py
 ## Expected output
 
 Each script prints status for the selected GPIO, I2C, SPI, or UART operation. Exact output depends on the connected Jetson carrier board and peripheral wiring.
+
+For example, `bmp280_i2c.py` with a BMP280 sensor connected, and `uart_loopback.py` with TX wired to RX:
+
+```text
+BMP280 I2C sample
+BMP280 chip id: 0x58
+Temperature reading: 23.41 °C
+...
+```
+
+```text
+UART Loopback sample
+Received: Loopback iteration 0
+Received: Loopback iteration 1
+...
+```
 
 ---
 

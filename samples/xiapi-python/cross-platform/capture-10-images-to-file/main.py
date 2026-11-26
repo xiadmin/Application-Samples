@@ -93,6 +93,16 @@ def main() -> int:
                 return 1
             import tifffile
 
+        try:
+            import numpy
+        except ImportError:
+            if not install_requirements("numpy"):
+                return 1
+            import numpy
+        # ximea.xiapi looks for numpy only when it is first imported; hand it the
+        # copy that may have been installed just now.
+        xiapi.np = numpy
+
         print("Opening camera index 0")
         cam.open_device()
         is_device_open = True

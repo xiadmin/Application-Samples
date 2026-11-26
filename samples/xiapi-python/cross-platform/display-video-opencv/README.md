@@ -5,7 +5,7 @@ Shows a live MONO8 or RGB24 video in an OpenCV window with the elapsed time draw
 | Item | Value |
 |------|-------|
 | Category | Display / OpenCV integration |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -19,8 +19,8 @@ Shows a live MONO8 or RGB24 video in an OpenCV window with the elapsed time draw
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera; a color camera for `--format rgb24` |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| Python | 3.11+ |
 | Libraries | numpy, opencv-python (versions and SHA-256 hashes pinned in `dependencies/python-constraints.txt`) |
+| Python | 3.11+ |
 
 The `ximea` package comes from the XIMEA Software Package (SP) installer. It is not a pip package and does not appear in `dependencies/python-constraints.txt`.
 

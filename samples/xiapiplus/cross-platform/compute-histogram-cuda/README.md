@@ -19,10 +19,10 @@ Delivers 8-bit frames to CPU, CUDA managed, mapped host or GPU memory with XI_PR
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+); `--target unified` and `--target gpu` need Linux |
 | Hardware | Any XIMEA camera and an NVIDIA GPU; `--target gpu` needs a XIMEA PCIe camera and a GPU that supports GPUDirect RDMA |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| CUDA | [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11 or newer and the NVIDIA driver |
+| Libraries | CUDA runtime (`CUDA::cudart`), found with `find_package(CUDAToolkit)` |
 | CMake | 3.18 or newer |
 | Compiler | MSVC 2022+ or GCC 9+ (C++17), supported by the installed CUDA Toolkit |
-| Libraries | CUDA runtime (`CUDA::cudart`), found with `find_package(CUDAToolkit)` |
+| CUDA | [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) 11 or newer and the NVIDIA driver |
 
 When CMake does not find the CUDA Toolkit, the sample is skipped with a warning. With a Visual Studio generator, CMake also needs the toolkit's Visual Studio integration (selected in the CUDA installer). Without it, build with Ninja from a "x64 Native Tools Command Prompt for VS".
 
@@ -90,6 +90,8 @@ cd samples\xiapiplus\cross-platform\compute-histogram-cuda
 
 ## Expected output
 
+Each `Frame` line draws the 64 bins from dark (few pixels) to bright (many pixels) on a logarithmic scale. The timing covers the copy to the GPU (`cpu` target only), the kernel and the read-back of the 64 counters. Compare the targets to see how much the copy costs.
+
 ```text
 CUDA device 0: NVIDIA RTX A4000
 Opening first camera
@@ -101,8 +103,6 @@ Average copy + histogram time: 0.405 ms, 7868.68 MB/s
 Skipped frames: transport 0, API 0
 Done
 ```
-
-Each line draws the 64 bins from dark (few pixels) to bright (many pixels) on a logarithmic scale. The timing covers the copy to the GPU (`cpu` target only), the kernel and the read-back of the 64 counters. Compare the targets to see how much the copy costs.
 
 ---
 

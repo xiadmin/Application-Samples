@@ -1,4 +1,4 @@
-# capture-10-images-to-file — GenTL C++ sample
+# capture-10-images-to-file — C++ sample
 
 Loads the XIMEA GenTL producer (`.cti`) at run time, opens the first camera through the GenTL module hierarchy, captures 10 images into application buffers and saves them as TIFF files.
 
@@ -19,9 +19,9 @@ Loads the XIMEA GenTL producer (`.cti`) at run time, opens the first camera thro
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | Any XIMEA camera supported by the XIMEA GenTL producer |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads), including the GenTL producer and the examples (`GenTL_v1_5.h`) |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 
 ---
 
@@ -72,9 +72,11 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ```bash
 # Linux
+cd samples/gentl/cross-platform/capture-10-images-to-file
 .cmake-tmp/build/gentl-cross-platform-capture-10-images-to-file --output-dir images
 
 # Windows PowerShell
+cd samples\gentl\cross-platform\capture-10-images-to-file
 .\.cmake-tmp\build\gentl-cross-platform-capture-10-images-to-file.exe --output-dir images
 ```
 
@@ -86,6 +88,8 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 ---
 
 ## Expected output
+
+The sample prints the producer and device it opens, then the path of every saved TIFF file:
 
 ```text
 Loading GenTL producer C:\XIMEA\GenTL Producer\ximea.gentl2.cti
@@ -104,7 +108,7 @@ Without a camera the sample prints `Error: the GenTL producer found no camera de
 
 ## Known limitations / caveats
 
-- The sample does not link xiAPI; it talks to the producer only through the GenTL C interface that it resolves from the `.cti` at run time.
+- The sample code uses only GenTL: it talks to the producer through the GenTL C interface that it resolves from the `.cti` at run time, and the executable links no XIMEA library. The build still needs the XIMEA SDK, though: the sample's `CMakeLists.txt` calls `ximea_find_sdk(REQUIRED)`, which stops the configure when the xiAPI headers and library are not found, and `ximea_find_gentl()`, which skips the sample unless that SDK was found and `GenTL_v1_5.h` is present in the SP examples.
 - Width, height, payload size, exposure and the acquisition start/stop commands are read and written at fixed XIMEA register addresses. The register map is chosen from the producer file name: `ximea.gentl2.cti` uses the current map, any other name the legacy one. A generic GenTL consumer reads these addresses from the device's GenICam XML instead.
 - The images are saved as 8-bit monochrome TIFFs. The sample stops with an error when the payload is smaller than one byte per pixel; other pixel formats are not converted.
 - A frame that does not arrive within 2 s is reported and skipped; the sample then exits with a failure code.

@@ -1,7 +1,0 @@
--c ../../../../dependencies/python-constraints.txt
-# Your own wheels in dependencies/local/wheels; ignored while it is empty.
-# Fill it with:
-# python -m pip download -r requirements.txt -d <path>
---find-links ../../../../dependencies/local/wheels
-
-numpy

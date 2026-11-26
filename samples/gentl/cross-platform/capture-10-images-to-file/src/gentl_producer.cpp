@@ -25,10 +25,16 @@ void* openModule(const std::string& path)
 
 void closeModule(void* p_module)
 {
+    // Runs from a destructor, so a failure is reported rather than thrown.
 #ifdef _WIN32
-    FreeLibrary(reinterpret_cast<HMODULE>(p_module));
+    if (!FreeLibrary(reinterpret_cast<HMODULE>(p_module)))
+        std::cerr << "Warning: FreeLibrary failed with Windows error " << GetLastError() << "\n";
 #else
-    dlclose(p_module);
+    if (dlclose(p_module) != 0)
+    {
+        const char* p_error = dlerror();
+        std::cerr << "Warning: dlclose failed: " << (p_error ? p_error : "unknown error") << "\n";
+    }
 #endif
 }
 

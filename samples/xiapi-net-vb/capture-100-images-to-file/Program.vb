@@ -73,6 +73,9 @@ Module Program
         Catch ex As IOException
             Console.Error.WriteLine($"Error: could not write JPEG file: {ex.Message}")
             exitCode = 1
+        Catch ex As UnauthorizedAccessException
+            Console.Error.WriteLine($"Error: could not write JPEG file: {ex.Message}")
+            exitCode = 1
         Finally
             If isAcquiring Then
                 Try

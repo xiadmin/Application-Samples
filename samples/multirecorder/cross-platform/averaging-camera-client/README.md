@@ -18,11 +18,11 @@ Connects to an averaging camera server, configures its camera, asks the server t
 |------|-------------|
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | None on the client computer; the camera is connected to the server computer |
-| Server | [averaging-camera-server](../averaging-camera-server/) running and reachable over the network |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) with its examples, which include the MultiRecorder sources |
+| Libraries | MultiRecorder sources from the SP (cpp-httplib and TinyXML included) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+ or GCC 9+ (C++17) |
-| Libraries | MultiRecorder sources from the SP (cpp-httplib and TinyXML included) |
+| Server | [averaging-camera-server](../averaging-camera-server/) running and reachable over the network |
 
 CMake builds the camera client classes from `<XIMEA_SP_PATH>/Examples/MultiRecorder/sources` on Windows or `/opt/XIMEA/examples/MultiRecorder/sources` on Linux. When they are missing, the sample is skipped with a warning.
 
@@ -74,6 +74,8 @@ cd samples\multirecorder\cross-platform\averaging-camera-client
 ---
 
 ## Expected output
+
+The client prints the camera it opens, the server's progress messages and one line per averaged image:
 
 ```text
 Opening camera MC031CG-SY-UB (CECAU0000001) at localhost:9001

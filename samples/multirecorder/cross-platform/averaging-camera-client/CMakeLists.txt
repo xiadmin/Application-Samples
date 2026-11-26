@@ -11,14 +11,14 @@ if(NOT XIMEA_MULTIRECORDER_FOUND)
     return()
 endif()
 
-add_executable(averaging_camera_client
+add_executable(multirecorder_cross_platform_averaging_camera_client
     main.cpp
     src/remote_camera_session.cpp
 )
-target_compile_features(averaging_camera_client PRIVATE cxx_std_17)
-target_include_directories(averaging_camera_client PRIVATE include)
-target_link_libraries(averaging_camera_client PRIVATE XIMEA::MultiRecorder)
+target_compile_features(multirecorder_cross_platform_averaging_camera_client PRIVATE cxx_std_17)
+target_include_directories(multirecorder_cross_platform_averaging_camera_client PRIVATE include)
+target_link_libraries(multirecorder_cross_platform_averaging_camera_client PRIVATE XIMEA::MultiRecorder)
 
-sample_flat_output_directories(TARGET averaging_camera_client)
+sample_flat_output_directories(TARGET multirecorder_cross_platform_averaging_camera_client)
 
-install(TARGETS averaging_camera_client RUNTIME DESTINATION bin)
+install(TARGETS multirecorder_cross_platform_averaging_camera_client RUNTIME DESTINATION bin)

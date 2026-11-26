@@ -6,14 +6,14 @@ include("${CMAKE_CURRENT_LIST_DIR}/../../../../cmake/CMakeLists.txt")
 ximea_find_sdk(REQUIRED)
 application_samples_use(libtiff)
 
-add_executable(capture_images_to_file_c main.c)
-target_compile_features(capture_images_to_file_c PRIVATE c_std_11)
-target_link_libraries(capture_images_to_file_c
+add_executable(xiapi_cross_platform_capture_10_images_to_file main.c)
+target_compile_features(xiapi_cross_platform_capture_10_images_to_file PRIVATE c_std_11)
+target_link_libraries(xiapi_cross_platform_capture_10_images_to_file
     PRIVATE
         XIMEA::xiAPI
         TIFF::tiff
 )
 
-sample_flat_output_directories(TARGET capture_images_to_file_c)
+sample_flat_output_directories(TARGET xiapi_cross_platform_capture_10_images_to_file)
 
-install(TARGETS capture_images_to_file_c RUNTIME DESTINATION bin)
+install(TARGETS xiapi_cross_platform_capture_10_images_to_file RUNTIME DESTINATION bin)

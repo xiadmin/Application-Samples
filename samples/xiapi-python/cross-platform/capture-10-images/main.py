@@ -46,8 +46,8 @@ def main() -> int:
         for i in range(FRAME_COUNT):
             current_frame = i + 1
             cam.get_image(img, timeout=GRAB_TIMEOUT_MS)
-            data = img.get_image_data_numpy()
-            first_byte = int(data.flat[0]) if data is not None and data.size > 0 else -1
+            data = img.get_image_data_raw()
+            first_byte = data[0] if data else -1
             print(
                 f"Frame {current_frame}/{FRAME_COUNT}: "
                 f"{img.width}x{img.height} "

@@ -37,6 +37,14 @@ int main(void)
     int payloadSize = 0;
     XI_IMG *p_images = NULL;
     unsigned char *p_storage = NULL;
+    DWORD deviceCount = 0;
+
+    CE(xiGetNumberDevices(&deviceCount));
+    if (deviceCount == 0)
+    {
+        fprintf(stderr, "Error: no XIMEA cameras detected\n");
+        return EXIT_FAILURE;
+    }
 
     printf("Opening camera index 0\n");
     CE(xiOpenDevice(0, &cam));

@@ -11,10 +11,10 @@ if(NOT XIMEA_GENTL_FOUND)
     return()
 endif()
 
-add_executable(gentl_zero_copy main.cpp)
-target_compile_features(gentl_zero_copy PRIVATE cxx_std_17)
-target_link_libraries(gentl_zero_copy PRIVATE XIMEA::GenTLHelpers)
+add_executable(gentl_cross_platform_capture_50_images_zero_copy main.cpp)
+target_compile_features(gentl_cross_platform_capture_50_images_zero_copy PRIVATE cxx_std_17)
+target_link_libraries(gentl_cross_platform_capture_50_images_zero_copy PRIVATE XIMEA::GenTLHelpers)
 
-sample_flat_output_directories(TARGET gentl_zero_copy)
+sample_flat_output_directories(TARGET gentl_cross_platform_capture_50_images_zero_copy)
 
-install(TARGETS gentl_zero_copy RUNTIME DESTINATION bin)
+install(TARGETS gentl_cross_platform_capture_50_images_zero_copy RUNTIME DESTINATION bin)

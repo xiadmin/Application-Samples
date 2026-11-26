@@ -5,7 +5,7 @@ Opens the first two connected cameras, splits the interface bandwidth between th
 | Item | Value |
 |------|-------|
 | Category | Multi-camera / basic acquisition |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -28,7 +28,7 @@ The sample needs only the `ximea` package, which comes from the XIMEA Software P
 
 ## Build
 
-No build step is required for this Python sample.
+No build step is required.
 
 ---
 

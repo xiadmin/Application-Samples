@@ -1,4 +1,4 @@
-# Jetson Demosaic Sample — C++/CUDA sample
+# jetson-demosaic-sample — C++ sample
 
 GPU demosaicing sample for Nvidia Jetson that bypasses xiAPI CPU processing for color cameras, renders frames, saves TIFF output, and prints processing timing statistics.
 
@@ -29,7 +29,7 @@ GPU demosaicing sample for Nvidia Jetson that bypasses xiAPI CPU processing for 
 
 This sample is hardware-specific. The CMake project intentionally skips itself on non-Linux or non-aarch64 systems.
 
-### CMake directly — Jetson
+### Linux (Jetson)
 
 ```bash
 cd samples/xiapi/hardware-specific/jetson-demosaic-sample
@@ -37,7 +37,7 @@ cmake -B .cmake-tmp
 cmake --build .cmake-tmp
 ```
 
-Binary lands in `.cmake-tmp/build/`.
+The binary lands in `.cmake-tmp/build/`. There is no Windows build; the sample is Jetson-only.
 
 ### Makefile — Jetson
 
@@ -70,7 +70,29 @@ cd samples/xiapi/hardware-specific/jetson-demosaic-sample
 
 ## Expected output
 
-The sample opens a camera, captures frames into CUDA-accessible memory, runs depacking/demosaicing, renders the image, saves TIFF output, and prints per-stage timing statistics.
+The sample opens a camera, captures frames into CUDA-accessible memory, runs depacking/demosaicing, renders the image, saves TIFF output, and prints per-stage timing statistics. It processes 20 frames, writes `saved_image_00.tif` through `saved_image_19.tif` to the current directory, and shows each frame in an OpenGL window. The depacking line depends on the camera's transport format.
+
+```text
+TRANSPORT FORMAT: ...
+Opened camera
+Image height: ...
+Image width: ...
+Buffer size: ...
+Processing frame 0
+GPU 12p depacking!
+NPPI demosaicing!
+Saving to .tif!
+Rendering!
+...
+Processing frame 19
+...
+
+Statistics:
+Average depacking time: ... ms
+Average demosaicing time: ... ms
+Average saving time: ... ms
+Average Rendering time: ... ms
+```
 
 ---
 

@@ -128,6 +128,16 @@ def main() -> int:
                 return 1
             import cv2
 
+        try:
+            import numpy
+        except ImportError:
+            if not install_requirements("numpy"):
+                return 1
+            import numpy
+        # ximea.xiapi looks for numpy only when it is first imported; hand it the
+        # copy that may have been installed just now.
+        xiapi.np = numpy
+
         print("Opening camera index 0")
         cam.open_device()
         is_device_open = True
@@ -144,49 +154,51 @@ def main() -> int:
         cam.start_acquisition()
         is_acquiring = True
 
-        img = xiapi.Image()
-        cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-        has_window = True
-        print("Showing video. Press ESC in the window or close it to exit")
-        start_time = time.monotonic()
-        while True:
-            cam.get_image(img, timeout=GRAB_TIMEOUT_MS)
-            # xiAPI delivers XI_RGB24 as BGR, which is the order OpenCV expects.
-            data = img.get_image_data_numpy()
-            height, width = data.shape[:2]
+        # cv2 is bound from here on, so its errors can be caught.
+        try:
+            img = xiapi.Image()
+            cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+            has_window = True
+            print("Showing video. Press ESC in the window or close it to exit")
+            start_time = time.monotonic()
+            while True:
+                cam.get_image(img, timeout=GRAB_TIMEOUT_MS)
+                # xiAPI delivers XI_RGB24 as BGR, which is the order OpenCV expects.
+                data = img.get_image_data_numpy()
+                height, width = data.shape[:2]
 
-            if frame_count == 0:
-                scale = min(1.0, MAX_WINDOW_WIDTH / width, MAX_WINDOW_HEIGHT / height)
-                cv2.resizeWindow(WINDOW_NAME, int(width * scale), int(height * scale))
+                if frame_count == 0:
+                    scale = min(1.0, MAX_WINDOW_WIDTH / width, MAX_WINDOW_HEIGHT / height)
+                    cv2.resizeWindow(WINDOW_NAME, int(width * scale), int(height * scale))
 
-            elapsed_s = time.monotonic() - start_time
-            # FONT_HERSHEY_SIMPLEX is about 22 px high at scale 1.
-            font_scale = height * TEXT_HEIGHT_RATIO / 22
-            thickness = max(1, round(font_scale * 2))
-            cv2.putText(
-                data,
-                f"{elapsed_s:6.2f} s",
-                (width // 20, height // 20 + round(font_scale * 22)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                font_scale,
-                TEXT_COLOR,
-                thickness,
-            )
-            cv2.imshow(WINDOW_NAME, data)
-            frame_count += 1
+                elapsed_s = time.monotonic() - start_time
+                # FONT_HERSHEY_SIMPLEX is about 22 px high at scale 1.
+                font_scale = height * TEXT_HEIGHT_RATIO / 22
+                thickness = max(1, round(font_scale * 2))
+                cv2.putText(
+                    data,
+                    f"{elapsed_s:6.2f} s",
+                    (width // 20, height // 20 + round(font_scale * 22)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    font_scale,
+                    TEXT_COLOR,
+                    thickness,
+                )
+                cv2.imshow(WINDOW_NAME, data)
+                frame_count += 1
 
-            if cv2.waitKey(1) == ESC_KEY:
-                break
-            if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
-                break
+                if cv2.waitKey(1) == ESC_KEY:
+                    break
+                if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
+                    break
+        except cv2.error as error:
+            # opencv-python-headless and systems without a display have no windows.
+            print(f"Error: could not show the OpenCV window: {error}", file=sys.stderr)
+            ret = 1
     except KeyboardInterrupt:
         print("Interrupted")
     except xiapi.Xi_error as error:
         print(f"Error: xiAPI call failed: {error}", file=sys.stderr)
-        ret = 1
-    except cv2.error as error:
-        # opencv-python-headless and systems without a display have no windows.
-        print(f"Error: could not show the OpenCV window: {error}", file=sys.stderr)
         ret = 1
     finally:
         if is_acquiring:

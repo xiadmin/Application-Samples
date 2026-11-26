@@ -8,7 +8,7 @@ Captures 100 MONO8 images and saves them as JPEG files with the WPF JpegBitmapEn
 | OS platform | Windows |
 | Hardware platform | Cross-platform |
 | API type | xiAPI.NET |
-| Language | Visual Basic .NET |
+| Language | VB.NET |
 
 ---
 
@@ -19,8 +19,8 @@ Captures 100 MONO8 images and saves them as JPEG files with the WPF JpegBitmapEn
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| .NET SDK | 8.0 or newer |
 | Libraries | WPF imaging (`System.Windows.Media.Imaging`, part of the .NET Windows Desktop runtime) |
+| .NET SDK | 10.0 or newer |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
 
@@ -79,7 +79,7 @@ The camera name, serial number and resolution depend on the camera.
 - The `images` folder is created when missing. Existing files in it with the same names are overwritten.
 - The exposure and gain are fixed. Adjust `ExposureUs` and `GainDb` in `Program.vb` for brighter or darker scenes.
 - Frames are read with `xiCam.GetImageByteArray` and the SAFE buffer policy into one preallocated array. `xiCam.GetImage` cannot be called from VB, because its overloads differ only in `ByRef`.
-- The project targets net8.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest version shipped with the SP). Forward compatibility is supported by the .NET runtime.
+- The project targets net10.0-windows but links against the net7.0 `xiApi.NETX64.dll` (the latest version shipped with the SP). Forward compatibility is supported by the .NET runtime.
 
 ---
 

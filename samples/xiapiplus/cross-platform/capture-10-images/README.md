@@ -5,7 +5,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPIplus |
 | Language | C++ |
@@ -16,7 +16,7 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 
 | Item | Requirement |
 |------|-------------|
-| OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
+| OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
 | Libraries | None |
@@ -35,8 +35,6 @@ cmake -B .cmake-tmp
 cmake --build .cmake-tmp
 ```
 
-Binary lands in `.cmake-tmp/build/`.
-
 ### Windows (PowerShell)
 
 ```powershell
@@ -45,7 +43,7 @@ cmake -B .cmake-tmp -A x64
 cmake --build .cmake-tmp --config Release
 ```
 
-Binary lands in `.cmake-tmp\build\`.
+The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Windows.
 
 ---
 
@@ -66,6 +64,8 @@ cd samples\xiapiplus\cross-platform\capture-10-images
 ---
 
 ## Expected output
+
+The sample reports how many cameras it found, sets a 100 ms exposure and prints the size, frame number and first pixel byte of each of the 10 frames.
 
 ```text
 Found 1 camera(s), opening index 0
@@ -89,3 +89,4 @@ Done
 ## Links
 
 - [xiAPI documentation](https://www.ximea.com/support/wiki/apis/xiapi_manual)
+- [XIMEA Software Packages](https://www.ximea.com/software-downloads)

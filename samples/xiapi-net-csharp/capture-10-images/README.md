@@ -19,8 +19,8 @@ Captures 10 frames from the first available XIMEA camera and prints per-frame me
 | OS | Windows 10/11 |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| .NET SDK | 8.0 or newer |
 | Libraries | None |
+| .NET SDK | 10.0 or newer |
 
 `xiApi.NETX64.dll` comes from the XIMEA Software Package (SP) installation, referenced via `XIMEA_SP_PATH`. It is not a NuGet package.
 
@@ -33,7 +33,7 @@ cd samples\xiapi-net-csharp\capture-10-images
 dotnet build CaptureImages.csproj -c Release --output .dotnet-tmp
 ```
 
-Binary lands in `.dotnet-tmp\` inside the sample folder.
+The binary lands in `.dotnet-tmp\` inside the sample folder.
 
 ---
 
@@ -70,8 +70,7 @@ Done
 ## Known limitations / caveats
 
 - Windows-only: the XIMEA .NET wrapper is not available for Linux or macOS.
-- The project targets net8.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest
-  version shipped with the SP). Forward compatibility is supported by the .NET runtime.
+- The project targets net10.0 but links against the net7.0 `xiApi.NETX64.dll` (the latest version shipped with the SP). Forward compatibility is supported by the .NET runtime.
 
 ---
 

@@ -12,20 +12,20 @@ if(NOT XIMEA_GENTL_FOUND)
 endif()
 application_samples_use(libtiff)
 
-add_executable(gentl_capture_to_file
+add_executable(gentl_cross_platform_capture_10_images_to_file
     main.cpp
     src/gentl_producer.cpp
     src/tiff_writer.cpp
 )
-target_compile_features(gentl_capture_to_file PRIVATE cxx_std_17)
-target_include_directories(gentl_capture_to_file PRIVATE include)
+target_compile_features(gentl_cross_platform_capture_10_images_to_file PRIVATE cxx_std_17)
+target_include_directories(gentl_cross_platform_capture_10_images_to_file PRIVATE include)
 # The producer is loaded at run time, so the sample links no XIMEA library.
-target_link_libraries(gentl_capture_to_file
+target_link_libraries(gentl_cross_platform_capture_10_images_to_file
     PRIVATE
         XIMEA::GenTL
         TIFF::tiff
 )
 
-sample_flat_output_directories(TARGET gentl_capture_to_file)
+sample_flat_output_directories(TARGET gentl_cross_platform_capture_10_images_to_file)
 
-install(TARGETS gentl_capture_to_file RUNTIME DESTINATION bin)
+install(TARGETS gentl_cross_platform_capture_10_images_to_file RUNTIME DESTINATION bin)

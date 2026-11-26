@@ -5,7 +5,7 @@ Captures 10 RAW8 images, converts them to RGB24 with xiAPI offline processing af
 | Item | Value |
 |------|-------|
 | Category | Image processing |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI |
 | Language | C |

@@ -5,7 +5,7 @@ Captures 10 images and saves them as TIFF files using libtiff.
 | Item | Value |
 |------|-------|
 | Category | Basic acquisition / image capture |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPIplus |
 | Language | C++ |
@@ -19,9 +19,9 @@ Captures 10 images and saves them as TIFF files using libtiff.
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | Any XIMEA USB3 / PCIe camera |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 | Network | With `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` set, required only until `dependencies/cache/downloads/` at the repository root holds the libtiff archive; later builds reuse the cached archive. Not set, no network is used. Pass `-DAPPLICATION_SAMPLES_OFFLINE=ON` to fail fast instead of reaching for the network. |
 
 ---

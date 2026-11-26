@@ -11,14 +11,14 @@ if(NOT XIMEA_MULTIRECORDER_FOUND)
     return()
 endif()
 
-add_executable(averaging_camera_server
+add_executable(multirecorder_cross_platform_averaging_camera_server
     main.cpp
     src/averaging_processor.cpp
 )
-target_compile_features(averaging_camera_server PRIVATE cxx_std_17)
-target_include_directories(averaging_camera_server PRIVATE include)
-target_link_libraries(averaging_camera_server PRIVATE XIMEA::MultiRecorder)
+target_compile_features(multirecorder_cross_platform_averaging_camera_server PRIVATE cxx_std_17)
+target_include_directories(multirecorder_cross_platform_averaging_camera_server PRIVATE include)
+target_link_libraries(multirecorder_cross_platform_averaging_camera_server PRIVATE XIMEA::MultiRecorder)
 
-sample_flat_output_directories(TARGET averaging_camera_server)
+sample_flat_output_directories(TARGET multirecorder_cross_platform_averaging_camera_server)
 
-install(TARGETS averaging_camera_server RUNTIME DESTINATION bin)
+install(TARGETS multirecorder_cross_platform_averaging_camera_server RUNTIME DESTINATION bin)

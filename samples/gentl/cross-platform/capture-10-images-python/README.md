@@ -19,8 +19,8 @@ Loads the XIMEA GenTL producer with the harvesters GenTL consumer, sets the expo
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS on Apple silicon |
 | Hardware | Any XIMEA camera supported by the GenTL producer |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads), which installs the GenTL producer and sets `GENICAM_GENTL64_PATH` |
-| Python | 3.11+ |
 | Libraries | harvesters, genicam, numpy (versions and SHA-256 hashes pinned in `dependencies/python-constraints.txt`) |
+| Python | 3.11+ |
 
 `genicam` is published as binary wheels only, and there is none for macOS on Intel, so the sample does not run there.
 
@@ -77,7 +77,7 @@ python main.py --exposure-us 20000
 To load a specific producer, pass its path with `--cti`. On Windows, for example:
 
 ```powershell
-cd samples/gentl/cross-platform/capture-10-images-python
+cd samples\gentl\cross-platform\capture-10-images-python
 python main.py --cti "C:\XIMEA\GenTL Producer\ximea.gentl2.cti"
 ```
 
@@ -91,6 +91,8 @@ On Linux and macOS, pass the path of the `.cti` file the XIMEA Software Package 
 ---
 
 ## Expected output
+
+The sample prints the producer and device it opens, then the size, timestamp and first pixels of each frame:
 
 ```text
 Loading GenTL producer C:\XIMEA\GenTL Producer\ximea.gentl2.cti

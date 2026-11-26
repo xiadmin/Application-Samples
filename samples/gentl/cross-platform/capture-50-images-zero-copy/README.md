@@ -1,4 +1,4 @@
-# capture-50-images-zero-copy — GenTL C++ sample
+# capture-50-images-zero-copy — C++ sample
 
 Configures the camera with xiAPI, then captures 50 images through the camera's GenTL data stream into buffers allocated by the application (or by the producer with `--auto-buffers`) and prints the metadata of each frame.
 
@@ -19,9 +19,9 @@ Configures the camera with xiAPI, then captures 50 images through the camera's G
 | OS | Windows 10/11 or Linux (Ubuntu 20.04+) |
 | Hardware | A XIMEA camera that supports `XI_PRM_GENTL_DATASTREAM_ENABLED` |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads), including the examples |
+| Libraries | XIMEA GenTL helpers (`GenTLStream`, `ImgBuffer`), built from the SP sources by `ximea_find_gentl()` |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | XIMEA GenTL helpers (`GenTLStream`, `ImgBuffer`), built from the SP sources by `ximea_find_gentl()` |
 
 ---
 
@@ -51,19 +51,23 @@ The binary lands in `.cmake-tmp/build/` on Linux and `.cmake-tmp\build\` on Wind
 
 ```bash
 # Linux
+cd samples/gentl/cross-platform/capture-50-images-zero-copy
 .cmake-tmp/build/gentl-cross-platform-capture-50-images-zero-copy
 
 # Windows PowerShell
+cd samples\gentl\cross-platform\capture-50-images-zero-copy
 .\.cmake-tmp\build\gentl-cross-platform-capture-50-images-zero-copy.exe
 ```
 
-| Option | Meaning |
-|--------|---------|
-| `--auto-buffers` | Let the GenTL producer allocate the 10 acquisition buffers (`DSAllocAndAnnounceBuffer`). By default the application allocates 4 KiB-aligned buffers and announces them (`DSAnnounceBuffer`), so the camera writes frames straight into application memory. |
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `--auto-buffers` | off: the application allocates 4 KiB-aligned buffers and announces them (`DSAnnounceBuffer`), so the camera writes frames straight into application memory | Let the GenTL producer allocate the 10 acquisition buffers (`DSAllocAndAnnounceBuffer`) |
 
 ---
 
 ## Expected output
+
+The sample prints the buffer setup, then one line of metadata per frame:
 
 ```text
 Opening first camera

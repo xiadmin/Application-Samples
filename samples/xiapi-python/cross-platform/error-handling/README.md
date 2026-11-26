@@ -5,7 +5,7 @@ Shows how to detect and recover from an xiAPI error such as XI_TIMEOUT.
 | Item | Value |
 |------|-------|
 | Category | Error handling |
-| OS platform | Cross-Platform |
+| OS platform | Cross-platform |
 | Hardware platform | Cross-platform |
 | API type | xiAPI Python |
 | Language | Python |
@@ -28,7 +28,7 @@ The `ximea` package comes from the XIMEA Software Package (SP) installer. It is 
 
 ## Build
 
-No build step is required for this Python sample.
+No build step is required.
 
 ---
 

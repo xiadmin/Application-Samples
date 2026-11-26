@@ -188,7 +188,10 @@ static int run(const Options& options)
             "xiGetParamString(GENTL_DATASTREAM_CONTEXT)");
 
     GenTLStream stream;
-    stream.SetStreamHandle(streamHandle);
+    // SetStreamHandle reports an invalid (null) handle by return value, not by throwing.
+    const GenTL::GC_ERROR streamStatus = stream.SetStreamHandle(streamHandle);
+    if (streamStatus != GenTL::GC_ERR_SUCCESS)
+        throw std::runtime_error("GenTLStream::SetStreamHandle returned GenTL error " + std::to_string(streamStatus));
     stream.RegisterEvent(GenTL::EVENT_NEW_BUFFER);
     ScopeGuard unregisterEvent([&] { stream.UnregisterEvent(GenTL::EVENT_NEW_BUFFER); });
 
@@ -217,7 +220,8 @@ static int run(const Options& options)
             std::vector<std::uint8_t>& bytes = storage.emplace_back(payloadSize + bufferAlignment);
             void* p_aligned = bytes.data();
             std::size_t space = bytes.size();
-            std::align(bufferAlignment, static_cast<std::size_t>(payloadSize), p_aligned, space);
+            if (std::align(bufferAlignment, static_cast<std::size_t>(payloadSize), p_aligned, space) == nullptr)
+                throw std::runtime_error("could not align a buffer to " + std::to_string(bufferAlignment) + " bytes");
             stream.AnnounceBuffer(p_aligned, static_cast<std::size_t>(payloadSize), &buffer);
         }
         buffers.push_back(buffer);

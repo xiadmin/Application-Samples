@@ -17,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -244,7 +245,8 @@ static int run(const Options& options)
         bytes.resize(payloadSize + bufferAlignment);
         void* p_aligned = bytes.data();
         std::size_t space = bytes.size();
-        std::align(bufferAlignment, payloadSize, p_aligned, space);
+        if (std::align(bufferAlignment, payloadSize, p_aligned, space) == nullptr)
+            throw std::runtime_error("could not align a buffer to " + std::to_string(bufferAlignment) + " bytes");
 
         GenTL::BUFFER_HANDLE buffer = nullptr;
         sample::checkGc(api.dsAnnounceBuffer(stream, p_aligned, payloadSize, nullptr, &buffer), "DSAnnounceBuffer");

@@ -79,18 +79,18 @@ static int writeTiffImage(const XI_IMG *p_image, const char *p_filename)
     }
 
     /* Gating on `result` keeps one cleanup path without an early return. */
-    for (uint32_t y = 0; result == 0 && y < (uint32_t)p_image->height; y++)
+    for (uint32_t i = 0; result == 0 && i < (uint32_t)p_image->height; i++)
     {
-        const unsigned char *p_src = (const unsigned char *)p_image->bp + (size_t)y * rowStride;
+        const unsigned char *p_src = (const unsigned char *)p_image->bp + (size_t)i * rowStride;
 
         if (isColor)
         {
             /* xiAPI delivers XI_RGB24 as BGR; TIFF expects RGB. */
-            for (uint32_t x = 0; x < (uint32_t)p_image->width; x++)
+            for (uint32_t j = 0; j < (uint32_t)p_image->width; j++)
             {
-                p_row[x * 3u]      = p_src[x * 3u + 2u];
-                p_row[x * 3u + 1u] = p_src[x * 3u + 1u];
-                p_row[x * 3u + 2u] = p_src[x * 3u];
+                p_row[j * 3u]      = p_src[j * 3u + 2u];
+                p_row[j * 3u + 1u] = p_src[j * 3u + 1u];
+                p_row[j * 3u + 2u] = p_src[j * 3u];
             }
         }
         else
@@ -98,9 +98,9 @@ static int writeTiffImage(const XI_IMG *p_image, const char *p_filename)
             memcpy(p_row, p_src, rowByteCount);
         }
 
-        if (TIFFWriteScanline(p_tif, p_row, y, 0) < 0)
+        if (TIFFWriteScanline(p_tif, p_row, i, 0) < 0)
         {
-            fprintf(stderr, "Error: TIFFWriteScanline failed at row %u of '%s'\n", y, p_filename);
+            fprintf(stderr, "Error: TIFFWriteScanline failed at row %u of '%s'\n", i, p_filename);
             result = -1;
             break;
         }
@@ -116,6 +116,14 @@ int main(void)
     HANDLE cam = NULL;
     int isColor = 0;
     XI_IMG image;
+    DWORD deviceCount = 0;
+
+    CE(xiGetNumberDevices(&deviceCount));
+    if (deviceCount == 0)
+    {
+        fprintf(stderr, "Error: no XIMEA cameras detected\n");
+        return EXIT_FAILURE;
+    }
 
     printf("Opening camera index 0\n");
     CE(xiOpenDevice(0, &cam));

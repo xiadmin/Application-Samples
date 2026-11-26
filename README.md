@@ -27,7 +27,7 @@ Type to filter the list, move with the arrow keys and press Enter to **Build**, 
 | Language | You need |
 |----------|----------|
 | C / C++ | CMake 3.16 or newer and a C/C++ compiler |
-| C# / VB.NET | .NET SDK 8.0 or newer |
+| C# / VB.NET | .NET SDK 10.0 or newer |
 | Python | Python 3.11 or newer |
 
 Some samples also need OpenCV, CUDA, OpenCL or an NVIDIA Jetson board; their READMEs list what they need.

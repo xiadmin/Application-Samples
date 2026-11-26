@@ -21,13 +21,11 @@ Records 10 images from a camera connected to another computer, which runs a Mult
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) with its examples, which include MultiRecorder |
 | Libraries | None |
 
-The scripts run MultiRecorder from `%XIMEA_SP_PATH%\Examples\MultiRecorder\MultiRecorder.exe` on Windows and `/opt/XIMEA/examples/MultiRecorder/MultiRecorder` on Linux. Set the `MULTIRECORDER` environment variable to the full path of the executable to use another copy.
-
 ---
 
 ## Build
 
-No build step. `start-server.bat`/`start-server.sh` run on the camera computer. `setup.xml` describes the recording; `run.bat` and `run.sh` pass it to MultiRecorder on the recording computer.
+No build step is required. `start-server.bat`/`start-server.sh` run on the camera computer. `setup.xml` describes the recording; `run.bat` and `run.sh` pass it to MultiRecorder on the recording computer.
 
 ---
 
@@ -37,27 +35,33 @@ On the computer the camera is connected to, start the server and leave it runnin
 
 ```bat
 :: Windows
-samples\multirecorder\cross-platform\record-through-remote-server\start-server.bat 192.168.1.10:8090
+cd samples\multirecorder\cross-platform\record-through-remote-server
+.\start-server.bat 192.168.1.10:8090
 ```
 
 ```bash
 # Linux
-sh samples/multirecorder/cross-platform/record-through-remote-server/start-server.sh 192.168.1.10:8090
+cd samples/multirecorder/cross-platform/record-through-remote-server
+sh start-server.sh 192.168.1.10:8090
 ```
 
 On the recording computer, set the same address in `setup.xml`, then run:
 
 ```bat
 :: Windows
-samples\multirecorder\cross-platform\record-through-remote-server\run.bat
+cd samples\multirecorder\cross-platform\record-through-remote-server
+.\run.bat
 ```
 
 ```bash
 # Linux
-sh samples/multirecorder/cross-platform/record-through-remote-server/run.sh
+cd samples/multirecorder/cross-platform/record-through-remote-server
+sh run.sh
 ```
 
 The scripts change to the sample folder first, so the relative folders and files in `setup.xml` are created there.
+
+On Linux, `run.sh` and `start-server.sh` look for MultiRecorder in this order: `$MULTIRECORDER` if set; otherwise `$XIMEA_SP_PATH/examples/MultiRecorder/MultiRecorder` (or `$XIMEA_SP_PATH/Examples/MultiRecorder/MultiRecorder`) when `XIMEA_SP_PATH` is set; otherwise `/opt/XIMEA/examples/MultiRecorder/MultiRecorder`. On Windows, `run.bat` and `start-server.bat` use `%MULTIRECORDER%` if set, otherwise `%XIMEA_SP_PATH%\Examples\MultiRecorder\MultiRecorder.exe`. Set `MULTIRECORDER` to the full path of the executable to use another copy.
 
 ---
 

@@ -19,10 +19,10 @@ Captures RAW8 Bayer frames from a color camera, demosaics them with a Malvar-He-
 | OS | Windows 10/11, Linux (Ubuntu 20.04+) or macOS |
 | Hardware | A XIMEA color camera with a Bayer filter (RGGB, GRBG, GBRG or BGGR) and an OpenCL 1.2 device, preferably a GPU |
 | XIMEA SDK | Latest beta of the [XIMEA Software Package](https://www.ximea.com/software-downloads) |
-| OpenCL | Headers and ICD loader at build time; an OpenCL runtime (part of the GPU driver) at run time |
+| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
 | CMake | 3.16 or newer |
 | Compiler | MSVC 2022+, GCC 9+, or Clang 10+ (C++17) |
-| Libraries | libtiff (central dependency in `dependencies/Dependencies.cmake`, downloaded and SHA-256 checked, or found installed; see [Third-party libraries](#third-party-libraries)) |
+| OpenCL | Headers and ICD loader at build time; an OpenCL runtime (part of the GPU driver) at run time |
 
 CMake finds OpenCL with `find_package(OpenCL)`, and the sample is skipped with a warning when it is missing:
 
@@ -99,6 +99,8 @@ cd samples\xiapiplus\cross-platform\demosaic-images-opencl
 
 ## Expected output
 
+The kernel time is measured by the OpenCL device with event profiling. The second time also covers copying the RAW8 frame to the device and the RGB result back.
+
 ```text
 Opening first camera
 Image size 2064x1544, color filter array 1, white balance R 1.28 G 1 B 3.25
@@ -108,8 +110,6 @@ Frame 1/10: kernel 0.214 ms, upload + kernel + download 3.902 ms, saved frames/i
 Average: kernel 0.209 ms, upload + kernel + download 3.517 ms
 Done
 ```
-
-The kernel time is measured by the OpenCL device with event profiling. The second time also covers copying the RAW8 frame to the device and the RGB result back.
 
 ---
 

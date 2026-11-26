@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <!-- Target latest LTS .NET; update when a new LTS ships. Windows Forms
          needs the -windows target. -->
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
