@@ -10,15 +10,8 @@ Code samples for XIMEA cameras. Every sample is self-contained and can be used i
 2. Connect a camera.
 3. Pick a sample from [Available samples](#available-samples) and follow its README.
 
-### Interactive sample browser
 
-To find, build and run samples from one terminal window, run this from the repository root (Python 3.11 or newer, no packages needed):
-
-```bash
-python samples_cli.py
-```
-
-Type to filter the list, move with the arrow keys and press Enter to **Build**, **Run** or **Open in explorer**. Build output goes to a `build/` folder inside each sample, with the full build log in `build/build.log`. **Run** builds the sample first when it has changed since the last build. Dependencies are downloaded only when `AUTOMATICALLY_DOWNLOAD_DEPENDENCIES` is set (see [Third-party libraries](#third-party-libraries)).
+To find, build and run samples from one terminal window, run `menu.pyz` from the repository root.
 
 ---
 

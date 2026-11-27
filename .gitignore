@@ -1,6 +1,9 @@
 # Build output
 /build/
 
+# samples_cli.py packed as a zipapp (python -m zipapp); generated, not committed
+/menu.pyz
+
 # Per-sample build output written by samples_cli.py, for samples/<api>/<sample>
 # and samples/<api>/<group>/<sample>. Spelled out rather than /samples/**/build/
 # because git before 1.8.2 does not understand ** in ignore patterns.
